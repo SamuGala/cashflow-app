@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/date_symbol_data_local.dart';
+import 'package:drift/drift.dart';
 
 import 'app/app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  /// carica tutti i locale per intl (date format)
-  await initializeDateFormatting();
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
   runApp(
     const ProviderScope(

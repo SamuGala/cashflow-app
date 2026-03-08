@@ -81,7 +81,7 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
   Future<void> deleteAllData() async {
     final db = ref.read(databaseProvider);
 
-    await db.deleteAllData();
+    await db.clearAllData();
 
     state = const AsyncData([]);
   }

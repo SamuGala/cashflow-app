@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../l10n/app_localizations.dart';
 import '../providers/category_provider.dart';
 import '../domain/category.dart';
@@ -54,9 +55,11 @@ Future<Category?> showAddCategoryDialog(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                     Text(
+
+                    /// TITLE
+                    Text(
                       t.newCategory,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
                       ),
@@ -101,7 +104,8 @@ Future<Category?> showAddCategoryDialog(
                               selectedIcon = icon.codePoint;
                             });
                           },
-                          child: Container(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: isSelected
@@ -129,16 +133,19 @@ Future<Category?> showAddCategoryDialog(
                               selectedColor = color.value;
                             });
                           },
-                          child: CircleAvatar(
-                            radius: isSelected ? 16 : 14,
-                            backgroundColor: color,
-                            child: isSelected
-                                ? const Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 16,
-                                  )
-                                : null,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            child: CircleAvatar(
+                              radius: isSelected ? 16 : 14,
+                              backgroundColor: color,
+                              child: isSelected
+                                  ? const Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 16,
+                                    )
+                                  : null,
+                            ),
                           ),
                         );
                       }).toList(),
@@ -149,6 +156,8 @@ Future<Category?> showAddCategoryDialog(
                     /// ACTIONS
                     Row(
                       children: [
+
+                        /// CANCEL
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () {
@@ -160,11 +169,21 @@ Future<Category?> showAddCategoryDialog(
 
                         const SizedBox(width: 12),
 
+                        /// ADD CATEGORY
                         Expanded(
                           child: FilledButton(
                             onPressed: () async {
                               final name = controller.text.trim();
-                              if (name.isEmpty) return;
+
+                              if (name.isEmpty) {
+                                ScaffoldMessenger.of(sheetContext)
+                                    .showSnackBar(
+                                  SnackBar(
+                                    content: Text(t.nameCategory),
+                                  ),
+                                );
+                                return;
+                              }
 
                               final category = await ref
                                   .read(categoryProvider.notifier)
@@ -175,8 +194,8 @@ Future<Category?> showAddCategoryDialog(
                                     color: selectedColor,
                                   );
 
-                              if (context.mounted) {
-                                Navigator.pop(context, category);
+                              if (sheetContext.mounted) {
+                                Navigator.pop(sheetContext, category);
                               }
                             },
                             child: Text(t.add),
