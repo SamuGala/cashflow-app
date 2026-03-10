@@ -10,6 +10,7 @@ import '../providers/category_provider.dart';
 import '../providers/search_provider.dart';
 import '../../transactions/domain/category.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/utils/category_localization.dart';
 
 class TransactionsPage extends ConsumerWidget {
   const TransactionsPage({super.key});
@@ -43,306 +44,350 @@ class TransactionsPage extends ConsumerWidget {
     final categories = categoriesAsync.value ?? [];
     final selectedMonth = ref.watch(transactionsMonthProvider);
 
-    final currency = NumberFormat.currency(locale: 'it_IT', symbol: '€');
-    final dateFormat = DateFormat('d MMMM yyyy', 'it_IT');
+    final locale = Localizations.localeOf(context).toString();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          t.transactions,
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
-        ),
-        elevation: 0,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openAddTransaction(context),
-        child: const Icon(Icons.add),
-      ),
-      body: Column(
-        children: [
-          /// MONTH FILTER
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed: () {
-                    final prev = DateTime(
-                      selectedMonth.year,
-                      selectedMonth.month - 1,
-                    );
-                    ref.read(transactionsMonthProvider.notifier).setMonth(prev);
-                  },
-                ),
-                Text(
-                  DateFormat('MMMM yyyy', 'it_IT').format(selectedMonth),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: () {
-                    final next = DateTime(
-                      selectedMonth.year,
-                      selectedMonth.month + 1,
-                    );
-                    ref.read(transactionsMonthProvider.notifier).setMonth(next);
-                  },
-                ),
-              ],
+    final currency = NumberFormat.currency(
+      locale: locale,
+      symbol: NumberFormat.simpleCurrency(locale: locale).currencySymbol,
+    );
+
+    final dateFormat = DateFormat.yMMMMd(locale);
+
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            t.transactions,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
             ),
           ),
-
-          /// SEARCH
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: TextField(
-              onChanged: (value) {
-                ref.read(transactionSearchProvider.notifier).setQuery(value);
-              },
-              decoration: InputDecoration(
-                hintText: t.lfTransactions,
-                prefixIcon: Icon(Icons.search),
+          elevation: 0,
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _openAddTransaction(context),
+          child: const Icon(Icons.add),
+        ),
+        body: Column(
+          children: [
+            /// MONTH FILTER
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: () {
+                      final prev = DateTime(
+                        selectedMonth.year,
+                        selectedMonth.month - 1,
+                      );
+                      ref
+                          .read(transactionsMonthProvider.notifier)
+                          .setMonth(prev);
+                    },
+                  ),
+                  Text(
+                    DateFormat.yMMMM(locale).format(selectedMonth),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: () {
+                      final next = DateTime(
+                        selectedMonth.year,
+                        selectedMonth.month + 1,
+                      );
+                      ref
+                          .read(transactionsMonthProvider.notifier)
+                          .setMonth(next);
+                    },
+                  ),
+                ],
               ),
             ),
-          ),
 
-          Expanded(
-            child: transactionsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(child: Text(error.toString())),
-              data: (transactions) {
-                final filteredMonth = transactions.where((tx) {
-                  return tx.date.month == selectedMonth.month &&
-                      tx.date.year == selectedMonth.year;
-                }).toList();
+            /// SEARCH
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: TextField(
+                onChanged: (value) {
+                  ref.read(transactionSearchProvider.notifier).setQuery(value);
+                },
+                decoration: InputDecoration(
+                  hintText: t.lfTransactions,
+                  prefixIcon: Icon(Icons.search),
+                ),
+              ),
+            ),
 
-                final sorted = [...filteredMonth]
-                  ..sort((a, b) => b.date.compareTo(a.date));
+            Expanded(
+              child: transactionsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => Center(child: Text(error.toString())),
+                data: (transactions) {
+                  final filteredMonth = transactions.where((tx) {
+                    return tx.date.month == selectedMonth.month &&
+                        tx.date.year == selectedMonth.year;
+                  }).toList();
 
-                final filtered = sorted.where((tx) {
-                  final category = categories.firstWhere(
-                    (c) => c.id == tx.categoryId,
-                    orElse: () => Category(
-                      id: tx.categoryId,
-                      name: t.categoryRemoved,
-                      isIncome: tx.isIncome,
-                      icon: Icons.help.codePoint,
-                      color: Colors.grey.value,
-                      isDefault: false,
-                    ),
-                  );
+                  final sorted = [...filteredMonth]
+                    ..sort((a, b) => b.date.compareTo(a.date));
 
-                  final query = searchQuery.toLowerCase();
+                  final filtered = sorted.where((tx) {
+                    final category = categories.firstWhere(
+                      (c) => c.id == tx.categoryId,
+                      orElse: () => Category(
+                        id: tx.categoryId,
+                        name: t.categoryRemoved,
+                        isIncome: tx.isIncome,
+                        icon: Icons.help.codePoint,
+                        color: Colors.grey.value,
+                        isDefault: false,
+                      ),
+                    );
 
-                  return category.name.toLowerCase().contains(query) ||
-                      (tx.note ?? '').toLowerCase().contains(query);
-                }).toList();
+                    final query = searchQuery.toLowerCase();
 
-                if (filtered.isEmpty) {
-                  return Center(child: Text(t.noTransactions));
-                }
+                    return categoryName(category.name, t).toLowerCase().contains(query) ||
+                        (tx.note ?? '').toLowerCase().contains(query);
+                  }).toList();
 
-                final Map<DateTime, List<TransactionModel>> grouped = {};
+                  if (filtered.isEmpty) {
+                    return Center(child: Text(t.noTransactions));
+                  }
 
-                for (final tx in filtered) {
-                  final day = DateTime(
-                    tx.date.year,
-                    tx.date.month,
-                    tx.date.day,
-                  );
-                  grouped.putIfAbsent(day, () => []);
-                  grouped[day]!.add(tx);
-                }
+                  final Map<DateTime, List<TransactionModel>> grouped = {};
 
-                final dates = grouped.keys.toList()
-                  ..sort((a, b) => b.compareTo(a));
+                  for (final tx in filtered) {
+                    final day = DateTime(
+                      tx.date.year,
+                      tx.date.month,
+                      tx.date.day,
+                    );
+                    grouped.putIfAbsent(day, () => []);
+                    grouped[day]!.add(tx);
+                  }
 
-                return ListView(
-                  children: dates.map((date) {
-                    final items = grouped[date]!;
+                  final dates = grouped.keys.toList()
+                    ..sort((a, b) => b.compareTo(a));
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-                          child: Text(
-                            dateFormat.format(date),
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                  return ListView(
+                    children: dates.map((date) {
+                      final items = grouped[date]!;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+                            child: Text(
+                              dateFormat.format(date),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
-                        ),
 
-                        ...items.map((tx) {
-                          final category = categories.firstWhere(
-                            (c) => c.id == tx.categoryId,
-                            orElse: () => Category(
-                              id: tx.categoryId,
-                              name: t.categoryRemoved,
-                              isIncome: tx.isIncome,
-                              icon: Icons.help.codePoint,
-                              color: Colors.grey.value,
-                              isDefault: false,
-                            ),
-                          );
-
-                          final amount = currency.format(tx.amountCents / 100);
-
-                          return Dismissible(
-                            key: ValueKey(tx.id),
-                            direction: DismissDirection.endToStart,
-
-                            background: Container(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 6,
+                          ...items.map((tx) {
+                            final category = categories.firstWhere(
+                              (c) => c.id == tx.categoryId,
+                              orElse: () => Category(
+                                id: tx.categoryId,
+                                name: t.categoryRemoved,
+                                isIncome: tx.isIncome,
+                                icon: Icons.help.codePoint,
+                                color: Colors.grey.value,
+                                isDefault: false,
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              alignment: Alignment.centerRight,
-                              child: const Icon(
-                                Icons.delete,
-                                color: Colors.white,
-                              ),
-                            ),
+                            );
 
-                            confirmDismiss: (_) async {
-                              return await showDialog(
-                                context: context,
-                                builder: (dialogContext) {
-                                  return AlertDialog(
-                                    title: Text(t.removeTransactionQ),
-                                    content: Text(
-                                      t.youSure,
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(dialogContext, false),
-                                        child: Text(t.cancel),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(dialogContext, true),
-                                        child: Text(t.delete),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
+                            final amount = currency.format(
+                              tx.amountCents / 100,
+                            );
 
-                            onDismissed: (_) {
-                              ref
-                                  .read(transactionProvider.notifier)
-                                  .deleteTransaction(tx.id);
+                            return Dismissible(
+                              key: ValueKey(tx.id),
+                              direction: DismissDirection.endToStart,
 
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(t.transactionDeleted),
-                                  action: SnackBarAction(
-                                    label: "UNDO",
-                                    onPressed: () {
-                                      ref
-                                          .read(transactionProvider.notifier)
-                                          .addTransaction(
-                                            amountCents: tx.amountCents,
-                                            isIncome: tx.isIncome,
-                                            categoryId: tx.categoryId,
-                                            date: tx.date,
-                                            note: tx.note,
-                                          );
-                                    },
-                                  ),
+                              background: Container(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 6,
                                 ),
-                              );
-                            },
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                alignment: Alignment.centerRight,
+                                child: const Icon(
+                                  Icons.delete,
+                                  color: Colors.white,
+                                ),
+                              ),
 
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 6,
-                              ),
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface,
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    height: 42,
-                                    width: 42,
-                                    decoration: BoxDecoration(
-                                      color: Color(
-                                        category.color,
-                                      ).withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      IconData(
-                                        category.icon,
-                                        fontFamily: 'MaterialIcons',
-                                      ),
-                                      color: Color(category.color),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          category.name,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
+                              confirmDismiss: (_) async {
+                                return await showDialog(
+                                  context: context,
+                                  builder: (dialogContext) {
+                                    return AlertDialog(
+                                      title: Text(t.removeTransactionQ),
+                                      content: Text(t.youSure),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(
+                                            dialogContext,
+                                            false,
                                           ),
+                                          child: Text(t.cancel),
                                         ),
-                                        Text(
-                                          tx.note ?? "",
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey.shade600,
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(
+                                            dialogContext,
+                                            true,
                                           ),
+                                          child: Text(t.delete),
                                         ),
                                       ],
+                                    );
+                                  },
+                                );
+                              },
+
+                              onDismissed: (_) {
+                                ref
+                                    .read(transactionProvider.notifier)
+                                    .deleteTransaction(tx.id);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(t.transactionDeleted),
+                                    action: SnackBarAction(
+                                      label: "UNDO",
+                                      onPressed: () {
+                                        ref
+                                            .read(transactionProvider.notifier)
+                                            .addTransaction(
+                                              amountCents: tx.amountCents,
+                                              isIncome: tx.isIncome,
+                                              categoryId: tx.categoryId,
+                                              date: tx.date,
+                                              note: tx.note,
+                                            );
+                                      },
                                     ),
                                   ),
-                                  Text(
-                                    '${tx.isIncome ? '+' : '-'} $amount',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 14,
-                                      color: tx.isIncome
-                                          ? Colors.green
-                                          : Colors.red,
+                                );
+                              },
+
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          AddTransactionPage(transaction: tx),
                                     ),
+                                  );
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 6,
                                   ),
-                                ],
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainer
+                                        : Theme.of(context).colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        height: 42,
+                                        width: 42,
+                                        decoration: BoxDecoration(
+                                          color: Color(
+                                            category.color,
+                                          ).withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          IconData(
+                                            category.icon,
+                                            fontFamily: 'MaterialIcons',
+                                          ),
+                                          color: Color(category.color),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              categoryName(category.name, t),
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                              ),
+                                            ),
+                                            Text(
+                                              tx.note ?? "",
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(
+                                        '${tx.isIncome ? '+' : '-'} $amount',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 14,
+                                          color: tx.isIncome
+                                              ? Colors.green
+                                              : Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          );
-                        }),
-                      ],
-                    );
-                  }).toList(),
-                );
-              },
+                            );
+                          }),
+                        ],
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

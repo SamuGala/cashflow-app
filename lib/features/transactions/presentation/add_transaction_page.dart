@@ -4,12 +4,16 @@ import 'package:intl/intl.dart';
 import 'package:another_flushbar/flushbar.dart';
 
 import '../domain/category.dart';
+import '../domain/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/category_provider.dart';
 import 'select_category_sheet.dart';
 import '../../../l10n/app_localizations.dart';
 
 class AddTransactionPage extends ConsumerStatefulWidget {
-  const AddTransactionPage({super.key});
+  const AddTransactionPage({super.key, this.transaction});
+
+  final TransactionModel? transaction;
 
   @override
   ConsumerState<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -23,6 +27,49 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   final noteController = TextEditingController();
 
   DateTime selectedDate = DateTime.now();
+
+  bool categoryInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final tx = widget.transaction;
+
+    if (tx != null) {
+      isIncome = tx.isIncome;
+      selectedDate = tx.date;
+      amountController.text = (tx.amountCents / 100).toStringAsFixed(2);
+      noteController.text = tx.note ?? "";
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (categoryInitialized) return;
+
+    final tx = widget.transaction;
+
+    if (tx != null) {
+      final categoriesAsync = ref.read(categoryProvider);
+
+      categoriesAsync.whenData((categories) {
+        final cat = categories.firstWhere(
+          (c) => c.id == tx.categoryId,
+          orElse: () => categories.first,
+        );
+
+        if (mounted) {
+          setState(() {
+            selectedCategory = cat;
+            categoryInitialized = true;
+          });
+        }
+      });
+    }
+  }
 
   Future<void> pickDate() async {
     final picked = await showDatePicker(
@@ -48,160 +95,147 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd MMM yyyy');
     final t = AppLocalizations.of(context)!;
-
+    final locale = Localizations.localeOf(context).toString();
+    final dateFormat = DateFormat.yMMMd(locale);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          t.addTransaction,
-          style: TextStyle(
+          widget.transaction == null ? t.addTransaction : t.saveTransaction,
+          style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
           ),
         ),
-        elevation: 0,
       ),
-
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          /// ENTRATA / USCITA
-          SegmentedButton<bool>(
-            segments: [
-              ButtonSegment<bool>(
-                value: true,
-                label: Text(
-                  t.income,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.4,
-                  ),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            /// INCOME / EXPENSE
+            SegmentedButton<bool>(
+              segments: [
+                ButtonSegment<bool>(
+                  value: true,
+                  label: Text(t.income),
+                  icon: const Icon(Icons.arrow_downward),
                 ),
-                icon: Icon(Icons.arrow_downward),
-              ),
-
-              ButtonSegment<bool>(
-                value: false,
-                label: Text(
-                  t.expense,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.4,
-                  ),
+                ButtonSegment<bool>(
+                  value: false,
+                  label: Text(t.expense),
+                  icon: const Icon(Icons.arrow_upward),
                 ),
-                icon: Icon(Icons.arrow_upward),
-              ),
-            ],
-            selected: {isIncome},
-            onSelectionChanged: (value) {
-              setState(() {
-                isIncome = value.first;
-                selectedCategory = null;
-              });
-            },
-          ),
-
-          const SizedBox(height: 24),
-
-          /// IMPORTO
-          TextField(
-            controller: amountController,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: t.amount,
-              prefixText: "€ ",
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          /// CATEGORIA
-          InkWell(
-            onTap: () async {
-              final category = await showCategorySelector(context, isIncome);
-
-              if (!mounted) return;
-
-              if (category != null) {
+              ],
+              selected: {isIncome},
+              onSelectionChanged: (value) {
                 setState(() {
-                  selectedCategory = category;
+                  isIncome = value.first;
+                  selectedCategory = null;
                 });
-              }
-            },
-            child: InputDecorator(
-              decoration: InputDecoration(labelText: t.category),
-              child: selectedCategory == null
-                  ? Text(t.selectCategory)
-                  : Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 14,
-                          backgroundColor: Color(
-                            selectedCategory!.color,
-                          ).withOpacity(0.2),
-                          child: Icon(
-                            IconData(
-                              selectedCategory!.icon,
-                              fontFamily: 'MaterialIcons',
+              },
+            ),
+
+            const SizedBox(height: 24),
+
+            /// AMOUNT
+            TextField(
+              controller: amountController,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: t.amount,
+                prefixText: "€ ",
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            /// CATEGORY
+            InkWell(
+              onTap: () async {
+                final category = await showCategorySelector(context, isIncome);
+
+                if (!mounted) return;
+
+                if (category != null) {
+                  setState(() {
+                    selectedCategory = category;
+                  });
+                }
+              },
+              child: InputDecorator(
+                decoration: InputDecoration(labelText: t.category),
+                child: selectedCategory == null
+                    ? Text(t.selectCategory)
+                    : Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 14,
+                            backgroundColor: Color(
+                              selectedCategory!.color,
+                            ).withOpacity(0.2),
+                            child: Icon(
+                              IconData(
+                                selectedCategory!.icon,
+                                fontFamily: 'MaterialIcons',
+                              ),
+                              size: 16,
+                              color: Color(selectedCategory!.color),
                             ),
-                            size: 16,
-                            color: Color(selectedCategory!.color),
                           ),
-                        ),
-
-                        const SizedBox(width: 8),
-
-                        Text(selectedCategory!.name),
-                      ],
-                    ),
+                          const SizedBox(width: 8),
+                          Text(selectedCategory!.name),
+                        ],
+                      ),
+              ),
             ),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          /// DATA
-          InkWell(
-            onTap: pickDate,
-            child: InputDecorator(
-              decoration: InputDecoration(labelText: t.date),
-              child: Text(dateFormat.format(selectedDate)),
+            /// DATE
+            InkWell(
+              onTap: pickDate,
+              child: InputDecorator(
+                decoration: InputDecoration(labelText: t.date),
+                child: Text(dateFormat.format(selectedDate)),
+              ),
             ),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          /// NOTA
-          TextField(
-            controller: noteController,
-            decoration: InputDecoration(labelText: t.note),
-          ),
+            /// NOTE
+            TextField(
+              controller: noteController,
+              decoration: InputDecoration(labelText: t.note),
+            ),
 
-          const SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-          /// SALVA
-          SizedBox(
-            height: 52,
-            child: FilledButton(
-              onPressed: () async {
-                if (selectedCategory == null) return;
+            /// SAVE
+            SizedBox(
+              height: 52,
+              child: FilledButton(
+                onPressed: () async {
+                  if (selectedCategory == null) return;
 
-                final parsedAmount = double.tryParse(
-                  amountController.text.replaceAll(',', '.'),
-                );
+                  final parsedAmount = double.tryParse(
+                    amountController.text.replaceAll(',', '.'),
+                  );
 
-                if (parsedAmount == null || parsedAmount <= 0) return;
+                  if (parsedAmount == null || parsedAmount <= 0) return;
 
-                final amountCents = (parsedAmount * 100).round();
+                  final amountCents = (parsedAmount * 100).round();
 
-                await ref
-                    .read(transactionProvider.notifier)
-                    .addTransaction(
+                  final notifier = ref.read(transactionProvider.notifier);
+
+                  if (widget.transaction != null) {
+                    await notifier.updateTransaction(
+                      id: widget.transaction!.id,
                       amountCents: amountCents,
                       isIncome: isIncome,
                       categoryId: selectedCategory!.id,
@@ -210,28 +244,40 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           ? null
                           : noteController.text.trim(),
                     );
+                  } else {
+                    await notifier.addTransaction(
+                      amountCents: amountCents,
+                      isIncome: isIncome,
+                      categoryId: selectedCategory!.id,
+                      date: selectedDate,
+                      note: noteController.text.trim().isEmpty
+                          ? null
+                          : noteController.text.trim(),
+                    );
+                  }
 
-                if (!mounted) return;
+                  if (!mounted) return;
 
-                final flush = Flushbar(
-                  icon: const Icon(Icons.check_circle, color: Colors.white),
-                  message: t.transactionSaved,
-                  duration: const Duration(seconds: 2),
-                  margin: const EdgeInsets.all(16),
-                  borderRadius: BorderRadius.circular(12),
-                  backgroundColor: Colors.green.shade600,
-                );
+                  final flush = Flushbar(
+                    icon: const Icon(Icons.check_circle, color: Colors.white),
+                    message: t.transactionSaved,
+                    duration: const Duration(seconds: 2),
+                    margin: const EdgeInsets.all(16),
+                    borderRadius: BorderRadius.circular(12),
+                    backgroundColor: Colors.green.shade600,
+                  );
 
-                await flush.show(context);
+                  await flush.show(context);
 
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-              child: Text(t.saveTransaction),
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: Text(t.saveTransaction),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

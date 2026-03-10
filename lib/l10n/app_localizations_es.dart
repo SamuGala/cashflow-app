@@ -75,7 +75,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get newCategory => 'Nueva categoría';
 
   @override
-  String get nameCategory => 'Nombre de categoría';
+  String get nameCategory => 'Nombre de la categoría';
 
   @override
   String get cancel => 'Cancelar';
@@ -129,5 +129,20 @@ class AppLocalizationsEs extends AppLocalizations {
   String get confirm => 'Confirmar';
 
   @override
-  String get deleteAllQ => '¿Seguro que deseas eliminar todos los datos?';
+  String get deleteAllQ => '¿Seguro que quieres eliminar todos los datos guardados?';
+
+  @override
+  String get salary => 'Salario';
+
+  @override
+  String get food => 'Comida';
+
+  @override
+  String get transport => 'Transporte';
+
+  @override
+  String get shopping => 'Compras';
+
+  @override
+  String get entertainment => 'Ocio';
 }

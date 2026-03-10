@@ -55,7 +55,6 @@ Future<Category?> showAddCategoryDialog(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-
                     /// TITLE
                     Text(
                       t.newCategory,
@@ -70,7 +69,11 @@ Future<Category?> showAddCategoryDialog(
                     /// PREVIEW
                     CircleAvatar(
                       radius: 28,
-                      backgroundColor: Color(selectedColor).withOpacity(0.2),
+                      backgroundColor: Color(selectedColor).withOpacity(
+                        Theme.of(context).brightness == Brightness.dark
+                            ? 0.35
+                            : 0.2,
+                      ),
                       child: Icon(
                         IconData(selectedIcon, fontFamily: 'MaterialIcons'),
                         color: Color(selectedColor),
@@ -86,37 +89,55 @@ Future<Category?> showAddCategoryDialog(
                       autofocus: true,
                       decoration: InputDecoration(
                         labelText: t.nameCategory,
+                        filled: true,
+                        fillColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainer,
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
                     /// ICONS
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: icons.map((icon) {
-                        final isSelected = icon.codePoint == selectedIcon;
+                    /// ICONS
+                    SizedBox(
+                      height: 70,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: icons.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 10),
+                        itemBuilder: (context, index) {
+                          final icon = icons[index];
+                          final isSelected = icon.codePoint == selectedIcon;
 
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedIcon = icon.codePoint;
-                            });
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? Color(selectedColor).withOpacity(0.2)
-                                  : Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(10),
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedIcon = icon.codePoint;
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Color(selectedColor).withOpacity(0.2)
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                icon,
+                                size: 26,
+                                color: isSelected
+                                    ? Color(selectedColor)
+                                    : Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
-                            child: Icon(icon),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        },
+                      ),
                     ),
 
                     const SizedBox(height: 20),
@@ -156,7 +177,6 @@ Future<Category?> showAddCategoryDialog(
                     /// ACTIONS
                     Row(
                       children: [
-
                         /// CANCEL
                         Expanded(
                           child: OutlinedButton(
@@ -176,11 +196,8 @@ Future<Category?> showAddCategoryDialog(
                               final name = controller.text.trim();
 
                               if (name.isEmpty) {
-                                ScaffoldMessenger.of(sheetContext)
-                                    .showSnackBar(
-                                  SnackBar(
-                                    content: Text(t.nameCategory),
-                                  ),
+                                ScaffoldMessenger.of(sheetContext).showSnackBar(
+                                  SnackBar(content: Text(t.nameCategory)),
                                 );
                                 return;
                               }

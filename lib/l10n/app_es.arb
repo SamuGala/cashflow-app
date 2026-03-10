@@ -21,7 +21,7 @@
   "settings": "Configuración",
   "lfTransactions": "Buscar movimientos",
   "newCategory": "Nueva categoría",
-  "nameCategory": "Nombre de categoría",
+  "nameCategory": "Nombre de la categoría",
   "cancel": "Cancelar",
   "add": "Agregar",
   "expensesDistribution": "Distribución de gastos",
@@ -39,5 +39,11 @@
   "delete": "Eliminar",
   "transactionDeleted": "Movimiento eliminado",
   "confirm": "Confirmar",
-  "deleteAllQ": "¿Seguro que deseas eliminar todos los datos?"
+  "deleteAllQ": "¿Seguro que quieres eliminar todos los datos guardados?",
+
+  "salary": "Salario",
+  "food": "Comida",
+  "transport": "Transporte",
+  "shopping": "Compras",
+  "entertainment": "Ocio"
 }

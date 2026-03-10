@@ -130,4 +130,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAllQ => 'Are you sure to delete all saved data?';
+
+  @override
+  String get salary => 'Salary';
+
+  @override
+  String get food => 'Food';
+
+  @override
+  String get transport => 'Transport';
+
+  @override
+  String get shopping => 'Shopping';
+
+  @override
+  String get entertainment => 'Entertainment';
 }

@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../l10n/app_localizations.dart';
 import '../providers/category_expense_provider.dart';
 
@@ -13,8 +14,6 @@ class CategoryDonutChart extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(categoryExpenseProvider);
     final t = AppLocalizations.of(context)!;
-
-    
 
     if (data.isEmpty) {
       return Center(child: Text(t.noExpenses));
@@ -37,7 +36,12 @@ class CategoryDonutChart extends ConsumerWidget {
                   value: e.amount.toDouble(),
                   color: Color(e.category.color),
                   radius: 60,
-                  showTitle: false,
+                  title: "${percent.toStringAsFixed(0)}%",
+                  titleStyle: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 );
               }).toList(),
             ),
@@ -49,10 +53,10 @@ class CategoryDonutChart extends ConsumerWidget {
         Column(
           children: data.map((e) {
             final percent = ((e.amount / total) * 100).toStringAsFixed(1);
+            final value = (e.amount / 100).toStringAsFixed(2);
 
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
-
               child: Row(
                 children: [
                   Container(
@@ -63,18 +67,15 @@ class CategoryDonutChart extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
                   Expanded(
                     child: Text(
                       e.category.name,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
-
                   Text(
-                    "$percent%",
+                    "€$value   $percent%",
                     style: TextStyle(
                       color: Colors.grey.shade700,
                       fontWeight: FontWeight.w600,

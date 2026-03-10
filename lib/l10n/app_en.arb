@@ -39,5 +39,11 @@
   "delete": "Delete",
   "transactionDeleted": "Transaction deleted",
   "confirm": "Confirm",
-  "deleteAllQ": "Are you sure to delete all saved data?"
+  "deleteAllQ": "Are you sure to delete all saved data?",
+
+  "salary": "Salary",
+  "food": "Food",
+  "transport": "Transport",
+  "shopping": "Shopping",
+  "entertainment": "Entertainment"
 }

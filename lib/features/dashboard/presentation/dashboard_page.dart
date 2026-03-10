@@ -14,6 +14,7 @@ import '../widgets/revolut_month_selector.dart';
 import '../widgets/cashflow_chart.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../transactions/domain/category.dart';
+import '../../../core/utils/category_localization.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -38,7 +39,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
     final List<Category> categories = categoriesAsync.value ?? [];
 
-    final currency = NumberFormat.currency(locale: 'it_IT', symbol: '€');
+    final locale = Localizations.localeOf(context).toString();
+    final currency = NumberFormat.currency(locale: locale, symbol: '€');
 
     String hide(String value) => showBalance ? value : "••••";
 
@@ -49,7 +51,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           /// HEADER
           Row(
             children: [
-               Text(
+              Text(
                 t.appName,
                 style: TextStyle(
                   fontSize: 28,
@@ -116,7 +118,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                 Text(
+                Text(
                   t.balance,
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
@@ -153,14 +155,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
           const SizedBox(height: 24),
 
-           Text(
+          Text(
             t.recentTransactions,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
 
           const SizedBox(height: 12),
 
-          if (recent.isEmpty)  Text(t.noTransactions),
+          if (recent.isEmpty) Text(t.noTransactions),
 
           /// RECENT TRANSACTIONS WITH ANIMATION
           ...recent.asMap().entries.map((entry) {
@@ -180,7 +182,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             );
 
             final amount = (tx.amountCents / 100).toStringAsFixed(2);
-            final date = DateFormat('dd.MM.yyyy').format(tx.date);
+            final date = DateFormat.yMd(locale).format(tx.date);
 
             return TweenAnimationBuilder(
               duration: Duration(milliseconds: 300 + (index * 80)),
@@ -198,7 +200,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 margin: const EdgeInsets.symmetric(vertical: 6),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Theme.of(context).colorScheme.surfaceContainer
+                      : Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Row(
@@ -223,8 +227,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            category.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            categoryName(category.name, t),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
                           Text(
                             date,

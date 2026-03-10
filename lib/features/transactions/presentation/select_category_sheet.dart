@@ -6,6 +6,7 @@ import '../domain/category.dart';
 import 'widgets/category_tile.dart';
 import 'add_category_dialog.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/utils/category_localization.dart';
 
 Future<Category?> showCategorySelector(BuildContext context, bool isIncome) {
   return showModalBottomSheet<Category>(

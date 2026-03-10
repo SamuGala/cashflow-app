@@ -4,10 +4,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../presentation/providers/theme_provider.dart';
 import '../presentation/providers/locale_provider.dart';
 import '../../transactions/providers/transaction_provider.dart';
+
 import '../../../l10n/app_localizations.dart';
+
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../../core/security/pin_storage.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
+
+  Future<void> _rateApp() async {
+    final url = Uri.parse(
+      "https://apps.apple.com/app/idYOUR_APP_ID?action=write-review",
+    );
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    }
+  }
+
+  void _shareApp() {
+    Share.share(
+      "Try Cashflow — simple expense tracker\nhttps://apps.apple.com/app/idYOUR_APP_ID",
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,22 +52,13 @@ class SettingsPage extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           /// THEME
-          Text(
-            t.theme,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          Text(t.theme, style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
 
           SegmentedButton<AppThemeMode>(
             segments: [
-              ButtonSegment(
-                value: AppThemeMode.light,
-                label: Text(t.light),
-              ),
-              ButtonSegment(
-                value: AppThemeMode.dark,
-                label: Text(t.dark),
-              ),
+              ButtonSegment(value: AppThemeMode.light, label: Text(t.light)),
+              ButtonSegment(value: AppThemeMode.dark, label: Text(t.dark)),
             ],
             selected: {theme},
             onSelectionChanged: (value) {
@@ -56,10 +69,7 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           /// LANGUAGE
-          Text(
-            t.language,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          Text(t.language, style: const TextStyle(fontWeight: FontWeight.bold)),
 
           const SizedBox(height: 8),
 
@@ -79,20 +89,40 @@ class SettingsPage extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          /// DATA RESET
-          Text(
-            t.data,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          /// APP
+          const Text("App", style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+
+          ListTile(
+            leading: const Icon(Icons.star_rate),
+            title: const Text("Rate app"),
+            onTap: _rateApp,
           ),
 
+          ListTile(
+            leading: const Icon(Icons.share),
+            title: const Text("Share app"),
+            onTap: _shareApp,
+          ),
+
+          const SizedBox(height: 24),
+
+          /// SECURITY
+          const Text("Security", style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+
+          const FaceIdToggle(),
+
+          const SizedBox(height: 24),
+
+          /// DATA RESET
+          Text(t.data, style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
 
           ElevatedButton.icon(
             icon: const Icon(Icons.delete_forever),
             label: Text(t.cancelAll),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               final confirm = await showDialog<bool>(
                 context: context,
@@ -102,13 +132,11 @@ class SettingsPage extends ConsumerWidget {
                     content: Text(t.deleteAllQ),
                     actions: [
                       TextButton(
-                        onPressed: () =>
-                            Navigator.pop(dialogContext, false),
+                        onPressed: () => Navigator.pop(dialogContext, false),
                         child: Text(t.cancel),
                       ),
                       TextButton(
-                        onPressed: () =>
-                            Navigator.pop(dialogContext, true),
+                        onPressed: () => Navigator.pop(dialogContext, true),
                         child: Text(t.delete),
                       ),
                     ],
@@ -117,14 +145,12 @@ class SettingsPage extends ConsumerWidget {
               );
 
               if (confirm == true) {
-                await ref
-                    .read(transactionProvider.notifier)
-                    .deleteAllData();
+                await ref.read(transactionProvider.notifier).deleteAllData();
 
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Deleted")),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text("Deleted")));
                 }
               }
             },
@@ -138,14 +164,54 @@ class SettingsPage extends ConsumerWidget {
             child: Text(
               "Cashflow v1.0.0\n© SG All rights reserved",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class FaceIdToggle extends StatefulWidget {
+  const FaceIdToggle({super.key});
+
+  @override
+  State<FaceIdToggle> createState() => _FaceIdToggleState();
+}
+
+class _FaceIdToggleState extends State<FaceIdToggle> {
+  final storage = PinStorage();
+
+  bool enabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    enabled = await storage.biometricsEnabled();
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      title: const Text("Face ID"),
+      value: enabled,
+      onChanged: (value) async {
+        if (value) {
+          await storage.enableBiometrics();
+        } else {
+          await storage.disableBiometrics();
+        }
+
+        setState(() {
+          enabled = value;
+        });
+      },
     );
   }
 }

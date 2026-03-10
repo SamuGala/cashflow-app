@@ -12,9 +12,7 @@ class RevolutMonthSelector extends ConsumerStatefulWidget {
       _RevolutMonthSelectorState();
 }
 
-class _RevolutMonthSelectorState
-    extends ConsumerState<RevolutMonthSelector> {
-
+class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
   late PageController controller;
 
   int currentYear = DateTime.now().year;
@@ -34,24 +32,19 @@ class _RevolutMonthSelectorState
 
   @override
   Widget build(BuildContext context) {
-
     final selected = ref.watch(selectedMonthProvider);
 
     return Column(
       children: [
-
         /// YEAR SELECTOR
         GestureDetector(
           onTap: () async {
-
             final year = await showDialog<int>(
               context: context,
               builder: (context) {
-
                 return SimpleDialog(
                   title: const Text("Seleziona anno"),
                   children: List.generate(20, (i) {
-
                     final y = DateTime.now().year - i;
 
                     return SimpleDialogOption(
@@ -64,18 +57,16 @@ class _RevolutMonthSelectorState
             );
 
             if (year != null) {
-
               currentYear = year;
 
-              ref.read(selectedMonthProvider.notifier).setMonth(
-                    DateTime(year, selected.month),
-                  );
+              ref
+                  .read(selectedMonthProvider.notifier)
+                  .setMonth(DateTime(year, selected.month));
             }
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-
               Text(
                 "$currentYear",
                 style: const TextStyle(
@@ -101,23 +92,23 @@ class _RevolutMonthSelectorState
             itemCount: 12,
 
             onPageChanged: (index) {
-
               final month = index + 1;
 
-              ref.read(selectedMonthProvider.notifier).setMonth(
-                    DateTime(currentYear, month),
-                  );
+              ref
+                  .read(selectedMonthProvider.notifier)
+                  .setMonth(DateTime(currentYear, month));
             },
 
             itemBuilder: (context, index) {
-
               final month = index + 1;
 
               final date = DateTime(currentYear, month);
 
+              final locale = Localizations.localeOf(context).toString();
+              final monthName = DateFormat.MMM(locale).format(date);
+
               final selectedMonth =
-                  selected.month == month &&
-                  selected.year == currentYear;
+                  selected.month == month && selected.year == currentYear;
 
               return Center(
                 child: AnimatedContainer(
@@ -129,7 +120,6 @@ class _RevolutMonthSelectorState
                   ),
 
                   decoration: BoxDecoration(
-
                     color: selectedMonth
                         ? const Color(0xff6366F1)
                         : Colors.transparent,
@@ -145,13 +135,11 @@ class _RevolutMonthSelectorState
                   ),
 
                   child: Text(
-                    DateFormat('MMM').format(date),
+                    monthName,
 
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: selectedMonth
-                          ? Colors.white
-                          : Colors.black87,
+                      color: selectedMonth ? Colors.white : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),

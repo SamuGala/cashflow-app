@@ -77,6 +77,44 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
     state = AsyncData(current.where((t) => t.id != id).toList());
   }
 
+  Future<void> updateTransaction({
+  required String id,
+  required int amountCents,
+  required bool isIncome,
+  required String categoryId,
+  required DateTime date,
+  String? note,
+}) async {
+  final db = ref.read(databaseProvider);
+
+  await db.updateTransaction(
+    id: id,
+    amountCents: amountCents,
+    isIncome: isIncome,
+    categoryId: categoryId,
+    date: date,
+    note: note,
+  );
+
+  final current = state.value ?? [];
+
+  final updated = current.map((t) {
+    if (t.id == id) {
+      return TransactionModel(
+        id: id,
+        amountCents: amountCents,
+        isIncome: isIncome,
+        categoryId: categoryId,
+        date: date,
+        note: note,
+      );
+    }
+    return t;
+  }).toList();
+
+  state = AsyncData(updated);
+}
+
   /// DELETE ALL DATA
   Future<void> deleteAllData() async {
     final db = ref.read(databaseProvider);

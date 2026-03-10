@@ -26,8 +26,9 @@ class Transactions extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  /// incrementato per aggiornare le categorie
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -38,18 +39,42 @@ class AppDatabase extends _$AppDatabase {
             b.insertAll(categories, [
               CategoriesCompanion.insert(
                 id: 'salary',
-                name: 'Stipendio',
+                name: 'salary',
                 isIncome: true,
                 icon: 0xe227,
                 color: 0xFF4CAF50,
                 isDefault: const Value(true),
               ),
               CategoriesCompanion.insert(
-                id: 'expense',
-                name: 'Spesa',
+                id: 'food',
+                name: 'food',
+                isIncome: false,
+                icon: 0xe56c,
+                color: 0xFFE53935,
+                isDefault: const Value(true),
+              ),
+              CategoriesCompanion.insert(
+                id: 'transport',
+                name: 'transport',
+                isIncome: false,
+                icon: 0xe530,
+                color: 0xFF3949AB,
+                isDefault: const Value(true),
+              ),
+              CategoriesCompanion.insert(
+                id: 'shopping',
+                name: 'shopping',
                 isIncome: false,
                 icon: 0xe8cc,
-                color: 0xFFF44336,
+                color: 0xFF8E24AA,
+                isDefault: const Value(true),
+              ),
+              CategoriesCompanion.insert(
+                id: 'entertainment',
+                name: 'entertainment',
+                isIncome: false,
+                icon: 0xe02c,
+                color: 0xFFFF9800,
                 isDefault: const Value(true),
               ),
             ]);
@@ -58,6 +83,45 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
             await m.createTable(categories);
+          }
+
+          if (from < 3) {
+            await batch((b) {
+              b.insertAll(categories, [
+                CategoriesCompanion.insert(
+                  id: 'food',
+                  name: 'food',
+                  isIncome: false,
+                  icon: 0xe56c,
+                  color: 0xFFE53935,
+                  isDefault: const Value(true),
+                ),
+                CategoriesCompanion.insert(
+                  id: 'transport',
+                  name: 'transport',
+                  isIncome: false,
+                  icon: 0xe530,
+                  color: 0xFF3949AB,
+                  isDefault: const Value(true),
+                ),
+                CategoriesCompanion.insert(
+                  id: 'shopping',
+                  name: 'shopping',
+                  isIncome: false,
+                  icon: 0xe8cc,
+                  color: 0xFF8E24AA,
+                  isDefault: const Value(true),
+                ),
+                CategoriesCompanion.insert(
+                  id: 'entertainment',
+                  name: 'entertainment',
+                  isIncome: false,
+                  icon: 0xe02c,
+                  color: 0xFFFF9800,
+                  isDefault: const Value(true),
+                ),
+              ]);
+            });
           }
         },
       );
@@ -70,6 +134,25 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> insertTransaction(TransactionsCompanion entry) {
     return into(transactions).insert(entry);
+  }
+
+  Future<void> updateTransaction({
+    required String id,
+    required int amountCents,
+    required bool isIncome,
+    required String categoryId,
+    required DateTime date,
+    String? note,
+  }) {
+    return (update(transactions)..where((t) => t.id.equals(id))).write(
+      TransactionsCompanion(
+        amountCents: Value(amountCents),
+        isIncome: Value(isIncome),
+        categoryId: Value(categoryId),
+        date: Value(date),
+        note: Value(note),
+      ),
+    );
   }
 
   Future<void> deleteTransactionById(String id) {
@@ -112,7 +195,7 @@ class AppDatabase extends _$AppDatabase {
     await (delete(categories)..where((c) => c.id.equals(id))).go();
   }
 
-  /// CLEAR ALL DATA (usato nei settings)
+  /// RESET DATA
 
   Future<void> clearAllData() async {
     await batch((b) {

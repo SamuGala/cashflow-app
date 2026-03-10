@@ -39,6 +39,11 @@
   "delete": "Elimina",
   "transactionDeleted": "Movimento eliminato",
   "confirm": "Conferma",
-  "deleteAllQ": "Sicuro di voler eliminare tutti i dati?"
+  "deleteAllQ": "Sei sicuro di voler eliminare tutti i dati salvati?",
 
+  "salary": "Stipendio",
+  "food": "Cibo",
+  "transport": "Trasporti",
+  "shopping": "Shopping",
+  "entertainment": "Svago"
 }

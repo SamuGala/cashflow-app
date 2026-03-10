@@ -129,5 +129,20 @@ class AppLocalizationsIt extends AppLocalizations {
   String get confirm => 'Conferma';
 
   @override
-  String get deleteAllQ => 'Sicuro di voler eliminare tutti i dati?';
+  String get deleteAllQ => 'Sei sicuro di voler eliminare tutti i dati salvati?';
+
+  @override
+  String get salary => 'Stipendio';
+
+  @override
+  String get food => 'Cibo';
+
+  @override
+  String get transport => 'Trasporti';
+
+  @override
+  String get shopping => 'Shopping';
+
+  @override
+  String get entertainment => 'Svago';
 }

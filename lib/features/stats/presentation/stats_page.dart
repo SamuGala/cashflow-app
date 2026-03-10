@@ -16,13 +16,11 @@ class StatsPage extends ConsumerStatefulWidget {
 }
 
 class _StatsPageState extends ConsumerState<StatsPage> {
-
   bool monthly = false;
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
-
 
     final selectedMonth = ref.watch(selectedMonthProvider);
 
@@ -41,11 +39,9 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         children: [
-
           /// TOTAL / MONTH TOGGLE
           Row(
             children: [
-
               ChoiceChip(
                 label: Text(t.total),
                 selected: !monthly,
@@ -81,34 +77,24 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           /// PIE CHART
           Text(
             t.expensesDistribution,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
 
           const SizedBox(height: 24),
 
-          CategoryDonutChart(
-            monthly: monthly,
-          ),
+          CategoryDonutChart(monthly: monthly),
 
           const SizedBox(height: 40),
 
           /// CASHFLOW TREND
           const Text(
             "Trend Cashflow",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
 
           const SizedBox(height: 20),
 
-          CashflowTrendChart(
-            monthly: monthly,
-          ),
+          CashflowTrendChart(monthly: monthly),
         ],
       ),
     );
