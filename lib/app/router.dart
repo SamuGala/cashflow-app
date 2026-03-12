@@ -1,8 +1,8 @@
-import 'package:cashflow_app/features/dashboard/presentation/dashboard_page.dart';
-import 'package:cashflow_app/features/settings/presentation/settings_page.dart';
-import 'package:cashflow_app/features/stats/presentation/stats_page.dart';
-import 'package:cashflow_app/features/transactions/presentation/transactions_page.dart';
-import 'package:cashflow_app/shared/widgets/bottom_nav_shell.dart';
+import 'package:pocket_vault/features/dashboard/presentation/dashboard_page.dart';
+import 'package:pocket_vault/features/settings/presentation/settings_page.dart';
+import 'package:pocket_vault/features/stats/presentation/stats_page.dart';
+import 'package:pocket_vault/features/transactions/presentation/transactions_page.dart';
+import 'package:pocket_vault/shared/widgets/bottom_nav_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 

@@ -9,6 +9,8 @@ import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
 import 'select_category_sheet.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/utils/category_localization.dart';
+import 'package:flutter/services.dart';
 
 class AddTransactionPage extends ConsumerStatefulWidget {
   const AddTransactionPage({super.key, this.transaction});
@@ -22,6 +24,7 @@ class AddTransactionPage extends ConsumerStatefulWidget {
 class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   Category? selectedCategory;
   bool isIncome = true;
+  bool shake = false;
 
   final amountController = TextEditingController();
   final noteController = TextEditingController();
@@ -29,6 +32,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   DateTime selectedDate = DateTime.now();
 
   bool categoryInitialized = false;
+
+  void _triggerShake() {
+    setState(() => shake = true);
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        setState(() => shake = false);
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -95,6 +108,12 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final parsedAmount = double.tryParse(
+      amountController.text.replaceAll(',', '.'),
+    );
+
+    final canSave =
+        selectedCategory != null && parsedAmount != null && parsedAmount > 0;
     final t = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).toString();
     final dateFormat = DateFormat.yMMMd(locale);
@@ -144,6 +163,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             TextField(
               controller: amountController,
               autofocus: true,
+              onChanged: (_) => setState(() {}),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -180,16 +200,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                               selectedCategory!.color,
                             ).withOpacity(0.2),
                             child: Icon(
-                              IconData(
-                                selectedCategory!.icon,
-                                fontFamily: 'MaterialIcons',
-                              ),
-                              size: 16,
+                              categoryIcon(selectedCategory!.name),
+                              size: 22,
                               color: Color(selectedCategory!.color),
                             ),
                           ),
+
                           const SizedBox(width: 8),
-                          Text(selectedCategory!.name),
+
+                          /// FIX TRADUZIONE CATEGORIA
+                          Text(categoryName(selectedCategory!.name, t)),
                         ],
                       ),
               ),
@@ -217,63 +237,82 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             const SizedBox(height: 32),
 
             /// SAVE
-            SizedBox(
-              height: 52,
-              child: FilledButton(
-                onPressed: () async {
-                  if (selectedCategory == null) return;
+            AnimatedSlide(
+              duration: const Duration(milliseconds: 120),
+              offset: shake ? const Offset(-0.02, 0) : Offset.zero,
+              child: SizedBox(
+                height: 52,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: canSave
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.grey.shade300,
+                    foregroundColor: canSave
+                        ? Colors.white
+                        : Colors.grey.shade600,
+                  ),
+                  onPressed: () async {
+                    if (!canSave) {
+                      HapticFeedback.mediumImpact();
+                      _triggerShake();
+                      return;
+                    }
 
-                  final parsedAmount = double.tryParse(
-                    amountController.text.replaceAll(',', '.'),
-                  );
-
-                  if (parsedAmount == null || parsedAmount <= 0) return;
-
-                  final amountCents = (parsedAmount * 100).round();
-
-                  final notifier = ref.read(transactionProvider.notifier);
-
-                  if (widget.transaction != null) {
-                    await notifier.updateTransaction(
-                      id: widget.transaction!.id,
-                      amountCents: amountCents,
-                      isIncome: isIncome,
-                      categoryId: selectedCategory!.id,
-                      date: selectedDate,
-                      note: noteController.text.trim().isEmpty
-                          ? null
-                          : noteController.text.trim(),
+                    final parsedAmount = double.tryParse(
+                      amountController.text.replaceAll(',', '.'),
                     );
-                  } else {
-                    await notifier.addTransaction(
-                      amountCents: amountCents,
-                      isIncome: isIncome,
-                      categoryId: selectedCategory!.id,
-                      date: selectedDate,
-                      note: noteController.text.trim().isEmpty
-                          ? null
-                          : noteController.text.trim(),
+
+                    if (parsedAmount == null || parsedAmount <= 0) return;
+
+                    final amountCents = (parsedAmount * 100).round();
+
+                    final notifier = ref.read(transactionProvider.notifier);
+
+                    if (widget.transaction != null) {
+                      await notifier.updateTransaction(
+                        id: widget.transaction!.id,
+                        amountCents: amountCents,
+                        isIncome: isIncome,
+                        categoryId: selectedCategory!.id,
+                        date: selectedDate,
+                        note: noteController.text.trim().isEmpty
+                            ? null
+                            : noteController.text.trim(),
+                      );
+                    } else {
+                      await notifier.addTransaction(
+                        amountCents: amountCents,
+                        isIncome: isIncome,
+                        categoryId: selectedCategory!.id,
+                        date: selectedDate,
+                        note: noteController.text.trim().isEmpty
+                            ? null
+                            : noteController.text.trim(),
+                      );
+                    }
+
+                    if (!mounted) return;
+
+                    final flush = Flushbar(
+                      icon: const Icon(Icons.check_circle, color: Colors.white),
+                      message: t.transactionSaved,
+                      duration: const Duration(seconds: 2),
+                      margin: const EdgeInsets.all(16),
+                      borderRadius: BorderRadius.circular(12),
+                      backgroundColor: Colors.green.shade600,
                     );
-                  }
 
-                  if (!mounted) return;
+                    await flush.show(context);
 
-                  final flush = Flushbar(
-                    icon: const Icon(Icons.check_circle, color: Colors.white),
-                    message: t.transactionSaved,
-                    duration: const Duration(seconds: 2),
-                    margin: const EdgeInsets.all(16),
-                    borderRadius: BorderRadius.circular(12),
-                    backgroundColor: Colors.green.shade600,
-                  );
-
-                  await flush.show(context);
-
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: Text(t.saveTransaction),
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Text(t.saveTransaction, key: ValueKey(canSave)),
+                  ),
+                ),
               ),
             ),
           ],

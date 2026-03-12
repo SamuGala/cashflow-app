@@ -34,6 +34,19 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
   Widget build(BuildContext context) {
     final selected = ref.watch(selectedMonthProvider);
 
+    /// sync controller se cambia mese da fuori
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final targetPage = selected.month - 1;
+
+      if (controller.hasClients && controller.page?.round() != targetPage) {
+        controller.animateToPage(
+          targetPage,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+
     return Column(
       children: [
         /// YEAR SELECTOR
@@ -43,7 +56,7 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
               context: context,
               builder: (context) {
                 return SimpleDialog(
-                  title: const Text("Seleziona anno"),
+                  title: const Text("Select year"),
                   children: List.generate(20, (i) {
                     final y = DateTime.now().year - i;
 
@@ -74,9 +87,7 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-
               const SizedBox(width: 6),
-
               const Icon(Icons.expand_more, size: 18),
             ],
           ),
@@ -90,7 +101,6 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
           child: PageView.builder(
             controller: controller,
             itemCount: 12,
-
             onPageChanged: (index) {
               final month = index + 1;
 
@@ -98,10 +108,8 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
                   .read(selectedMonthProvider.notifier)
                   .setMonth(DateTime(currentYear, month));
             },
-
             itemBuilder: (context, index) {
               final month = index + 1;
-
               final date = DateTime(currentYear, month);
 
               final locale = Localizations.localeOf(context).toString();
@@ -110,36 +118,45 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
               final selectedMonth =
                   selected.month == month && selected.year == currentYear;
 
-              return Center(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+              return GestureDetector(
+                onTap: () {
+                  ref
+                      .read(selectedMonthProvider.notifier)
+                      .setMonth(DateTime(currentYear, month));
 
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-
-                  decoration: BoxDecoration(
-                    color: selectedMonth
-                        ? const Color(0xff6366F1)
-                        : Colors.transparent,
-
-                    borderRadius: BorderRadius.circular(12),
-
-                    border: Border.all(
+                  controller.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                  );
+                },
+                child: Center(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
                       color: selectedMonth
                           ? const Color(0xff6366F1)
-                          : Colors.grey.shade300,
-                      width: 1.2,
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: selectedMonth
+                            ? const Color(0xff6366F1)
+                            : Colors.grey.shade300,
+                        width: 1.2,
+                      ),
                     ),
-                  ),
-
-                  child: Text(
-                    monthName,
-
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: selectedMonth ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                    child: Text(
+                      monthName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: selectedMonth
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ),

@@ -100,7 +100,7 @@ abstract class AppLocalizations {
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
-  /// **'Cashflow'**
+  /// **'Pocket Vault'**
   String get appName;
 
   /// No description provided for @addTransaction.
@@ -114,6 +114,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save transaction'**
   String get saveTransaction;
+
+  /// No description provided for @editTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit transaction'**
+  String get editTransaction;
 
   /// No description provided for @amount.
   ///
@@ -160,7 +166,7 @@ abstract class AppLocalizations {
   /// No description provided for @incomes.
   ///
   /// In en, this message translates to:
-  /// **'Income'**
+  /// **'Incomes'**
   String get incomes;
 
   /// No description provided for @expenses.
@@ -340,7 +346,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAllQ.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure to delete all saved data?'**
+  /// **'Are you sure you want to delete all saved data?'**
   String get deleteAllQ;
 
   /// No description provided for @salary.
@@ -349,11 +355,29 @@ abstract class AppLocalizations {
   /// **'Salary'**
   String get salary;
 
+  /// No description provided for @bonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus'**
+  String get bonus;
+
+  /// No description provided for @gift.
+  ///
+  /// In en, this message translates to:
+  /// **'Gift'**
+  String get gift;
+
   /// No description provided for @food.
   ///
   /// In en, this message translates to:
   /// **'Food'**
   String get food;
+
+  /// No description provided for @groceries.
+  ///
+  /// In en, this message translates to:
+  /// **'Groceries'**
+  String get groceries;
 
   /// No description provided for @transport.
   ///
@@ -361,17 +385,197 @@ abstract class AppLocalizations {
   /// **'Transport'**
   String get transport;
 
+  /// No description provided for @rent.
+  ///
+  /// In en, this message translates to:
+  /// **'Rent'**
+  String get rent;
+
+  /// No description provided for @bills.
+  ///
+  /// In en, this message translates to:
+  /// **'Bills'**
+  String get bills;
+
   /// No description provided for @shopping.
   ///
   /// In en, this message translates to:
   /// **'Shopping'**
   String get shopping;
 
+  /// No description provided for @health.
+  ///
+  /// In en, this message translates to:
+  /// **'Health'**
+  String get health;
+
   /// No description provided for @entertainment.
   ///
   /// In en, this message translates to:
   /// **'Entertainment'**
   String get entertainment;
+
+  /// No description provided for @travel.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel'**
+  String get travel;
+
+  /// No description provided for @education.
+  ///
+  /// In en, this message translates to:
+  /// **'Education'**
+  String get education;
+
+  /// No description provided for @recurrents.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring'**
+  String get recurrents;
+
+  /// No description provided for @security.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get security;
+
+  /// No description provided for @everyMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Every month'**
+  String get everyMonth;
+
+  /// No description provided for @active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get active;
+
+  /// No description provided for @modify.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get modify;
+
+  /// No description provided for @pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get pause;
+
+  /// No description provided for @recurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring'**
+  String get recurrent;
+
+  /// No description provided for @recurrentMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable to repeat every month'**
+  String get recurrentMsg;
+
+  /// No description provided for @color.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get color;
+
+  /// No description provided for @day.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get day;
+
+  /// No description provided for @modifyRecurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit recurring transaction'**
+  String get modifyRecurrent;
+
+  /// No description provided for @modifyCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit category'**
+  String get modifyCategory;
+
+  /// No description provided for @noRecurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'No recurring transactions'**
+  String get noRecurrent;
+
+  /// No description provided for @reactivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactivate'**
+  String get reactivate;
+
+  /// No description provided for @reactivateMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring transaction reactivated'**
+  String get reactivateMsg;
+
+  /// No description provided for @reactivatePauseMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring transaction paused'**
+  String get reactivatePauseMsg;
+
+  /// No description provided for @dayOfMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Day of the month'**
+  String get dayOfMonth;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @recurringCreationMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring transaction created • you will see it in your account on '**
+  String get recurringCreationMsg;
+
+  /// No description provided for @deleteMovement.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete transaction?'**
+  String get deleteMovement;
+
+  /// No description provided for @deleteMovementSure.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone'**
+  String get deleteMovementSure;
+
+  /// No description provided for @deletedMovement.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction deleted'**
+  String get deletedMovement;
+
+  /// No description provided for @addExpenseToViewGraph.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an expense to view the chart'**
+  String get addExpenseToViewGraph;
+
+  /// No description provided for @selectYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Select year'**
+  String get selectYear;
+
+  /// No description provided for @existingCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category already exists'**
+  String get existingCategory;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -16,7 +16,7 @@ class ExpensePieChart extends ConsumerWidget {
         height: 200,
         child: Center(
           child: Text(
-            "Aggiungi una spesa per vedere il grafico",
+            "Add at least one expense to view the graphic.",
             textAlign: TextAlign.center,
           ),
         ),

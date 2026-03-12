@@ -8,11 +8,7 @@ class CategoryTile extends StatelessWidget {
   final Category category;
   final VoidCallback onTap;
 
-  const CategoryTile({
-    super.key,
-    required this.category,
-    required this.onTap,
-  });
+  const CategoryTile({super.key, required this.category, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +18,8 @@ class CategoryTile extends StatelessWidget {
       leading: CircleAvatar(
         backgroundColor: Color(category.color).withOpacity(0.2),
         child: Icon(
-          IconData(category.icon, fontFamily: 'MaterialIcons'),
+          categoryIcon(category.name),
+          size: 22,
           color: Color(category.color),
         ),
       ),

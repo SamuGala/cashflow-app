@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:cashflow_app/app/app.dart';
+import 'package:pocket_vault/app/app.dart';
 
 void main() {
 

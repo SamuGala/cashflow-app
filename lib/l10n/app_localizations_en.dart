@@ -9,13 +9,16 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appName => 'Cashflow';
+  String get appName => 'Pocket Vault';
 
   @override
   String get addTransaction => 'Add transaction';
 
   @override
   String get saveTransaction => 'Save transaction';
+
+  @override
+  String get editTransaction => 'Edit transaction';
 
   @override
   String get amount => 'Amount';
@@ -39,7 +42,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expense => 'Expense';
 
   @override
-  String get incomes => 'Income';
+  String get incomes => 'Incomes';
 
   @override
   String get expenses => 'Expenses';
@@ -129,20 +132,119 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirm => 'Confirm';
 
   @override
-  String get deleteAllQ => 'Are you sure to delete all saved data?';
+  String get deleteAllQ => 'Are you sure you want to delete all saved data?';
 
   @override
   String get salary => 'Salary';
 
   @override
+  String get bonus => 'Bonus';
+
+  @override
+  String get gift => 'Gift';
+
+  @override
   String get food => 'Food';
+
+  @override
+  String get groceries => 'Groceries';
 
   @override
   String get transport => 'Transport';
 
   @override
+  String get rent => 'Rent';
+
+  @override
+  String get bills => 'Bills';
+
+  @override
   String get shopping => 'Shopping';
 
   @override
+  String get health => 'Health';
+
+  @override
   String get entertainment => 'Entertainment';
+
+  @override
+  String get travel => 'Travel';
+
+  @override
+  String get education => 'Education';
+
+  @override
+  String get recurrents => 'Recurring';
+
+  @override
+  String get security => 'Security';
+
+  @override
+  String get everyMonth => 'Every month';
+
+  @override
+  String get active => 'Active';
+
+  @override
+  String get modify => 'Edit';
+
+  @override
+  String get pause => 'Pause';
+
+  @override
+  String get recurrent => 'Recurring';
+
+  @override
+  String get recurrentMsg => 'Enable to repeat every month';
+
+  @override
+  String get color => 'Color';
+
+  @override
+  String get day => 'Day';
+
+  @override
+  String get modifyRecurrent => 'Edit recurring transaction';
+
+  @override
+  String get modifyCategory => 'Edit category';
+
+  @override
+  String get noRecurrent => 'No recurring transactions';
+
+  @override
+  String get reactivate => 'Reactivate';
+
+  @override
+  String get reactivateMsg => 'Recurring transaction reactivated';
+
+  @override
+  String get reactivatePauseMsg => 'Recurring transaction paused';
+
+  @override
+  String get dayOfMonth => 'Day of the month';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get recurringCreationMsg => 'Recurring transaction created • you will see it in your account on ';
+
+  @override
+  String get deleteMovement => 'Delete transaction?';
+
+  @override
+  String get deleteMovementSure => 'This action cannot be undone';
+
+  @override
+  String get deletedMovement => 'Transaction deleted';
+
+  @override
+  String get addExpenseToViewGraph => 'Add an expense to view the chart';
+
+  @override
+  String get selectYear => 'Select year';
+
+  @override
+  String get existingCategory => 'Category already exists';
 }

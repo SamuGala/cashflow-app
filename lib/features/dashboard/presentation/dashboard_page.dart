@@ -11,10 +11,10 @@ import '../providers/recent_transactions_provider.dart';
 import '../../transactions/providers/category_provider.dart';
 
 import '../widgets/revolut_month_selector.dart';
-import '../widgets/cashflow_chart.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../transactions/domain/category.dart';
 import '../../../core/utils/category_localization.dart';
+import '../../transactions/presentation/quick_add_transaction_sheet.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -30,7 +30,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
 
-    final selectedMonth = ref.watch(selectedMonthProvider);
     final stats = ref.watch(dashboardProvider(monthly));
     final showBalance = ref.watch(balanceVisibilityProvider);
 
@@ -45,6 +44,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     String hide(String value) => showBalance ? value : "••••";
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            showDragHandle: true,
+            builder: (_) => const QuickAddTransactionSheet(),
+          );
+        },
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 50, 16, 16),
         children: [
@@ -53,7 +63,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             children: [
               Text(
                 t.appName,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.5,
@@ -120,18 +130,29 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               children: [
                 Text(
                   t.balance,
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
+
                 const SizedBox(height: 6),
-                Text(
-                  hide(currency.format(stats.balance / 100)),
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
+
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: stats.balance / 100),
+                  duration: const Duration(milliseconds: 700),
+                  curve: Curves.easeOut,
+                  builder: (context, value, child) {
+                    return Text(
+                      hide(currency.format(value)),
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
                 ),
+
                 const SizedBox(height: 24),
+
                 Row(
                   children: [
                     _StatBox(
@@ -140,7 +161,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       color: Colors.green,
                       icon: Icons.arrow_downward,
                     ),
+
                     const SizedBox(width: 12),
+
                     _StatBox(
                       label: t.expense,
                       value: hide(currency.format(stats.expense / 100)),
@@ -157,29 +180,21 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
           Text(
             t.recentTransactions,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
 
           const SizedBox(height: 12),
 
           if (recent.isEmpty) Text(t.noTransactions),
 
-          /// RECENT TRANSACTIONS WITH ANIMATION
+          /// RECENT TRANSACTIONS
           ...recent.asMap().entries.map((entry) {
             final index = entry.key;
             final tx = entry.value;
 
-            final category = categories.firstWhere(
-              (c) => c.id == tx.categoryId,
-              orElse: () => Category(
-                id: tx.categoryId,
-                name: t.categoryRemoved,
-                isIncome: tx.isIncome,
-                icon: Icons.help.codePoint,
-                color: Colors.grey.value,
-                isDefault: false,
-              ),
-            );
+            final category =
+                categories.where((c) => c.id == tx.categoryId).firstOrNull ??
+                categories.first;
 
             final amount = (tx.amountCents / 100).toStringAsFixed(2);
             final date = DateFormat.yMd(locale).format(tx.date);
@@ -207,16 +222,40 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 ),
                 child: Row(
                   children: [
+                    /// CATEGORY ICON + RECURRING BADGE
                     Container(
                       height: 42,
                       width: 42,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: Color(category.color).withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
-                        IconData(category.icon, fontFamily: 'MaterialIcons'),
-                        color: Color(category.color),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Center(
+                            child: Icon(
+                              categoryIcon(category.name),
+                              size: 22,
+                              color: Color(category.color),
+                            ),
+                          ),
+                          if (tx.isRecurring)
+                            Positioned(
+                              right: -6,
+                              bottom: -6,
+                              child: Container(
+                                height: 16,
+                                width: 16,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.autorenew, size: 10),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
 
@@ -287,19 +326,30 @@ class _StatBox extends StatelessWidget {
         child: Row(
           children: [
             Icon(icon, color: Colors.white),
+
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(color: Colors.white70)),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: const TextStyle(color: Colors.white70)),
+
+                  const SizedBox(height: 2),
+
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),

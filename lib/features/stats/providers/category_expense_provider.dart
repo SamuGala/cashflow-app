@@ -32,14 +32,7 @@ final categoryExpenseProvider = Provider<List<CategoryExpense>>((ref) {
   return totals.entries.map((entry) {
     final category = categories.firstWhere(
       (c) => c.id == entry.key,
-      orElse: () => Category(
-        id: entry.key,
-        name: "No Category",
-        isIncome: false,
-        icon: Icons.help.codePoint,
-        color: Colors.grey.value,
-        isDefault: false,
-      ),
+      orElse: () => categories.first,
     );
 
     return CategoryExpense(category: category, amount: entry.value);

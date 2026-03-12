@@ -1,43 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/transactions_month_provider.dart';
-import '../domain/transaction.dart';
-import 'add_transaction_page.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
 import '../providers/search_provider.dart';
+
+import '../domain/transaction.dart';
 import '../../transactions/domain/category.dart';
+
+import 'add_transaction_page.dart';
+import 'recurring_list.dart';
+
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/category_localization.dart';
 
-class TransactionsPage extends ConsumerWidget {
+class TransactionsPage extends ConsumerStatefulWidget {
   const TransactionsPage({super.key});
 
-  void _openAddTransaction(BuildContext context) {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 300),
-        pageBuilder: (_, __, ___) => const AddTransactionPage(),
-        transitionsBuilder: (_, animation, __, child) {
-          return SlideTransition(
-            position: Tween(
-              begin: const Offset(0, 1),
-              end: Offset.zero,
-            ).animate(animation),
-            child: child,
-          );
-        },
-      ),
-    );
-  }
+  @override
+  ConsumerState<TransactionsPage> createState() => _TransactionsPageState();
+}
+
+class _TransactionsPageState extends ConsumerState<TransactionsPage> {
+  bool showRecurring = false;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
 
-    final searchQuery = ref.watch(transactionSearchProvider);
     final transactionsAsync = ref.watch(transactionProvider);
     final categoriesAsync = ref.watch(categoryProvider);
 
@@ -54,24 +47,17 @@ class TransactionsPage extends ConsumerWidget {
     final dateFormat = DateFormat.yMMMMd(locale);
 
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         appBar: AppBar(
           title: Text(
             t.transactions,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.5,
             ),
           ),
-          elevation: 0,
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _openAddTransaction(context),
-          child: const Icon(Icons.add),
         ),
         body: Column(
           children: [
@@ -113,280 +99,322 @@ class TransactionsPage extends ConsumerWidget {
               ),
             ),
 
-            /// SEARCH
+            /// SEGMENT SELECTOR
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: TextField(
-                onChanged: (value) {
-                  ref.read(transactionSearchProvider.notifier).setQuery(value);
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SegmentedButton<bool>(
+                segments: [
+                  ButtonSegment(value: false, label: Text(t.transactions)),
+                  ButtonSegment(value: true, label: Text(t.recurrents)),
+                ],
+                selected: {showRecurring},
+                onSelectionChanged: (v) {
+                  setState(() {
+                    showRecurring = v.first;
+                  });
                 },
-                decoration: InputDecoration(
-                  hintText: t.lfTransactions,
-                  prefixIcon: Icon(Icons.search),
-                ),
               ),
             ),
+
+            const SizedBox(height: 8),
 
             Expanded(
-              child: transactionsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(child: Text(error.toString())),
-                data: (transactions) {
-                  final filteredMonth = transactions.where((tx) {
-                    return tx.date.month == selectedMonth.month &&
-                        tx.date.year == selectedMonth.year;
-                  }).toList();
+              child: showRecurring
+                  ? const RecurringList()
+                  : transactionsAsync.when(
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (error, stack) =>
+                          Center(child: Text(error.toString())),
+                      data: (transactions) {
+                        final filteredMonth = transactions.where((tx) {
+                          return tx.date.month == selectedMonth.month &&
+                              tx.date.year == selectedMonth.year;
+                        }).toList();
 
-                  final sorted = [...filteredMonth]
-                    ..sort((a, b) => b.date.compareTo(a.date));
+                        final sorted = [...filteredMonth]
+                          ..sort((a, b) => b.date.compareTo(a.date));
 
-                  final filtered = sorted.where((tx) {
-                    final category = categories.firstWhere(
-                      (c) => c.id == tx.categoryId,
-                      orElse: () => Category(
-                        id: tx.categoryId,
-                        name: t.categoryRemoved,
-                        isIncome: tx.isIncome,
-                        icon: Icons.help.codePoint,
-                        color: Colors.grey.value,
-                        isDefault: false,
-                      ),
-                    );
+                        if (sorted.isEmpty) {
+                          return Center(child: Text(t.noTransactions));
+                        }
 
-                    final query = searchQuery.toLowerCase();
+                        final Map<DateTime, List<TransactionModel>> grouped =
+                            {};
 
-                    return categoryName(category.name, t).toLowerCase().contains(query) ||
-                        (tx.note ?? '').toLowerCase().contains(query);
-                  }).toList();
+                        for (final tx in sorted) {
+                          final day = DateTime(
+                            tx.date.year,
+                            tx.date.month,
+                            tx.date.day,
+                          );
+                          grouped.putIfAbsent(day, () => []);
+                          grouped[day]!.add(tx);
+                        }
 
-                  if (filtered.isEmpty) {
-                    return Center(child: Text(t.noTransactions));
-                  }
+                        final dates = grouped.keys.toList()
+                          ..sort((a, b) => b.compareTo(a));
 
-                  final Map<DateTime, List<TransactionModel>> grouped = {};
+                        return ListView(
+                          children: dates.map((date) {
+                            final items = grouped[date]!;
 
-                  for (final tx in filtered) {
-                    final day = DateTime(
-                      tx.date.year,
-                      tx.date.month,
-                      tx.date.day,
-                    );
-                    grouped.putIfAbsent(day, () => []);
-                    grouped[day]!.add(tx);
-                  }
-
-                  final dates = grouped.keys.toList()
-                    ..sort((a, b) => b.compareTo(a));
-
-                  return ListView(
-                    children: dates.map((date) {
-                      final items = grouped[date]!;
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-                            child: Text(
-                              dateFormat.format(date),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-
-                          ...items.map((tx) {
-                            final category = categories.firstWhere(
-                              (c) => c.id == tx.categoryId,
-                              orElse: () => Category(
-                                id: tx.categoryId,
-                                name: t.categoryRemoved,
-                                isIncome: tx.isIncome,
-                                icon: Icons.help.codePoint,
-                                color: Colors.grey.value,
-                                isDefault: false,
-                              ),
-                            );
-
-                            final amount = currency.format(
-                              tx.amountCents / 100,
-                            );
-
-                            return Dismissible(
-                              key: ValueKey(tx.id),
-                              direction: DismissDirection.endToStart,
-
-                              background: Container(
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 6,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                                alignment: Alignment.centerRight,
-                                child: const Icon(
-                                  Icons.delete,
-                                  color: Colors.white,
-                                ),
-                              ),
-
-                              confirmDismiss: (_) async {
-                                return await showDialog(
-                                  context: context,
-                                  builder: (dialogContext) {
-                                    return AlertDialog(
-                                      title: Text(t.removeTransactionQ),
-                                      content: Text(t.youSure),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(
-                                            dialogContext,
-                                            false,
-                                          ),
-                                          child: Text(t.cancel),
-                                        ),
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(
-                                            dialogContext,
-                                            true,
-                                          ),
-                                          child: Text(t.delete),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-
-                              onDismissed: (_) {
-                                ref
-                                    .read(transactionProvider.notifier)
-                                    .deleteTransaction(tx.id);
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(t.transactionDeleted),
-                                    action: SnackBarAction(
-                                      label: "UNDO",
-                                      onPressed: () {
-                                        ref
-                                            .read(transactionProvider.notifier)
-                                            .addTransaction(
-                                              amountCents: tx.amountCents,
-                                              isIncome: tx.isIncome,
-                                              categoryId: tx.categoryId,
-                                              date: tx.date,
-                                              note: tx.note,
-                                            );
-                                      },
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    16,
+                                    16,
+                                    6,
+                                  ),
+                                  child: Text(
+                                    dateFormat.format(date),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                );
-                              },
+                                ),
 
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          AddTransactionPage(transaction: tx),
+                                ...items.map((tx) {
+                                  final category = categories.firstWhere(
+                                    (c) => c.id == tx.categoryId,
+                                    orElse: () => categories.first,
+                                  );
+
+                                  final amount = currency.format(
+                                    tx.amountCents / 100,
+                                  );
+
+                                  return Dismissible(
+                                    key: ValueKey(tx.id),
+                                    direction: DismissDirection.endToStart,
+
+                                    background: Container(
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 6,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      alignment: Alignment.centerRight,
+                                      child: const Icon(
+                                        Icons.delete,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+
+                                    confirmDismiss: (_) async {
+                                      return await showDialog<bool>(
+                                        context: context,
+                                        builder: (dialogContext) {
+                                          return AlertDialog(
+                                            title: Text(
+                                              t.deleteMovement,
+                                            ),
+                                            content: Text(
+                                              t.deleteMovementSure,
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                  dialogContext,
+                                                  false,
+                                                ),
+                                                child: Text(t.cancel),
+                                              ),
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                  dialogContext,
+                                                  true,
+                                                ),
+                                                child: Text(t.delete),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+
+                                    onDismissed: (_) {
+                                      final deleted = tx;
+
+                                      ref
+                                          .read(transactionProvider.notifier)
+                                          .deleteTransaction(tx.id);
+
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            t.deletedMovement,
+                                          ),
+                                          behavior: SnackBarBehavior.floating,
+                                          action: SnackBarAction(
+                                            label: "UNDO",
+                                            onPressed: () {
+                                              ref
+                                                  .read(
+                                                    transactionProvider
+                                                        .notifier,
+                                                  )
+                                                  .addTransaction(
+                                                    amountCents:
+                                                        deleted.amountCents,
+                                                    isIncome: deleted.isIncome,
+                                                    categoryId:
+                                                        deleted.categoryId,
+                                                    date: deleted.date,
+                                                    note: deleted.note,
+                                                  );
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+
+                                    child: _TransactionTile(
+                                      tx: tx,
+                                      category: category,
+                                      amount: amount,
+                                      t: t,
                                     ),
                                   );
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 6,
-                                  ),
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Theme.of(
-                                            context,
-                                          ).colorScheme.surfaceContainer
-                                        : Theme.of(context).colorScheme.surface,
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        height: 42,
-                                        width: 42,
-                                        decoration: BoxDecoration(
-                                          color: Color(
-                                            category.color,
-                                          ).withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          IconData(
-                                            category.icon,
-                                            fontFamily: 'MaterialIcons',
-                                          ),
-                                          color: Color(category.color),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              categoryName(category.name, t),
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.onSurface,
-                                              ),
-                                            ),
-                                            Text(
-                                              tx.note ?? "",
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.onSurfaceVariant,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Text(
-                                        '${tx.isIncome ? '+' : '-'} $amount',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 14,
-                                          color: tx.isIncome
-                                              ? Colors.green
-                                              : Colors.red,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                                }),
+                              ],
                             );
-                          }),
-                        ],
-                      );
-                    }).toList(),
-                  );
-                },
-              ),
+                          }).toList(),
+                        );
+                      },
+                    ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionTile extends StatefulWidget {
+  final TransactionModel tx;
+  final Category category;
+  final String amount;
+  final AppLocalizations t;
+
+  const _TransactionTile({
+    required this.tx,
+    required this.category,
+    required this.amount,
+    required this.t,
+  });
+
+  @override
+  State<_TransactionTile> createState() => _TransactionTileState();
+}
+
+class _TransactionTileState extends State<_TransactionTile> {
+  double scale = 1;
+
+  void _press() => setState(() => scale = 0.95);
+  void _release() => setState(() => scale = 1);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _press(),
+      onTapCancel: _release,
+      onTapUp: (_) => _release(),
+      onLongPress: () {
+        HapticFeedback.mediumImpact();
+
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            transitionDuration: const Duration(milliseconds: 300),
+            pageBuilder: (_, __, ___) =>
+                AddTransactionPage(transaction: widget.tx),
+            transitionsBuilder: (_, animation, __, child) {
+              return SlideTransition(
+                position: Tween(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              );
+            },
+          ),
+        );
+      },
+      child: AnimatedScale(
+        scale: scale,
+        duration: const Duration(milliseconds: 120),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Theme.of(context).colorScheme.surfaceContainer
+                : Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              Container(
+                height: 42,
+                width: 42,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Color(widget.category.color).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      categoryIcon(widget.category.name),
+                      size: 20,
+                      color: Color(widget.category.color),
+                    ),
+                    if (widget.tx.isRecurring)
+                      Positioned(
+                        right: -13,
+                        bottom: -13,
+                        child: Container(
+                          height: 16,
+                          width: 16,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.autorenew, size: 10),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  categoryName(widget.category.name, widget.t),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              Text(
+                '${widget.tx.isIncome ? '+' : '-'} ${widget.amount}',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  color: widget.tx.isIncome ? Colors.green : Colors.red,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

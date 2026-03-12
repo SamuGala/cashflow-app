@@ -1,14 +1,14 @@
-import 'package:cashflow_app/app/router.dart';
-import 'package:cashflow_app/app/theme/app_theme.dart';
-import 'package:cashflow_app/core/constants/app_constants.dart';
-import 'package:cashflow_app/features/settings/presentation/providers/locale_provider.dart';
-import 'package:cashflow_app/features/settings/presentation/providers/theme_provider.dart';
+import 'package:pocket_vault/app/router.dart';
+import 'package:pocket_vault/app/theme/app_theme.dart';
+import 'package:pocket_vault/core/constants/app_constants.dart';
+import 'package:pocket_vault/features/settings/presentation/providers/locale_provider.dart';
+import 'package:pocket_vault/features/settings/presentation/providers/theme_provider.dart';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:cashflow_app/l10n/app_localizations.dart';
+import 'package:pocket_vault/l10n/app_localizations.dart';
 
 class CashflowApp extends ConsumerWidget {
   const CashflowApp({super.key});

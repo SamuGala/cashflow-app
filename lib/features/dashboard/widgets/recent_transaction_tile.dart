@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../transactions/domain/transaction.dart';
 import '../../transactions/domain/category.dart';
+import '../../../core/utils/category_localization.dart';
 
 class RecentTransactionTile extends StatelessWidget {
   final TransactionModel transaction;
@@ -25,7 +26,8 @@ class RecentTransactionTile extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: Color(category.color).withOpacity(0.2),
           child: Icon(
-            IconData(category.icon, fontFamily: 'MaterialIcons'),
+            categoryIcon(category.name),
+            size: 22,
             color: Color(category.color),
           ),
         ),

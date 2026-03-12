@@ -9,13 +9,16 @@ class AppLocalizationsIt extends AppLocalizations {
   AppLocalizationsIt([String locale = 'it']) : super(locale);
 
   @override
-  String get appName => 'Cashflow';
+  String get appName => 'Pocket Vault';
 
   @override
   String get addTransaction => 'Aggiungi movimento';
 
   @override
   String get saveTransaction => 'Salva movimento';
+
+  @override
+  String get editTransaction => 'Modifica movimento';
 
   @override
   String get amount => 'Importo';
@@ -135,14 +138,113 @@ class AppLocalizationsIt extends AppLocalizations {
   String get salary => 'Stipendio';
 
   @override
+  String get bonus => 'Bonus';
+
+  @override
+  String get gift => 'Regalo';
+
+  @override
   String get food => 'Cibo';
+
+  @override
+  String get groceries => 'Supermercato';
 
   @override
   String get transport => 'Trasporti';
 
   @override
+  String get rent => 'Affitto';
+
+  @override
+  String get bills => 'Bollette';
+
+  @override
   String get shopping => 'Shopping';
 
   @override
+  String get health => 'Salute';
+
+  @override
   String get entertainment => 'Svago';
+
+  @override
+  String get travel => 'Viaggi';
+
+  @override
+  String get education => 'Studio';
+
+  @override
+  String get recurrents => 'Ricorrenti';
+
+  @override
+  String get security => 'Sicurezza';
+
+  @override
+  String get everyMonth => 'Ogni mese';
+
+  @override
+  String get active => 'Attivo';
+
+  @override
+  String get modify => 'Modifica';
+
+  @override
+  String get pause => 'Metti in pausa';
+
+  @override
+  String get recurrent => 'Ricorrente';
+
+  @override
+  String get recurrentMsg => 'Attiva per ripetere ogni mese';
+
+  @override
+  String get color => 'Colore';
+
+  @override
+  String get day => 'Giorno';
+
+  @override
+  String get modifyRecurrent => 'Modifica ricorrenza';
+
+  @override
+  String get modifyCategory => 'Modifica categoria';
+
+  @override
+  String get noRecurrent => 'No recurrent transactions';
+
+  @override
+  String get reactivate => 'Riattiva';
+
+  @override
+  String get reactivateMsg => 'Ricorrenza riattivata';
+
+  @override
+  String get reactivatePauseMsg => 'Ricorrenza messa in pausa';
+
+  @override
+  String get dayOfMonth => 'Giorno del mese';
+
+  @override
+  String get save => 'Salva';
+
+  @override
+  String get recurringCreationMsg => 'Ricorrenza creata • la vedrai nel tuo account il ';
+
+  @override
+  String get deleteMovement => 'Eliminare il movimento?';
+
+  @override
+  String get deleteMovementSure => 'Questa azione non può essere annullata';
+
+  @override
+  String get deletedMovement => 'Movimento eliminato';
+
+  @override
+  String get addExpenseToViewGraph => 'Aggiungi una spesa per vedere il grafico';
+
+  @override
+  String get selectYear => 'Seleziona anno';
+
+  @override
+  String get existingCategory => 'Categoria già esistente';
 }

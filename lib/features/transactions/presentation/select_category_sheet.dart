@@ -47,11 +47,28 @@ Future<Category?> showCategorySelector(BuildContext context, bool isIncome) {
 
               final category = categories[index];
 
-              return CategoryTile(
-                category: category,
-                onTap: () {
-                  Navigator.pop(sheetContext, category);
+              return Dismissible(
+                key: ValueKey(category.id),
+                direction: category.isDefault
+                    ? DismissDirection.none
+                    : DismissDirection.endToStart,
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                onDismissed: (_) {
+                  ref
+                      .read(categoryProvider.notifier)
+                      .deleteCategory(category.id);
                 },
+                child: CategoryTile(
+                  category: category,
+                  onTap: () {
+                    Navigator.pop(sheetContext, category);
+                  },
+                ),
               );
             },
           );

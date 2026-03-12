@@ -3,8 +3,9 @@ class TransactionModel {
   final int amountCents;
   final bool isIncome;
   final String categoryId;
-  final String? note;
   final DateTime date;
+  final String? note;
+  final bool isRecurring;
 
   const TransactionModel({
     required this.id,
@@ -13,5 +14,6 @@ class TransactionModel {
     required this.categoryId,
     required this.date,
     this.note,
+    this.isRecurring = false,
   });
 }

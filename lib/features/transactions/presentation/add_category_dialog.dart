@@ -5,230 +5,231 @@ import '../../../l10n/app_localizations.dart';
 import '../providers/category_provider.dart';
 import '../domain/category.dart';
 
+final icons = [
+  Icons.shopping_cart,
+  Icons.home,
+  Icons.fastfood,
+  Icons.directions_car,
+  Icons.movie,
+  Icons.sports_esports,
+  Icons.restaurant,
+  Icons.flight,
+  Icons.school,
+  Icons.favorite,
+];
+
+final colors = [
+  Colors.blue,
+  Colors.red,
+  Colors.green,
+  Colors.orange,
+  Colors.purple,
+  Colors.teal,
+  Colors.indigo,
+  Colors.pink,
+];
+
 Future<Category?> showAddCategoryDialog(
   BuildContext context,
-  bool isIncome,
-) async {
-  final t = AppLocalizations.of(context)!;
+  bool isIncome, {
+  Category? existing,
+}) {
+  return showDialog<Category>(
+    context: context,
+    builder: (_) => _AddCategoryDialog(isIncome: isIncome, existing: existing),
+  );
+}
 
+class _AddCategoryDialog extends ConsumerStatefulWidget {
+  final bool isIncome;
+  final Category? existing;
+
+  const _AddCategoryDialog({required this.isIncome, this.existing});
+
+  @override
+  ConsumerState<_AddCategoryDialog> createState() => _AddCategoryDialogState();
+}
+
+class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
   final controller = TextEditingController();
 
-  int selectedColor = Colors.blue.value;
-  int selectedIcon = Icons.category.codePoint;
+  int icon = Icons.shopping_cart.codePoint;
+  int color = Colors.blue.value;
 
-  final colors = [
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.red,
-    Colors.purple,
-    Colors.teal,
-  ];
+  @override
+  void initState() {
+    super.initState();
 
-  final icons = [
-    Icons.home,
-    Icons.shopping_cart,
-    Icons.restaurant,
-    Icons.directions_car,
-    Icons.flight,
-    Icons.movie,
-    Icons.savings,
-    Icons.attach_money,
-  ];
+    if (widget.existing != null) {
+      controller.text = widget.existing!.name;
+      icon = widget.existing!.icon;
+      color = widget.existing!.color;
+    }
+  }
 
-  return showModalBottomSheet<Category>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (sheetContext) {
-      return Consumer(
-        builder: (context, ref, _) {
-          return StatefulBuilder(
-            builder: (context, setState) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  left: 20,
-                  right: 20,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-                  top: 10,
+  Future<bool> _categoryExists(String name) async {
+    final categories = ref.read(categoryProvider).value ?? [];
+
+    return categories.any(
+      (c) =>
+          c.name.toLowerCase() == name.toLowerCase() &&
+          c.id != widget.existing?.id,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
+    return AlertDialog(
+      title: Text(
+        widget.existing == null ? t.newCategory : "${t.category} • edit",
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            /// NAME
+            TextField(
+              controller: controller,
+              decoration: InputDecoration(labelText: t.nameCategory),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// ICON PICKER
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Icona",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    /// TITLE
-                    Text(
-                      t.newCategory,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: icons.map((i) {
+                final selected = icon == i.codePoint;
+
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => icon = i.codePoint);
+                  },
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundColor: selected
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.grey.shade200,
+                    child: Icon(
+                      i,
+                      color: selected
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
+                  ),
+                );
+              }).toList(),
+            ),
 
-                    const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-                    /// PREVIEW
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Color(selectedColor).withOpacity(
-                        Theme.of(context).brightness == Brightness.dark
-                            ? 0.35
-                            : 0.2,
-                      ),
-                      child: Icon(
-                        IconData(selectedIcon, fontFamily: 'MaterialIcons'),
-                        color: Color(selectedColor),
-                        size: 28,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    /// NAME
-                    TextField(
-                      controller: controller,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: t.nameCategory,
-                        filled: true,
-                        fillColor: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainer,
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    /// ICONS
-                    /// ICONS
-                    SizedBox(
-                      height: 70,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: icons.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 10),
-                        itemBuilder: (context, index) {
-                          final icon = icons[index];
-                          final isSelected = icon.codePoint == selectedIcon;
-
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedIcon = icon.codePoint;
-                              });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? Color(selectedColor).withOpacity(0.2)
-                                    : Theme.of(
-                                        context,
-                                      ).colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                icon,
-                                size: 26,
-                                color: isSelected
-                                    ? Color(selectedColor)
-                                    : Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    /// COLORS
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: colors.map((color) {
-                        final isSelected = color.value == selectedColor;
-
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedColor = color.value;
-                            });
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            child: CircleAvatar(
-                              radius: isSelected ? 16 : 14,
-                              backgroundColor: color,
-                              child: isSelected
-                                  ? const Icon(
-                                      Icons.check,
-                                      color: Colors.white,
-                                      size: 16,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-
-                    const SizedBox(height: 26),
-
-                    /// ACTIONS
-                    Row(
-                      children: [
-                        /// CANCEL
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.pop(sheetContext);
-                            },
-                            child: Text(t.cancel),
-                          ),
-                        ),
-
-                        const SizedBox(width: 12),
-
-                        /// ADD CATEGORY
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: () async {
-                              final name = controller.text.trim();
-
-                              if (name.isEmpty) {
-                                ScaffoldMessenger.of(sheetContext).showSnackBar(
-                                  SnackBar(content: Text(t.nameCategory)),
-                                );
-                                return;
-                              }
-
-                              final category = await ref
-                                  .read(categoryProvider.notifier)
-                                  .addCategory(
-                                    name: name,
-                                    isIncome: isIncome,
-                                    icon: selectedIcon,
-                                    color: selectedColor,
-                                  );
-
-                              if (sheetContext.mounted) {
-                                Navigator.pop(sheetContext, category);
-                              }
-                            },
-                            child: Text(t.add),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 10),
-                  ],
+            /// COLOR PICKER
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Colore",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: colors.map((c) {
+                final selected = color == c.value;
+
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => color = c.value);
+                  },
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: c,
+                    child: selected
+                        ? const Icon(Icons.check, size: 16, color: Colors.white)
+                        : null,
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+
+      actions: [
+        /// CANCEL
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(t.cancel),
+        ),
+
+        /// SAVE
+        FilledButton(
+          onPressed: () async {
+            final name = controller.text.trim();
+
+            if (name.isEmpty) return;
+
+            if (await _categoryExists(name)) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(t.existingCategory)),
               );
-            },
-          );
-        },
-      );
-    },
-  );
+              return;
+            }
+
+            if (widget.existing == null) {
+              /// CREATE
+              final created = await ref
+                  .read(categoryProvider.notifier)
+                  .addCategory(
+                    name: name,
+                    isIncome: widget.isIncome,
+                    icon: icon,
+                    color: color,
+                  );
+
+              if (mounted) {
+                Navigator.pop(context, created);
+              }
+            } else {
+              /// UPDATE
+              final updated = widget.existing!.copyWith(
+                name: name,
+                icon: icon,
+                color: color,
+              );
+
+              await ref.read(categoryProvider.notifier).updateCategory(updated);
+
+              if (mounted) {
+                Navigator.pop(context, updated);
+              }
+            }
+          },
+          child: Text(t.saveTransaction),
+        ),
+      ],
+    );
+  }
 }

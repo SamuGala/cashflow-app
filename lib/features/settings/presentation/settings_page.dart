@@ -108,7 +108,7 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           /// SECURITY
-          const Text("Security", style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(t.security, style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
 
           const FaceIdToggle(),
