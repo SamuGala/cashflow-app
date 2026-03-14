@@ -11,7 +11,7 @@ import 'add_category_dialog.dart';
 
 import '../../../core/utils/category_localization.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../core/providers/database_provider.dart';
+import '../../../core/database/database_provider.dart';
 
 class QuickAddTransactionSheet extends ConsumerStatefulWidget {
   const QuickAddTransactionSheet({super.key});
@@ -25,6 +25,7 @@ class _QuickAddTransactionSheetState
     extends ConsumerState<QuickAddTransactionSheet> {
   String amount = "0.00";
   bool shake = false;
+  final noteController = TextEditingController();
 
   Category? selectedCategory;
 
@@ -39,6 +40,8 @@ class _QuickAddTransactionSheetState
   void _addDigit(String digit) {
     setState(() {
       final digits = amount.replaceAll('.', '');
+
+      if (digits.length >= 9) return;
 
       final newDigits = digits + digit;
 
@@ -111,12 +114,21 @@ class _QuickAddTransactionSheetState
 
     /// DEFAULT CATEGORY → non modificabile
     if (category.isDefault) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(t.modifyCategory),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      final messenger = ScaffoldMessenger.of(context);
+
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(t.modifyCategory),
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        );
       return;
     }
 
@@ -273,6 +285,56 @@ class _QuickAddTransactionSheetState
             ),
 
             const SizedBox(height: 20),
+
+            /// DATE PICKER
+            InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDate,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2100),
+                );
+
+                if (picked != null) {
+                  setState(() {
+                    selectedDate = picked;
+                  });
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey.shade300),
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today, size: 18),
+
+                    const SizedBox(width: 10),
+
+                    Text(
+                      DateFormat.yMMMd(
+                        Localizations.localeOf(context).toString(),
+                      ).format(selectedDate),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+
+                    const Spacer(),
+
+                    const Icon(Icons.expand_more),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
 
             /// CATEGORY
             if (!showKeypad) ...[
@@ -450,6 +512,42 @@ class _QuickAddTransactionSheetState
                 ),
 
               const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.notes_rounded,
+                      size: 20,
+                      color: Colors.grey.shade600,
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    Expanded(
+                      child: TextField(
+                        controller: noteController,
+                        decoration: InputDecoration(
+                          hintText: t.note,
+                          border: InputBorder.none,
+                        ),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
 
             /// KEYPAD
@@ -499,79 +597,143 @@ class _QuickAddTransactionSheetState
               AnimatedSlide(
                 duration: const Duration(milliseconds: 120),
                 offset: shake ? const Offset(-0.02, 0) : Offset.zero,
-                child: SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: canSave
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.grey.shade300,
-                      foregroundColor: canSave
-                          ? Colors.white
-                          : Colors.grey.shade600,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: () async {
-                      if (!canSave) {
-                        HapticFeedback.mediumImpact();
-                        _triggerShake();
-                        return;
-                      }
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: canSave
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey.shade300,
+                          foregroundColor: canSave
+                              ? Colors.white
+                              : Colors.grey.shade600,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () async {
+                          if (!canSave) {
+                            HapticFeedback.mediumImpact();
+                            _triggerShake();
+                            return;
+                          }
 
-                      final cents = (amountValue! * 100).round();
-
-                      final notifier = ref.read(transactionProvider.notifier);
-
-                      if (recurring) {
-                        await notifier.addRecurringTransaction(
-                          amountCents: cents,
-                          isIncome: isIncome,
-                          categoryId: selectedCategory!.id,
-                          dayOfMonth: recurringDay,
-                          startDate: selectedDate,
-                        );
-
-                        /// genera subito la transazione se oggi è il giorno
-                        await ref
-                            .read(databaseProvider)
-                            .generateRecurringTransactions();
-
-                        ref.invalidate(recurringProvider);
-                        ref.invalidate(transactionProvider);
-
-                        final locale = Localizations.localeOf(
-                          context,
-                        ).toString();
-                        final formattedDate = DateFormat.yMMMd(
-                          locale,
-                        ).format(selectedDate);
-
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "${t.recurringCreationMsg}$formattedDate",
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                            ),
+                          final cents = (amountValue! * 100).round();
+                          final notifier = ref.read(
+                            transactionProvider.notifier,
                           );
-                        }
-                      } else {
-                        await notifier.addTransaction(
-                          amountCents: cents,
-                          isIncome: isIncome,
-                          categoryId: selectedCategory!.id,
-                          date: selectedDate,
-                        );
-                      }
 
-                      if (context.mounted) Navigator.pop(context);
-                    },
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: Text(t.saveTransaction, key: ValueKey(canSave)),
+                          if (recurring) {
+                            await notifier.addRecurringTransaction(
+                              amountCents: cents,
+                              isIncome: isIncome,
+                              categoryId: selectedCategory!.id,
+                              dayOfMonth: recurringDay,
+                              startDate: selectedDate,
+                              note: noteController.text.trim().isEmpty
+                                  ? null
+                                  : noteController.text.trim(),
+                            );
+
+                            await ref
+                                .read(databaseProvider)
+                                .generateRecurringTransactions();
+
+                            ref.invalidate(recurringProvider);
+                            ref.invalidate(transactionProvider);
+
+                            final locale = Localizations.localeOf(
+                              context,
+                            ).toString();
+                            final formattedDate = DateFormat.yMMMd(
+                              locale,
+                            ).format(selectedDate);
+
+                            if (context.mounted) {
+                              final messenger = ScaffoldMessenger.of(context);
+
+                              messenger
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "${t.recurringCreationMsg}$formattedDate",
+                                    ),
+                                    duration: const Duration(seconds: 4),
+                                    behavior: SnackBarBehavior.floating,
+                                    margin: const EdgeInsets.all(16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                );
+                            }
+                          } else {
+                            await notifier.addTransaction(
+                              amountCents: cents,
+                              isIncome: isIncome,
+                              categoryId: selectedCategory!.id,
+                              date: selectedDate,
+                              note: noteController.text.trim().isEmpty
+                                  ? null
+                                  : noteController.text.trim(),
+                            );
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: Colors.green,
+                                  behavior: SnackBarBehavior.floating,
+                                  margin: const EdgeInsets.all(16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  content: Text(
+                                    t.transactionSaved,
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          }
+
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: Text(
+                            t.saveTransaction,
+                            key: ValueKey(canSave),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+
+                    const SizedBox(height: 10),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.red.withOpacity(0.08),
+                          foregroundColor: Colors.red,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () {
+                          HapticFeedback.selectionClick();
+                          Navigator.pop(context);
+                        },
+                        child: Text(t.cancel),
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -653,11 +815,14 @@ class _CategoryChipState extends State<_CategoryChip> {
                   child: Icon(Icons.check, size: 16, color: Colors.white),
                 ),
               Icon(
-                categoryIcon(widget.category.name),
+                widget.category.isDefault
+                    ? categoryIcon(widget.category.name)
+                    : IconData(
+                        widget.category.icon,
+                        fontFamily: 'MaterialIcons',
+                      ),
                 size: 20,
-                color: widget.selected
-                    ? Colors.white
-                    : Color(widget.category.color),
+                color: Color(widget.category.color),
               ),
               const SizedBox(width: 6),
               Text(

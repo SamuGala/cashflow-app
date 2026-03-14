@@ -6,7 +6,7 @@ import '../../../core/providers/balance_visibility_provider.dart';
 import '../../../core/providers/selected_month_provider.dart';
 
 import '../providers/dashboard_provider.dart';
-import '../providers/recent_transactions_provider.dart';
+import '../../transactions/providers/transaction_provider.dart';
 
 import '../../transactions/providers/category_provider.dart';
 
@@ -25,6 +25,7 @@ class DashboardPage extends ConsumerStatefulWidget {
 
 class _DashboardPageState extends ConsumerState<DashboardPage> {
   bool monthly = false;
+  bool showIncome = false;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +34,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final stats = ref.watch(dashboardProvider(monthly));
     final showBalance = ref.watch(balanceVisibilityProvider);
 
-    final recent = ref.watch(recentTransactionsProvider);
+    final transactionsAsync = ref.watch(transactionProvider);
+    final transactions = transactionsAsync.value ?? [];
     final categoriesAsync = ref.watch(categoryProvider);
 
     final List<Category> categories = categoriesAsync.value ?? [];
@@ -132,9 +134,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   t.balance,
                   style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
-
                 const SizedBox(height: 6),
-
                 TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0, end: stats.balance / 100),
                   duration: const Duration(milliseconds: 700),
@@ -150,25 +150,21 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     );
                   },
                 ),
-
                 const SizedBox(height: 24),
-
                 Row(
                   children: [
                     _StatBox(
                       label: t.income,
                       value: hide(currency.format(stats.income / 100)),
                       color: Colors.green,
-                      icon: Icons.arrow_downward,
+                      icon: Icons.arrow_upward,
                     ),
-
                     const SizedBox(width: 12),
-
                     _StatBox(
                       label: t.expense,
                       value: hide(currency.format(stats.expense / 100)),
                       color: Colors.red,
-                      icon: Icons.arrow_upward,
+                      icon: Icons.arrow_downward,
                     ),
                   ],
                 ),
@@ -178,123 +174,206 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
           const SizedBox(height: 24),
 
-          Text(
-            t.recentTransactions,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          const SizedBox(height: 24),
+
+          /// INCOME / EXPENSE SELECTOR
+          Row(
+            children: [
+              ChoiceChip(
+                label: Text(t.expenses),
+                selected: !showIncome,
+                onSelected: (_) {
+                  setState(() {
+                    showIncome = false;
+                  });
+                },
+              ),
+              const SizedBox(width: 8),
+              ChoiceChip(
+                label: Text(t.incomes),
+                selected: showIncome,
+                onSelected: (_) {
+                  setState(() {
+                    showIncome = true;
+                  });
+                },
+              ),
+            ],
           ),
+
+          const SizedBox(height: 16),
 
           const SizedBox(height: 12),
 
-          if (recent.isEmpty) Text(t.noTransactions),
+          Builder(
+            builder: (_) {
+              final selectedMonth = ref.watch(selectedMonthProvider);
 
-          /// RECENT TRANSACTIONS
-          ...recent.asMap().entries.map((entry) {
-            final index = entry.key;
-            final tx = entry.value;
+              final Map<String, int> totals = {};
 
-            final category =
-                categories.where((c) => c.id == tx.categoryId).firstOrNull ??
-                categories.first;
+              for (final tx in transactions) {
+                if (tx.isIncome != showIncome) continue;
 
-            final amount = (tx.amountCents / 100).toStringAsFixed(2);
-            final date = DateFormat.yMd(locale).format(tx.date);
+                if (monthly) {
+                  if (tx.date.month != selectedMonth.month ||
+                      tx.date.year != selectedMonth.year) {
+                    continue;
+                  }
+                }
 
-            return TweenAnimationBuilder(
-              duration: Duration(milliseconds: 300 + (index * 80)),
-              tween: Tween(begin: 0.0, end: 1.0),
-              builder: (context, double value, child) {
-                return Opacity(
-                  opacity: value,
-                  child: Transform.translate(
-                    offset: Offset(0, 20 * (1 - value)),
-                    child: child,
-                  ),
+                totals.update(
+                  tx.categoryId,
+                  (v) => v + tx.amountCents,
+                  ifAbsent: () => tx.amountCents,
                 );
-              },
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 6),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Theme.of(context).colorScheme.surfaceContainer
-                      : Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Row(
-                  children: [
-                    /// CATEGORY ICON + RECURRING BADGE
-                    Container(
-                      height: 42,
-                      width: 42,
-                      alignment: Alignment.center,
+              }
+
+              final entries = totals.entries.toList()
+                ..sort((a, b) => b.value.compareTo(a.value));
+
+              final topCategory = entries.isNotEmpty ? entries.first.key : null;
+
+              if (entries.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(t.noTransactions),
+                );
+              }
+
+              final totalExpense = entries.fold<int>(
+                0,
+                (sum, e) => sum + e.value,
+              );
+
+              return Column(
+                children: entries.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final e = entry.value;
+
+                  final category = categories.firstWhere(
+                    (c) => c.id == e.key,
+                    orElse: () => categories.first,
+                  );
+
+                  final amount = currency.format(e.value / 100);
+
+                  final percent = e.value / totalExpense;
+
+                  return TweenAnimationBuilder(
+                    duration: Duration(milliseconds: 300 + index * 80),
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    builder: (context, double value, child) {
+                      return Opacity(
+                        opacity: value,
+                        child: Transform.translate(
+                          offset: Offset(0, 20 * (1 - value)),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Color(category.color).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Theme.of(context).colorScheme.surfaceContainer
+                            : Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(18),
                       ),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Center(
-                            child: Icon(
-                              categoryIcon(category.name),
-                              size: 22,
-                              color: Color(category.color),
-                            ),
-                          ),
-                          if (tx.isRecurring)
-                            Positioned(
-                              right: -6,
-                              bottom: -6,
-                              child: Container(
-                                height: 16,
-                                width: 16,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.autorenew, size: 10),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            categoryName(category.name, t),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+                          Row(
+                            children: [
+                              Container(
+                                height: 42,
+                                width: 42,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: category.id == topCategory
+                                      ? Color(category.color).withOpacity(0.08)
+                                      : Theme.of(context).brightness ==
+                                            Brightness.dark
+                                      ? Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainer
+                                      : Theme.of(context).colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                child: Icon(
+                                  category.isDefault
+                                      ? categoryIcon(category.name)
+                                      : IconData(
+                                          category.icon,
+                                          fontFamily: 'MaterialIcons',
+                                        ),
+                                  size: 24,
+                                  color: Color(category.color),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  categoryName(category.name, t),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    hide(amount),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    "${(percent * 100).toStringAsFixed(0)}%",
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          Text(
-                            date,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade500,
+
+                          const SizedBox(height: 10),
+
+                          /// PERCENT BAR
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 0, end: percent),
+                              duration: const Duration(milliseconds: 800),
+                              curve: Curves.easeOut,
+                              builder: (context, value, _) {
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: LinearProgressIndicator(
+                                    value: value,
+                                    minHeight: 6,
+                                    backgroundColor: Colors.grey.withOpacity(
+                                      0.15,
+                                    ),
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Color(category.color),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],
                       ),
                     ),
-
-                    Text(
-                      '${tx.isIncome ? '+' : '-'} €$amount',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: tx.isIncome ? Colors.green : Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
+                  );
+                }).toList(),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -326,17 +405,13 @@ class _StatBox extends StatelessWidget {
         child: Row(
           children: [
             Icon(icon, color: Colors.white),
-
             const SizedBox(width: 8),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label, style: const TextStyle(color: Colors.white70)),
-
                   const SizedBox(height: 2),
-
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,

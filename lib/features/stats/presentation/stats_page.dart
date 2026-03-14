@@ -5,6 +5,9 @@ import '../../dashboard/widgets/revolut_month_selector.dart';
 import '../../../l10n/app_localizations.dart';
 
 import '../widgets/category_donut_chart.dart';
+import 'package:fl_chart/fl_chart.dart';
+import '../widgets/statistics_income_expense_chart.dart';
+import '../widgets/premium_fintech_chart.dart';
 
 class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});
@@ -35,7 +38,6 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-
           /// TOTAL / MONTH
           Row(
             children: [
@@ -72,10 +74,31 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           ],
 
           /// DONUT CHART
-          SizedBox(height: monthly ? 8 : 24),
-          CategoryDonutChart(
-            monthly: monthly,
+          SizedBox(height: monthly ? 16 : 32),
+
+          CategoryDonutChart(monthly: monthly),
+
+          const SizedBox(height: 40),
+
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  Theme.of(context).dividerColor.withOpacity(0.2),
+                  Colors.transparent,
+                ],
+              ),
+            ),
           ),
+
+          const SizedBox(height: 32),
+
+          PremiumFintechChart(monthly: monthly),
+
+          const SizedBox(height: 40),
         ],
       ),
     );

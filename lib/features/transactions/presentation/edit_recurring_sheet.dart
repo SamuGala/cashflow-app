@@ -6,7 +6,6 @@ import '../providers/recurring_provider.dart';
 import '../providers/category_provider.dart';
 import '../domain/category.dart';
 import '../../../core/utils/category_localization.dart';
-import '../../../core/utils/category_localization.dart';
 import '../../../l10n/app_localizations.dart';
 
 class EditRecurringSheet extends ConsumerStatefulWidget {
@@ -39,6 +38,10 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
     final categoriesAsync = ref.watch(categoryProvider);
 
     final categories = categoriesAsync.value ?? [];
+
+    if (categories.isEmpty) {
+      return const SizedBox();
+    }
 
     selectedCategory ??= categories.firstWhere(
       (c) => c.id == widget.recurring.categoryId,
@@ -128,8 +131,10 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
 
               return ChoiceChip(
                 avatar: Icon(
-                  categoryIcon(c.name),
-                  size: 18,
+                  c.isDefault
+                      ? categoryIcon(c.name)
+                      : IconData(c.icon, fontFamily: 'MaterialIcons'),
+                  size: 20,
                   color: Color(c.color),
                 ),
                 label: Text(categoryName(c.name, t)),

@@ -298,7 +298,7 @@ abstract class AppLocalizations {
   /// No description provided for @cancelAll.
   ///
   /// In en, this message translates to:
-  /// **'Delete all data'**
+  /// **'All data has been deleted'**
   String get cancelAll;
 
   /// No description provided for @categoryRemoved.
@@ -576,6 +576,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Category already exists'**
   String get existingCategory;
+
+  /// No description provided for @saveCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Save category'**
+  String get saveCategory;
+
+  /// No description provided for @searchBar.
+  ///
+  /// In en, this message translates to:
+  /// **'Search transaction'**
+  String get searchBar;
+
+  /// No description provided for @paused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get paused;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

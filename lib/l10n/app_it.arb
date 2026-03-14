@@ -61,13 +61,14 @@
 "active": "Attivo",
 "modify": "Modifica",
 "pause": "Metti in pausa",
+"paused": "Pausa",
 "recurrent": "Ricorrente",
 "recurrentMsg": "Attiva per ripetere ogni mese",
 "color": "Colore",
 "day": "Giorno",
 "modifyRecurrent": "Modifica ricorrenza",
 "modifyCategory": "Modifica categoria",
-"noRecurrent": "No recurrent transactions",
+"noRecurrent": "Nessuna transazione ricorrente",
 "reactivate": "Riattiva",
 "reactivateMsg": "Ricorrenza riattivata",
 "reactivatePauseMsg": "Ricorrenza messa in pausa",
@@ -79,5 +80,8 @@
 "deletedMovement": "Movimento eliminato",
 "addExpenseToViewGraph" : "Aggiungi una spesa per vedere il grafico",
 "selectYear": "Seleziona anno",
-"existingCategory" : "Categoria già esistente"
+"existingCategory" : "Categoria già esistente",
+"saveCategory": "Salva categoria",
+"cancelAll": "Tutti i dati sono stati cancellati",
+"searchBar": "Cerca movimento"
 }

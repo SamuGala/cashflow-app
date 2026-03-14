@@ -26,7 +26,7 @@ class RecentTransactionTile extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: Color(category.color).withOpacity(0.2),
           child: Icon(
-            categoryIcon(category.name),
+            IconData(category.icon, fontFamily: 'MaterialIcons'),
             size: 22,
             color: Color(category.color),
           ),

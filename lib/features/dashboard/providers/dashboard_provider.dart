@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/providers/database_provider.dart';
+import '../../../core/database/database_provider.dart';
 import '../../../core/providers/selected_month_provider.dart';
 import '../../transactions/providers/transaction_provider.dart';
 

@@ -80,5 +80,9 @@
 "deletedMovement": "Movimiento eliminado",
 "addExpenseToViewGraph": "Agrega un gasto para ver el gráfico",
 "selectYear": "Seleccionar año",
-"existingCategory": "La categoría ya existe"
+"existingCategory": "La categoría ya existe",
+"saveCategory": "Guardar categoría",
+"cancelAll": "Todos los datos han sido eliminados",
+"searchBar": "Busca movimiento",
+"paused": "Pausado"
 }

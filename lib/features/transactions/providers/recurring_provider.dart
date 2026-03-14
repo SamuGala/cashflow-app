@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart';
 
-import '../../../core/providers/database_provider.dart';
+import '../../../core/database/database_provider.dart';
 import '../../../core/database/app_database.dart';
 
 final recurringProvider =
@@ -19,9 +19,7 @@ class RecurringNotifier extends AsyncNotifier<List<RecurringTransaction>> {
   Future<List<RecurringTransaction>> build() async {
     final db = ref.read(databaseProvider);
 
-    return await (db.select(
-      db.recurringTransactions,
-    )..where((t) => t.active.equals(true))).get();
+    return await db.select(db.recurringTransactions).get();
   }
 
   /// DELETE RECURRING

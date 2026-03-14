@@ -108,7 +108,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get data => 'Dati';
 
   @override
-  String get cancelAll => 'Cancella tutti i dati';
+  String get cancelAll => 'Tutti i dati sono stati cancellati';
 
   @override
   String get categoryRemoved => 'Categoria rimossa';
@@ -210,7 +210,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get modifyCategory => 'Modifica categoria';
 
   @override
-  String get noRecurrent => 'No recurrent transactions';
+  String get noRecurrent => 'Nessuna transazione ricorrente';
 
   @override
   String get reactivate => 'Riattiva';
@@ -247,4 +247,13 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get existingCategory => 'Categoria già esistente';
+
+  @override
+  String get saveCategory => 'Salva categoria';
+
+  @override
+  String get searchBar => 'Cerca movimento';
+
+  @override
+  String get paused => 'Pausa';
 }

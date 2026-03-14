@@ -148,9 +148,23 @@ class SettingsPage extends ConsumerWidget {
                 await ref.read(transactionProvider.notifier).deleteAllData();
 
                 if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text("Deleted")));
+                  final messenger = ScaffoldMessenger.of(context);
+
+                          messenger
+                            ..hideCurrentSnackBar()
+                            ..showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  t.cancelAll,
+                                ),
+                                duration: const Duration(seconds: 4),
+                                behavior: SnackBarBehavior.floating,
+                                margin: const EdgeInsets.all(16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                            );
                 }
               }
             },

@@ -16,6 +16,7 @@ final icons = [
   Icons.flight,
   Icons.school,
   Icons.favorite,
+  Icons.attach_money
 ];
 
 final colors = [
@@ -192,9 +193,21 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
             if (name.isEmpty) return;
 
             if (await _categoryExists(name)) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(t.existingCategory)),
-              );
+              final messenger = ScaffoldMessenger.of(context);
+
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(t.existingCategory),
+                    duration: const Duration(seconds: 4),
+                    behavior: SnackBarBehavior.floating,
+                    margin: const EdgeInsets.all(16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                );
               return;
             }
 
@@ -227,7 +240,7 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
               }
             }
           },
-          child: Text(t.saveTransaction),
+          child: Text(t.saveCategory),
         ),
       ],
     );

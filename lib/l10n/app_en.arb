@@ -79,5 +79,9 @@
 "deletedMovement": "Transaction deleted",
 "addExpenseToViewGraph": "Add an expense to view the chart",
 "selectYear": "Select year",
-"existingCategory": "Category already exists"
+"existingCategory": "Category already exists",
+"saveCategory": "Save category",
+"cancelAll": "All data has been deleted",
+"searchBar": "Search transaction",
+"paused": "Paused"
 }

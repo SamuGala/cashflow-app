@@ -4,8 +4,10 @@ import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
-import '../../../core/providers/database_provider.dart';
+import '../../../core/database/database_provider.dart';
 import '../domain/transaction.dart';
+import '../providers/category_provider.dart';
+import '../providers/recurring_provider.dart';
 
 final transactionProvider =
     AsyncNotifierProvider<TransactionNotifier, List<TransactionModel>>(
@@ -19,7 +21,7 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
   Future<List<TransactionModel>> build() async {
     final db = ref.read(databaseProvider);
 
-    /// genera eventuali transazioni ricorrenti
+    await db.generateRecurringTransactions();
 
     final rows = await db.getAllTransactions();
 
@@ -71,6 +73,25 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
 
     final current = state.value ?? [];
     state = AsyncData([...current, transaction]);
+  }
+
+  Future<void> restoreTransaction(TransactionModel tx) async {
+    final db = ref.read(databaseProvider);
+
+    await db.insertTransaction(
+      TransactionsCompanion.insert(
+        id: tx.id,
+        amountCents: tx.amountCents,
+        isIncome: tx.isIncome,
+        categoryId: tx.categoryId,
+        date: tx.date,
+        note: Value(tx.note),
+        isRecurring: Value(tx.isRecurring),
+      ),
+    );
+
+    final current = state.value ?? [];
+    state = AsyncData([...current, tx]);
   }
 
   Future<void> addRecurringTransaction({
@@ -146,6 +167,8 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
     final db = ref.read(databaseProvider);
 
     await db.clearAllData();
+    ref.invalidate(categoryProvider);
+    ref.invalidate(recurringProvider);
 
     state = const AsyncData([]);
   }

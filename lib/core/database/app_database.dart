@@ -352,10 +352,7 @@ class AppDatabase extends _$AppDatabase {
         id: category.id,
         name: category.name,
         isIncome: category.isIncome,
-
-        /// NON usiamo più le Material icons
-        icon: 0,
-
+        icon: category.icon, // FIX
         color: category.color,
         isDefault: Value(category.isDefault),
       ),
@@ -370,9 +367,13 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> clearAllData() async {
     await batch((b) {
+      /// elimina tutte le transazioni
       b.deleteAll(transactions);
 
-      // elimina solo categorie NON default
+      /// elimina tutte le ricorrenze
+      b.deleteAll(recurringTransactions);
+
+      /// elimina solo categorie custom
       b.deleteWhere(categories, (tbl) => tbl.isDefault.equals(false));
     });
   }

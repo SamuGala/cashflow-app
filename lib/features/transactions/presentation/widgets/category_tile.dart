@@ -18,8 +18,9 @@ class CategoryTile extends StatelessWidget {
       leading: CircleAvatar(
         backgroundColor: Color(category.color).withOpacity(0.2),
         child: Icon(
-          categoryIcon(category.name),
-          size: 22,
+          category.isDefault
+              ? categoryIcon(category.name)
+              : IconData(category.icon, fontFamily: 'MaterialIcons'),
           color: Color(category.color),
         ),
       ),

@@ -25,7 +25,10 @@ class TransactionsPage extends ConsumerStatefulWidget {
 }
 
 class _TransactionsPageState extends ConsumerState<TransactionsPage> {
+  final FocusNode searchFocus = FocusNode();
   bool showRecurring = false;
+  final TextEditingController searchController = TextEditingController();
+  String query = "";
 
   @override
   Widget build(BuildContext context) {
@@ -62,42 +65,43 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         body: Column(
           children: [
             /// MONTH FILTER
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: () {
-                      final prev = DateTime(
-                        selectedMonth.year,
-                        selectedMonth.month - 1,
-                      );
-                      ref
-                          .read(transactionsMonthProvider.notifier)
-                          .setMonth(prev);
-                    },
-                  ),
-                  Text(
-                    DateFormat.yMMMM(locale).format(selectedMonth),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: () {
-                      final next = DateTime(
-                        selectedMonth.year,
-                        selectedMonth.month + 1,
-                      );
-                      ref
-                          .read(transactionsMonthProvider.notifier)
-                          .setMonth(next);
-                    },
-                  ),
-                ],
+            if (!showRecurring)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left),
+                      onPressed: () {
+                        final prev = DateTime(
+                          selectedMonth.year,
+                          selectedMonth.month - 1,
+                        );
+                        ref
+                            .read(transactionsMonthProvider.notifier)
+                            .setMonth(prev);
+                      },
+                    ),
+                    Text(
+                      DateFormat.yMMMM(locale).format(selectedMonth),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed: () {
+                        final next = DateTime(
+                          selectedMonth.year,
+                          selectedMonth.month + 1,
+                        );
+                        ref
+                            .read(transactionsMonthProvider.notifier)
+                            .setMonth(next);
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             /// SEGMENT SELECTOR
             Padding(
@@ -111,10 +115,95 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                 onSelectionChanged: (v) {
                   setState(() {
                     showRecurring = v.first;
+
+                    if (showRecurring) {
+                      searchController.clear();
+                      query = "";
+                    }
                   });
                 },
               ),
             ),
+            if (!showRecurring)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(26),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF1E1F23)
+                      : Colors.white,
+                  boxShadow: [
+                    if (searchFocus.hasFocus)
+                      BoxShadow(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.25),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                      )
+                    else
+                      const BoxShadow(color: Color(0x11000000), blurRadius: 6),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      height: 34,
+                      width: 34,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.search,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    Expanded(
+                      child: TextField(
+                        controller: searchController,
+                        focusNode: searchFocus,
+                        onChanged: (value) {
+                          HapticFeedback.selectionClick();
+
+                          setState(() {
+                            query = value.toLowerCase();
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText: t.searchBar,
+                          border: InputBorder.none,
+                          hintStyle: TextStyle(color: Colors.grey.shade500),
+                        ),
+                      ),
+                    ),
+
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: query.isNotEmpty
+                          ? IconButton(
+                              key: const ValueKey("clear"),
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () {
+                                searchController.clear();
+                                setState(() {
+                                  query = "";
+                                });
+                              },
+                            )
+                          : const SizedBox(key: ValueKey("empty")),
+                    ),
+                  ],
+                ),
+              ),
 
             const SizedBox(height: 8),
 
@@ -134,6 +223,25 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
 
                         final sorted = [...filteredMonth]
                           ..sort((a, b) => b.date.compareTo(a.date));
+
+                        final filteredSearch = sorted.where((tx) {
+                          if (query.isEmpty) return true;
+
+                          final category = categories.firstWhere(
+                            (c) => c.id == tx.categoryId,
+                            orElse: () => categories.first,
+                          );
+
+                          final categoryNameTranslated = categoryName(
+                            category.name,
+                            t,
+                          ).toLowerCase();
+
+                          final note = (tx.note ?? "").toLowerCase();
+
+                          return categoryNameTranslated.contains(query) ||
+                              note.contains(query);
+                        }).toList();
 
                         if (sorted.isEmpty) {
                           return Center(child: Text(t.noTransactions));
@@ -155,9 +263,25 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                         final dates = grouped.keys.toList()
                           ..sort((a, b) => b.compareTo(a));
 
+                        final visibleDates = dates.where((date) {
+                          final items = grouped[date]!
+                              .where((tx) => filteredSearch.contains(tx))
+                              .toList();
+
+                          return items.isNotEmpty;
+                        }).toList();
+
+                        if (filteredSearch.isEmpty) {
+                          return Center(child: Text(t.noTransactions));
+                        }
+
                         return ListView(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
                           children: dates.map((date) {
-                            final items = grouped[date]!;
+                            final items = grouped[date]!
+                                .where((tx) => filteredSearch.contains(tx))
+                                .toList();
 
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +302,13 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                                 ),
 
                                 ...items.map((tx) {
-                                  final category = categories.firstWhere(
+                                  Category category;
+
+                                  if (categories.isEmpty) {
+                                    return const SizedBox();
+                                  }
+
+                                  category = categories.firstWhere(
                                     (c) => c.id == tx.categoryId,
                                     orElse: () => categories.first,
                                   );
@@ -215,12 +345,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                                         context: context,
                                         builder: (dialogContext) {
                                           return AlertDialog(
-                                            title: Text(
-                                              t.deleteMovement,
-                                            ),
-                                            content: Text(
-                                              t.deleteMovementSure,
-                                            ),
+                                            title: Text(t.deleteMovement),
+                                            content: Text(t.deleteMovementSure),
                                             actions: [
                                               TextButton(
                                                 onPressed: () => Navigator.pop(
@@ -249,34 +375,46 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                                           .read(transactionProvider.notifier)
                                           .deleteTransaction(tx.id);
 
-                                      ScaffoldMessenger.of(
+                                      final messenger = ScaffoldMessenger.of(
                                         context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            t.deletedMovement,
+                                      );
+
+                                      messenger
+                                        ..hideCurrentSnackBar()
+                                        ..showSnackBar(
+                                          SnackBar(
+                                            content: Text(t.transactionDeleted),
+                                            duration: const Duration(
+                                              seconds: 4,
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            margin: const EdgeInsets.all(16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                            action: SnackBarAction(
+                                              label: "UNDO",
+                                              onPressed: () {
+                                                ref
+                                                    .read(
+                                                      transactionProvider
+                                                          .notifier,
+                                                    )
+                                                    .restoreTransaction(
+                                                      deleted,
+                                                    );
+                                              },
+                                            ),
                                           ),
-                                          behavior: SnackBarBehavior.floating,
-                                          action: SnackBarAction(
-                                            label: "UNDO",
-                                            onPressed: () {
-                                              ref
-                                                  .read(
-                                                    transactionProvider
-                                                        .notifier,
-                                                  )
-                                                  .addTransaction(
-                                                    amountCents:
-                                                        deleted.amountCents,
-                                                    isIncome: deleted.isIncome,
-                                                    categoryId:
-                                                        deleted.categoryId,
-                                                    date: deleted.date,
-                                                    note: deleted.note,
-                                                  );
-                                            },
-                                          ),
-                                        ),
+                                        );
+                                      Future.delayed(
+                                        const Duration(seconds: 4),
+                                        () {
+                                          if (context.mounted) {
+                                            messenger.hideCurrentSnackBar();
+                                          }
+                                        },
                                       );
                                     },
 
@@ -377,8 +515,13 @@ class _TransactionTileState extends State<_TransactionTile> {
                   clipBehavior: Clip.none,
                   children: [
                     Icon(
-                      categoryIcon(widget.category.name),
-                      size: 20,
+                      widget.category.isDefault
+                          ? categoryIcon(widget.category.name)
+                          : IconData(
+                              widget.category.icon,
+                              fontFamily: 'MaterialIcons',
+                            ),
+                      size: 24,
                       color: Color(widget.category.color),
                     ),
                     if (widget.tx.isRecurring)
@@ -400,11 +543,46 @@ class _TransactionTileState extends State<_TransactionTile> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  categoryName(widget.category.name, widget.t),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      categoryName(widget.category.name, widget.t),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+
+                    if (widget.tx.note != null && widget.tx.note!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.grey.withOpacity(0.15),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            widget.tx.note!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
+
               Text(
                 '${widget.tx.isIncome ? '+' : '-'} ${widget.amount}',
                 style: TextStyle(

@@ -130,7 +130,13 @@ class _RecurringTileState extends State<_RecurringTile> {
                   children: [
                     Center(
                       child: Icon(
-                        categoryIcon(widget.category.name),
+                        widget.category.isDefault
+                            ? categoryIcon(widget.category.name)
+                            : IconData(
+                                widget.category.icon,
+                                fontFamily: 'MaterialIcons',
+                              ),
+                        size: 20,
                         color: Color(widget.category.color),
                       ),
                     ),
@@ -187,7 +193,7 @@ class _RecurringTileState extends State<_RecurringTile> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    widget.recurring.active ? t.active : t.pause,
+                    widget.recurring.active ? t.active : t.paused,
                     style: TextStyle(
                       fontSize: 13,
                       color: widget.recurring.active
@@ -252,16 +258,23 @@ class _RecurringActions extends ConsumerWidget {
               Navigator.pop(context);
 
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      newState
-                          ? t.reactivateMsg
-                          : t.reactivatePauseMsg,
+                final messenger = ScaffoldMessenger.of(context);
+
+                messenger
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        newState ? t.reactivateMsg : t.reactivatePauseMsg,
+                      ),
+                      duration: const Duration(seconds: 4),
+                      behavior: SnackBarBehavior.floating,
+                      margin: const EdgeInsets.all(16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                  );
               }
             },
           ),

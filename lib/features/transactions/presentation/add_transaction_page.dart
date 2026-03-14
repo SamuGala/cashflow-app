@@ -7,7 +7,7 @@ import '../domain/category.dart';
 import '../domain/transaction.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
-import 'select_category_sheet.dart';
+import 'category_selector.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/category_localization.dart';
 import 'package:flutter/services.dart';
@@ -200,15 +200,19 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                               selectedCategory!.color,
                             ).withOpacity(0.2),
                             child: Icon(
-                              categoryIcon(selectedCategory!.name),
-                              size: 22,
+                              selectedCategory!.isDefault
+                                  ? categoryIcon(selectedCategory!.name)
+                                  : IconData(
+                                      selectedCategory!.icon,
+                                      fontFamily: 'MaterialIcons',
+                                    ),
+                              size: 20,
                               color: Color(selectedCategory!.color),
                             ),
                           ),
 
                           const SizedBox(width: 8),
 
-                          /// FIX TRADUZIONE CATEGORIA
                           Text(categoryName(selectedCategory!.name, t)),
                         ],
                       ),

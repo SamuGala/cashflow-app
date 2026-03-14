@@ -7,6 +7,7 @@ import '../../transactions/providers/category_provider.dart';
 import '../../../core/providers/selected_month_provider.dart';
 import '../../transactions/domain/category.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/utils/category_localization.dart';
 
 class CategoryDonutChart extends ConsumerWidget {
   final bool monthly;
@@ -106,9 +107,20 @@ class CategoryDonutChart extends ConsumerWidget {
             Column(
               children: data.map((e) {
                 final percent = ((e.$2 / total) * 100).toStringAsFixed(1);
+                final amount = (e.$2 / 100).toStringAsFixed(2);
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withOpacity(
+                          0.08,
+                        ), // bianco soft fintech
+                        width: 0.5, // puoi provare anche 1
+                      ),
+                    ),
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -122,16 +134,28 @@ class CategoryDonutChart extends ConsumerWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          e.$1.name,
+                          categoryName(e.$1.name, t),
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
-                      Text(
-                        "$percent%",
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            "$percent%",
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            "€ $amount",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
