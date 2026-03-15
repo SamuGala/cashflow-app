@@ -84,5 +84,8 @@
 "saveCategory": "Guardar categoría",
 "cancelAll": "Todos los datos han sido eliminados",
 "searchBar": "Busca movimiento",
-"paused": "Pausado"
+"paused": "Pausado",
+"savedMore": "Este mes has gastado un {value}% menos que el mes pasado",
+"spentMore": "Este mes has gastado un {value}% más que el mes pasado",
+"period": "Período"
 }

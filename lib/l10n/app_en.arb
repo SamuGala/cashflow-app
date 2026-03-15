@@ -83,5 +83,8 @@
 "saveCategory": "Save category",
 "cancelAll": "All data has been deleted",
 "searchBar": "Search transaction",
-"paused": "Paused"
+"paused": "Paused",
+"savedMore": "You spent {value}% less than last month",
+"spentMore": "You spent {value}% more than last month",
+"period": "Period"
 }

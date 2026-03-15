@@ -5,7 +5,16 @@ import 'package:intl/intl.dart';
 import '../../../core/providers/selected_month_provider.dart';
 
 class RevolutMonthSelector extends ConsumerStatefulWidget {
-  const RevolutMonthSelector({super.key});
+  final DateTime? initialDate;
+  final ValueChanged<DateTime>? onChanged;
+  final String? label;
+
+  const RevolutMonthSelector({
+    super.key,
+    this.initialDate,
+    this.onChanged,
+    this.label,
+  });
 
   @override
   ConsumerState<RevolutMonthSelector> createState() =>
@@ -15,40 +24,67 @@ class RevolutMonthSelector extends ConsumerStatefulWidget {
 class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
   late PageController controller;
 
+  DateTime selected = DateTime.now();
   int currentYear = DateTime.now().year;
 
   @override
   void initState() {
     super.initState();
 
-    final now = DateTime.now();
-    currentYear = now.year;
+    final base = widget.initialDate ?? DateTime.now();
+
+    selected = base;
+    currentYear = base.year;
 
     controller = PageController(
       viewportFraction: 0.22,
-      initialPage: now.month - 1,
+      initialPage: base.month - 1,
     );
+  }
+
+  void updateMonth(int month) {
+    final newDate = DateTime(currentYear, month);
+
+    /// evita update inutili
+    if (selected.month == month && selected.year == currentYear) return;
+
+    setState(() {
+      selected = newDate;
+    });
+
+    /// aggiorna provider dopo il frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      if (widget.onChanged != null) {
+        widget.onChanged!(newDate);
+        return;
+      }
+
+      final current = ref.read(selectedMonthProvider);
+
+      if (current.month == newDate.month && current.year == newDate.year) {
+        return;
+      }
+
+      ref.read(selectedMonthProvider.notifier).setMonth(newDate);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final selected = ref.watch(selectedMonthProvider);
-
-    /// sync controller se cambia mese da fuori
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final targetPage = selected.month - 1;
-
-      if (controller.hasClients && controller.page?.round() != targetPage) {
-        controller.animateToPage(
-          targetPage,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+    final locale = Localizations.localeOf(context).toString();
 
     return Column(
       children: [
+        if (widget.label != null) ...[
+          Text(
+            widget.label!,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+          const SizedBox(height: 6),
+        ],
+
         /// YEAR SELECTOR
         GestureDetector(
           onTap: () async {
@@ -70,11 +106,12 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
             );
 
             if (year != null) {
-              currentYear = year;
+              setState(() {
+                currentYear = year;
+                selected = DateTime(year, selected.month);
+              });
 
-              ref
-                  .read(selectedMonthProvider.notifier)
-                  .setMonth(DateTime(year, selected.month));
+              updateMonth(selected.month);
             }
           },
           child: Row(
@@ -104,25 +141,22 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
             onPageChanged: (index) {
               final month = index + 1;
 
-              ref
-                  .read(selectedMonthProvider.notifier)
-                  .setMonth(DateTime(currentYear, month));
+              if (selected.month != month) {
+                updateMonth(month);
+              }
             },
             itemBuilder: (context, index) {
               final month = index + 1;
               final date = DateTime(currentYear, month);
 
-              final locale = Localizations.localeOf(context).toString();
               final monthName = DateFormat.MMM(locale).format(date);
 
-              final selectedMonth =
+              final isSelected =
                   selected.month == month && selected.year == currentYear;
 
               return GestureDetector(
                 onTap: () {
-                  ref
-                      .read(selectedMonthProvider.notifier)
-                      .setMonth(DateTime(currentYear, month));
+                  updateMonth(month);
 
                   controller.animateToPage(
                     index,
@@ -138,12 +172,12 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: selectedMonth
+                      color: isSelected
                           ? const Color(0xff6366F1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: selectedMonth
+                        color: isSelected
                             ? const Color(0xff6366F1)
                             : Colors.grey.shade300,
                         width: 1.2,
@@ -153,7 +187,7 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
                       monthName,
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: selectedMonth
+                        color: isSelected
                             ? Colors.white
                             : Theme.of(context).colorScheme.onSurface,
                       ),

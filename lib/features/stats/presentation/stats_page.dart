@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../dashboard/widgets/revolut_month_selector.dart';
+import '../../dashboard/presentation/dashboard_page.dart';
+import '../../dashboard/domain/dashboard_filter.dart';
+import '../../dashboard/providers/dashboard_provider.dart';
+
 import '../../../l10n/app_localizations.dart';
 
 import '../widgets/category_donut_chart.dart';
-import 'package:fl_chart/fl_chart.dart';
-import '../widgets/statistics_income_expense_chart.dart';
 import '../widgets/premium_fintech_chart.dart';
 
 class StatsPage extends ConsumerStatefulWidget {
@@ -17,11 +19,28 @@ class StatsPage extends ConsumerStatefulWidget {
 }
 
 class _StatsPageState extends ConsumerState<StatsPage> {
-  bool monthly = false;
+  DashboardFilter filter = DashboardFilter.total;
+
+  DateTime? customStart;
+  DateTime? customEnd;
+
+  DashboardQuery query = const DashboardQuery(filter: DashboardFilter.total);
+
+  void _updateQuery() {
+    setState(() {
+      query = DashboardQuery(
+        filter: filter,
+        start: customStart,
+        end: customEnd,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
+
+    final stats = ref.watch(dashboardProvider(query));
 
     return Scaffold(
       appBar: AppBar(
@@ -34,49 +53,44 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           ),
         ),
       ),
-
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          /// TOTAL / MONTH
-          Row(
-            children: [
-              ChoiceChip(
-                label: Text(t.total),
-                selected: !monthly,
-                onSelected: (_) {
-                  setState(() {
-                    monthly = false;
-                  });
-                },
-              ),
-
-              const SizedBox(width: 8),
-
-              ChoiceChip(
-                label: Text(t.month),
-                selected: monthly,
-                onSelected: (_) {
-                  setState(() {
-                    monthly = true;
-                  });
-                },
-              ),
-            ],
+          PremiumSegmentedSelector(
+            labels: [t.total, t.month, t.period],
+            selectedIndex: filter.index,
+            onChanged: (index) {
+              filter = DashboardFilter.values[index];
+              _updateQuery();
+            },
           ),
 
           const SizedBox(height: 16),
 
-          /// MONTH SELECTOR
-          if (monthly) ...[
+          if (filter == DashboardFilter.month) ...[
             const RevolutMonthSelector(),
             const SizedBox(height: 24),
           ],
 
-          /// DONUT CHART
-          SizedBox(height: monthly ? 16 : 32),
+          if (filter == DashboardFilter.period) ...[
+            PeriodSelector(
+              start: customStart,
+              end: customEnd,
+              onChanged: (start, end) {
+                customStart = start;
+                customEnd = end;
+                _updateQuery();
+              },
+            ),
+            const SizedBox(height: 24),
+          ],
 
-          CategoryDonutChart(monthly: monthly),
+          const SizedBox(height: 28),
+
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: CategoryDonutChart(query: query),
+          ),
 
           const SizedBox(height: 40),
 
@@ -96,10 +110,71 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
           const SizedBox(height: 32),
 
-          PremiumFintechChart(monthly: monthly),
+          PremiumFintechChart(query: query),
 
           const SizedBox(height: 40),
         ],
+      ),
+    );
+  }
+}
+
+class PeriodSelector extends StatelessWidget {
+  final DateTime? start;
+  final DateTime? end;
+  final Function(DateTime, DateTime) onChanged;
+
+  const PeriodSelector({
+    super.key,
+    required this.start,
+    required this.end,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    String format(DateTime? d) {
+      if (d == null) return "Select period";
+      return "${d.month}/${d.year}";
+    }
+
+    return GestureDetector(
+      onTap: () async {
+        final now = DateTime.now();
+
+        final picked = await showDateRangePicker(
+          context: context,
+          firstDate: DateTime(now.year - 5),
+          lastDate: DateTime(now.year + 1),
+          initialDateRange: start != null && end != null
+              ? DateTimeRange(start: start!, end: end!)
+              : null,
+        );
+
+        if (picked != null) {
+          onChanged(picked.start, picked.end);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.date_range),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "${format(start)} → ${format(end)}",
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Icon(Icons.expand_more),
+          ],
+        ),
       ),
     );
   }

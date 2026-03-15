@@ -1,9 +1,8 @@
-import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/database/database_provider.dart';
 import '../../../core/providers/selected_month_provider.dart';
 import '../../transactions/providers/transaction_provider.dart';
+import '../domain/dashboard_filter.dart';
 
 class DashboardStats {
   final int income;
@@ -14,7 +13,29 @@ class DashboardStats {
   int get balance => income - expense;
 }
 
-final dashboardProvider = Provider.family<DashboardStats, bool>((ref, monthly) {
+class DashboardQuery {
+  final DashboardFilter filter;
+  final DateTime? start;
+  final DateTime? end;
+
+  const DashboardQuery({required this.filter, this.start, this.end});
+
+  @override
+  bool operator ==(Object other) {
+    return other is DashboardQuery &&
+        other.filter == filter &&
+        other.start == start &&
+        other.end == end;
+  }
+
+  @override
+  int get hashCode => Object.hash(filter, start, end);
+}
+
+final dashboardProvider = Provider.family<DashboardStats, DashboardQuery>((
+  ref,
+  query,
+) {
   final transactionsAsync = ref.watch(transactionProvider);
   final selectedMonth = ref.watch(selectedMonthProvider);
 
@@ -24,11 +45,21 @@ final dashboardProvider = Provider.family<DashboardStats, bool>((ref, monthly) {
   int expense = 0;
 
   for (final t in transactions) {
-    final sameMonth =
-        t.date.month == selectedMonth.month &&
-        t.date.year == selectedMonth.year;
+    bool include = true;
 
-    if (monthly && !sameMonth) continue;
+    if (query.filter == DashboardFilter.month) {
+      include =
+          t.date.month == selectedMonth.month &&
+          t.date.year == selectedMonth.year;
+    }
+
+    if (query.filter == DashboardFilter.period &&
+        query.start != null &&
+        query.end != null) {
+      include = !t.date.isBefore(query.start!) && !t.date.isAfter(query.end!);
+    }
+
+    if (!include) continue;
 
     if (t.isIncome) {
       income += t.amountCents;

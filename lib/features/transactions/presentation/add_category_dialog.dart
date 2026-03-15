@@ -16,7 +16,7 @@ final icons = [
   Icons.flight,
   Icons.school,
   Icons.favorite,
-  Icons.attach_money
+  Icons.attach_money,
 ];
 
 final colors = [
@@ -81,24 +81,62 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AlertDialog(
       title: Text(
         widget.existing == null ? t.newCategory : "${t.category} • edit",
       ),
+
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            /// CATEGORY PREVIEW
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Color(color).withOpacity(.18),
+                    child: Icon(
+                      IconData(icon, fontFamily: 'MaterialIcons'),
+                      color: Color(color),
+                    ),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  Expanded(
+                    child: Text(
+                      controller.text.isEmpty ? t.category : controller.text,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 22),
+
             /// NAME
             TextField(
               controller: controller,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(labelText: t.nameCategory),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            /// ICON PICKER
+            /// ICON TITLE
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -110,11 +148,12 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
 
+            /// ICON GRID
             Wrap(
-              spacing: 10,
-              runSpacing: 10,
+              spacing: 12,
+              runSpacing: 12,
               children: icons.map((i) {
                 final selected = icon == i.codePoint;
 
@@ -122,25 +161,40 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
                   onTap: () {
                     setState(() => icon = i.codePoint);
                   },
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundColor: selected
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.grey.shade200,
+
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+
+                    width: 44,
+                    height: 44,
+
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+
+                      color: selected
+                          ? Color(color)
+                          : isDark
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade200,
+                    ),
+
                     child: Icon(
                       i,
+                      size: 22,
                       color: selected
                           ? Colors.white
-                          : Theme.of(context).colorScheme.onSurface,
+                          : isDark
+                          ? Colors.grey.shade300
+                          : Colors.grey.shade700,
                     ),
                   ),
                 );
               }).toList(),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            /// COLOR PICKER
+            /// COLOR TITLE
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -152,11 +206,12 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
 
+            /// COLOR GRID
             Wrap(
-              spacing: 10,
-              runSpacing: 10,
+              spacing: 12,
+              runSpacing: 12,
               children: colors.map((c) {
                 final selected = color == c.value;
 
@@ -164,11 +219,30 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
                   onTap: () {
                     setState(() => color = c.value);
                   },
-                  child: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: c,
+
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+
+                    width: 36,
+                    height: 36,
+
+                    decoration: BoxDecoration(
+                      color: c,
+                      shape: BoxShape.circle,
+
+                      boxShadow: selected
+                          ? [
+                              BoxShadow(
+                                color: c.withOpacity(.6),
+                                blurRadius: 10,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : null,
+                    ),
+
                     child: selected
-                        ? const Icon(Icons.check, size: 16, color: Colors.white)
+                        ? const Icon(Icons.check, size: 18, color: Colors.white)
                         : null,
                   ),
                 );
@@ -208,11 +282,11 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
                     ),
                   ),
                 );
+
               return;
             }
 
             if (widget.existing == null) {
-              /// CREATE
               final created = await ref
                   .read(categoryProvider.notifier)
                   .addCategory(
@@ -226,7 +300,6 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
                 Navigator.pop(context, created);
               }
             } else {
-              /// UPDATE
               final updated = widget.existing!.copyWith(
                 name: name,
                 icon: icon,

@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/dashboard_provider.dart';
-import '../../../l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
+
+import '../providers/dashboard_provider.dart';
+import '../domain/dashboard_filter.dart';
+import '../../../l10n/app_localizations.dart';
 
 class MonthSummaryCard extends ConsumerWidget {
   const MonthSummaryCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(dashboardProvider(true));
+    final stats = ref.watch(
+      dashboardProvider(const DashboardQuery(filter: DashboardFilter.month)),
+    );
+
     final t = AppLocalizations.of(context)!;
 
-    final currency = NumberFormat.currency(locale: 'it_IT', symbol: '€');
+    final locale = Localizations.localeOf(context).toString();
+    final currency = NumberFormat.currency(locale: locale, symbol: '€');
 
     final saved = stats.income - stats.expense;
 
@@ -48,7 +54,7 @@ class MonthSummaryCard extends ConsumerWidget {
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [const Text("Saved"), Text(currency.format(saved / 100))],
+            children: [Text(t.balance), Text(currency.format(saved / 100))],
           ),
         ],
       ),

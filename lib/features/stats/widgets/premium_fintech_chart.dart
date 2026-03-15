@@ -5,10 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../transactions/providers/transaction_provider.dart';
 import '../../../core/providers/selected_month_provider.dart';
 
-class PremiumFintechChart extends ConsumerStatefulWidget {
-  final bool monthly;
+import '../../dashboard/providers/dashboard_provider.dart';
+import '../../dashboard/domain/dashboard_filter.dart';
 
-  const PremiumFintechChart({super.key, required this.monthly});
+class PremiumFintechChart extends ConsumerStatefulWidget {
+  final DashboardQuery query;
+
+  const PremiumFintechChart({super.key, required this.query});
 
   @override
   ConsumerState<PremiumFintechChart> createState() =>
@@ -29,7 +32,11 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
     controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
-    )..forward();
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.forward();
+    });
   }
 
   @override
@@ -45,51 +52,56 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
 
     return txAsync.when(
       loading: () => const SizedBox(
-        height: 240,
+        height: 260,
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (_, __) => const SizedBox(),
       data: (transactions) {
-        final filtered = widget.monthly
-            ? transactions.where(
-                (tx) =>
-                    tx.date.month == selectedMonth.month &&
-                    tx.date.year == selectedMonth.year,
-              )
-            : transactions;
+        Iterable filtered = transactions;
+
+        if (widget.query.filter == DashboardFilter.month) {
+          filtered = transactions.where(
+            (tx) =>
+                tx.date.month == selectedMonth.month &&
+                tx.date.year == selectedMonth.year,
+          );
+        }
+
+        if (widget.query.filter == DashboardFilter.period &&
+            widget.query.start != null &&
+            widget.query.end != null) {
+          filtered = transactions.where(
+            (tx) =>
+                !tx.date.isBefore(widget.query.start!) &&
+                !tx.date.isAfter(widget.query.end!),
+          );
+        }
 
         final Map<int, double> income = {};
         final Map<int, double> expense = {};
 
+        final monthly = widget.query.filter == DashboardFilter.month;
+
         for (final tx in filtered) {
-          final key = widget.monthly ? tx.date.day : tx.date.month;
+          final key = monthly ? tx.date.day : tx.date.month;
+
+          final amount = (tx.amountCents as num).toDouble() / 100;
 
           if (tx.isIncome) {
-            income.update(
-              key,
-              (v) => v + tx.amountCents / 100,
-              ifAbsent: () => tx.amountCents / 100,
-            );
+            income.update(key, (v) => v + amount, ifAbsent: () => amount);
           } else {
-            expense.update(
-              key,
-              (v) => v + tx.amountCents / 100,
-              ifAbsent: () => tx.amountCents / 100,
-            );
+            expense.update(key, (v) => v + amount, ifAbsent: () => amount);
           }
         }
 
-        final maxX = widget.monthly ? 31 : 12;
+        final maxX = monthly ? 31 : 12;
 
         List<FlSpot> incomeSpots = [];
         List<FlSpot> expenseSpots = [];
 
         for (int i = 1; i <= maxX; i++) {
-          final inc = income[i] ?? 0;
-          final exp = expense[i] ?? 0;
-
-          incomeSpots.add(FlSpot(i.toDouble(), inc));
-          expenseSpots.add(FlSpot(i.toDouble(), exp));
+          incomeSpots.add(FlSpot(i.toDouble(), income[i] ?? 0));
+          expenseSpots.add(FlSpot(i.toDouble(), expense[i] ?? 0));
         }
 
         final allValues = [
@@ -97,9 +109,6 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
           ...expenseSpots.map((e) => e.y),
         ];
 
-        final minY = allValues.isEmpty
-            ? 0
-            : allValues.reduce((a, b) => a < b ? a : b);
         final maxY = allValues.isEmpty
             ? 0
             : allValues.reduce((a, b) => a > b ? a : b);
@@ -107,126 +116,117 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
         return Column(
           children: [
             SizedBox(
-              height: 240,
+              height: 260,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: AnimatedBuilder(
                   animation: controller,
                   builder: (_, __) {
-                    return SizedBox(
-                      width: double.infinity,
-                      child: LineChart(
-                        LineChartData(
-                          clipData: const FlClipData.all(),
-                          minY: -maxY * 0.16,
-                          maxY: maxY * 1.25,
-                          gridData: FlGridData(
-                            drawVerticalLine: false,
-                            horizontalInterval: (maxY / 4).clamp(20, 200),
-                            getDrawingHorizontalLine: (_) => FlLine(
-                              color: Colors.grey.withOpacity(0.08),
-                              strokeWidth: 1,
-                            ),
+                    return LineChart(
+                      LineChartData(
+                        clipData: const FlClipData.all(),
+                        minY: -maxY * 0.15,
+                        maxY: maxY * 1.3,
+
+                        gridData: FlGridData(
+                          drawVerticalLine: false,
+                          horizontalInterval: ((maxY / 4).clamp(
+                            20,
+                            200,
+                          )).toDouble(),
+                          getDrawingHorizontalLine: (_) => FlLine(
+                            color: Colors.grey.withOpacity(0.08),
+                            strokeWidth: 1,
                           ),
-                          titlesData: const FlTitlesData(show: false),
-                          borderData: FlBorderData(show: false),
-                          lineTouchData: LineTouchData(
-                            handleBuiltInTouches: true,
-                            getTouchedSpotIndicator: (barData, indicators) =>
-                                indicators
-                                    .map(
-                                      (i) => TouchedSpotIndicatorData(
-                                        FlLine(
-                                          color: Colors.grey.withOpacity(0.25),
-                                          strokeWidth: 1,
-                                        ),
-                                        FlDotData(
-                                          getDotPainter: (_, __, ___, ____) =>
-                                              FlDotCirclePainter(
-                                                radius: 4,
-                                                color: Colors.white,
-                                                strokeWidth: 2,
-                                                strokeColor: Theme.of(
-                                                  context,
-                                                ).colorScheme.primary,
-                                              ),
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
-                            touchTooltipData: LineTouchTooltipData(
-                              getTooltipColor: (touchedSpot) => Colors.black,
-                            ),
-                          ),
-                          lineBarsData: [
-                            if (showIncome)
-                              LineChartBarData(
-                                spots: incomeSpots
-                                    .map(
-                                      (s) =>
-                                          FlSpot(s.x, s.y * controller.value),
-                                    )
-                                    .toList(),
-                                isCurved: true,
-                                curveSmoothness: 0.35,
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.green.shade400,
-                                    Colors.green.shade600,
-                                  ],
-                                ),
-                                barWidth: 4,
-                                dotData: const FlDotData(show: false),
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.green.withOpacity(0.25),
-                                      Colors.transparent,
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            if (showExpense)
-                              LineChartBarData(
-                                spots: expenseSpots
-                                    .map(
-                                      (s) =>
-                                          FlSpot(s.x, s.y * controller.value),
-                                    )
-                                    .toList(),
-                                isCurved: true,
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.red.shade400,
-                                    Colors.red.shade600,
-                                  ],
-                                ),
-                                barWidth: 4,
-                                dotData: const FlDotData(show: false),
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.red.withOpacity(0.25),
-                                      Colors.transparent,
-                                    ],
-                                  ),
-                                ),
-                              ),
-                          ],
                         ),
+
+                        titlesData: const FlTitlesData(show: false),
+                        borderData: FlBorderData(show: false),
+
+                        lineTouchData: LineTouchData(
+                          handleBuiltInTouches: true,
+                          touchTooltipData: LineTouchTooltipData(
+                            getTooltipItems: (spots) {
+                              return spots.map((s) {
+                                return LineTooltipItem(
+                                  "€ ${s.y.toStringAsFixed(2)}",
+                                  const TextStyle(color: Colors.white),
+                                );
+                              }).toList();
+                            },
+                          ),
+                        ),
+
+                        lineBarsData: [
+                          if (showIncome)
+                            LineChartBarData(
+                              spots: incomeSpots
+                                  .map(
+                                    (s) => FlSpot(s.x, s.y * controller.value),
+                                  )
+                                  .toList(),
+                              isCurved: true,
+                              curveSmoothness: 0.35,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.green.shade400,
+                                  Colors.green.shade600,
+                                ],
+                              ),
+                              barWidth: 4,
+                              dotData: const FlDotData(show: false),
+                              belowBarData: BarAreaData(
+                                show: true,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.green.withOpacity(0.25),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                          if (showExpense)
+                            LineChartBarData(
+                              spots: expenseSpots
+                                  .map(
+                                    (s) => FlSpot(s.x, s.y * controller.value),
+                                  )
+                                  .toList(),
+                              isCurved: true,
+                              curveSmoothness: 0.35,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.red.shade400,
+                                  Colors.red.shade600,
+                                ],
+                              ),
+                              barWidth: 4,
+                              dotData: const FlDotData(show: false),
+                              belowBarData: BarAreaData(
+                                show: true,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.red.withOpacity(0.25),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     );
                   },
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+
+            const SizedBox(height: 22),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -245,7 +245,6 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
                 ),
               ],
             ),
-            const SizedBox(height: 10),
           ],
         );
       },

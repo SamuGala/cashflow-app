@@ -71,7 +71,9 @@ class _CategorySelector extends ConsumerWidget {
 
           child: ListTile(
             leading: Icon(
-              IconData(category.icon, fontFamily: 'MaterialIcons'),
+              category.isDefault
+                  ? categoryIcon(category.name)
+                  : IconData(category.icon, fontFamily: 'MaterialIcons'),
               color: Color(category.color),
             ),
 

@@ -83,5 +83,8 @@
 "existingCategory" : "Categoria già esistente",
 "saveCategory": "Salva categoria",
 "cancelAll": "Tutti i dati sono stati cancellati",
-"searchBar": "Cerca movimento"
+"searchBar": "Cerca movimento",
+"savedMore": "Questo mese hai speso il {value}% in meno rispetto al mese scorso",
+"spentMore": "Questo mese hai speso il {value}% in più rispetto al mese scorso",
+"period": "Periodo"
 }

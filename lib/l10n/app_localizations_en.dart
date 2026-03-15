@@ -256,4 +256,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paused => 'Paused';
+
+  @override
+  String savedMore(Object value) {
+    return 'You spent $value% less than last month';
+  }
+
+  @override
+  String spentMore(Object value) {
+    return 'You spent $value% more than last month';
+  }
+
+  @override
+  String get period => 'Period';
 }

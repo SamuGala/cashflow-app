@@ -594,6 +594,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paused'**
   String get paused;
+
+  /// No description provided for @savedMore.
+  ///
+  /// In en, this message translates to:
+  /// **'You spent {value}% less than last month'**
+  String savedMore(Object value);
+
+  /// No description provided for @spentMore.
+  ///
+  /// In en, this message translates to:
+  /// **'You spent {value}% more than last month'**
+  String spentMore(Object value);
+
+  /// No description provided for @period.
+  ///
+  /// In en, this message translates to:
+  /// **'Period'**
+  String get period;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

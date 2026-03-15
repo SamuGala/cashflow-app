@@ -119,10 +119,15 @@ class SettingsPage extends ConsumerWidget {
           Text(t.data, style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
 
-          ElevatedButton.icon(
-            icon: const Icon(Icons.delete_forever),
-            label: Text(t.cancelAll),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
             onPressed: () async {
               final confirm = await showDialog<bool>(
                 context: context,
@@ -150,24 +155,24 @@ class SettingsPage extends ConsumerWidget {
                 if (context.mounted) {
                   final messenger = ScaffoldMessenger.of(context);
 
-                          messenger
-                            ..hideCurrentSnackBar()
-                            ..showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  t.cancelAll,
-                                ),
-                                duration: const Duration(seconds: 4),
-                                behavior: SnackBarBehavior.floating,
-                                margin: const EdgeInsets.all(16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                            );
+                  messenger
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      SnackBar(
+                        content: Text(t.cancelAll),
+                        duration: const Duration(seconds: 4),
+                        behavior: SnackBarBehavior.floating,
+                        margin: const EdgeInsets.all(16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    );
                 }
               }
             },
+            icon: const Icon(Icons.delete),
+            label: Text(t.cancelAll),
           ),
 
           const SizedBox(height: 260),
