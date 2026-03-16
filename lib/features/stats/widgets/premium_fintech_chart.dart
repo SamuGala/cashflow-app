@@ -7,6 +7,7 @@ import '../../../core/providers/selected_month_provider.dart';
 
 import '../../dashboard/providers/dashboard_provider.dart';
 import '../../dashboard/domain/dashboard_filter.dart';
+import '../../../l10n/app_localizations.dart';
 
 class PremiumFintechChart extends ConsumerStatefulWidget {
   final DashboardQuery query;
@@ -47,6 +48,7 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     final txAsync = ref.watch(transactionProvider);
     final selectedMonth = ref.watch(selectedMonthProvider);
 
@@ -232,14 +234,14 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
               children: [
                 _LegendChip(
                   color: Colors.green,
-                  label: "Income",
+                  label: t.incomes,
                   active: showIncome,
                   onTap: () => setState(() => showIncome = !showIncome),
                 ),
                 const SizedBox(width: 14),
                 _LegendChip(
                   color: Colors.red,
-                  label: "Expense",
+                  label: t.expenses,
                   active: showExpense,
                   onTap: () => setState(() => showExpense = !showExpense),
                 ),

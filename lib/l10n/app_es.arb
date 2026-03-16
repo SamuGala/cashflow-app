@@ -74,7 +74,7 @@
 "reactivatePauseMsg": "Movimiento recurrente pausado",
 "dayOfMonth": "Día del mes",
 "save": "Guardar",
-"recurringCreationMsg": "Movimiento recurrente creado • lo verás en tu cuenta el ",
+"recurringCreationMsg": "Movimiento recurrente creado ",
 "deleteMovement": "¿Eliminar movimiento?",
 "deleteMovementSure": "Esta acción no se puede deshacer",
 "deletedMovement": "Movimiento eliminado",

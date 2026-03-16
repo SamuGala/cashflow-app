@@ -228,7 +228,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
-  String get recurringCreationMsg => 'Recurring transaction created • you will see it in your account on ';
+  String get recurringCreationMsg => 'Recurring transaction created ';
 
   @override
   String get deleteMovement => 'Delete transaction?';

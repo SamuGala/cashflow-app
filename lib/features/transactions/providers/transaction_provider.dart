@@ -21,8 +21,6 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
   Future<List<TransactionModel>> build() async {
     final db = ref.read(databaseProvider);
 
-    await db.generateRecurringTransactions();
-
     final rows = await db.getAllTransactions();
 
     return rows

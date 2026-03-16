@@ -48,8 +48,18 @@ class RecurringList extends ConsumerWidget {
 
             return Dismissible(
               key: ValueKey(r.id),
-              direction: DismissDirection.endToStart,
+              direction: DismissDirection.horizontal,
               background: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                alignment: Alignment.centerLeft,
+                child: const Icon(Icons.edit, color: Colors.white),
+              ),
+              secondaryBackground: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
@@ -59,6 +69,43 @@ class RecurringList extends ConsumerWidget {
                 alignment: Alignment.centerRight,
                 child: const Icon(Icons.delete, color: Colors.white),
               ),
+              confirmDismiss: (direction) async {
+                if (direction == DismissDirection.startToEnd) {
+                  HapticFeedback.mediumImpact();
+
+                  showModalBottomSheet(
+                    context: context,
+                    showDragHandle: true,
+                    builder: (_) => _RecurringActions(recurring: r),
+                  );
+
+                  return false;
+                }
+
+                if (direction == DismissDirection.endToStart) {
+                  final t = AppLocalizations.of(context)!;
+
+                  return await showDialog<bool>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: Text(t.deleteMovement),
+                      content: Text(t.deleteMovementSure),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: Text(t.cancel),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          child: Text(t.delete),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return false;
+              },
               onDismissed: (_) {
                 ref.read(recurringProvider.notifier).deleteRecurring(r.id);
               },
@@ -95,15 +142,6 @@ class _RecurringTileState extends State<_RecurringTile> {
       onTapDown: (_) => _press(),
       onTapCancel: _release,
       onTapUp: (_) => _release(),
-      onLongPress: () {
-        HapticFeedback.mediumImpact();
-
-        showModalBottomSheet(
-          context: context,
-          showDragHandle: true,
-          builder: (_) => _RecurringActions(recurring: widget.recurring),
-        );
-      },
       child: AnimatedScale(
         scale: scale,
         duration: const Duration(milliseconds: 120),
@@ -173,10 +211,12 @@ class _RecurringTileState extends State<_RecurringTile> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "€ ${(widget.recurring.amountCents / 100).toStringAsFixed(2)}",
+                      "${widget.recurring.isIncome ? '+' : '-'} € ${(widget.recurring.amountCents / 100).toStringAsFixed(2)}",
                       style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w700,
+                        color: widget.recurring.isIncome
+                            ? Colors.green
+                            : Colors.red,
                       ),
                     ),
                   ],

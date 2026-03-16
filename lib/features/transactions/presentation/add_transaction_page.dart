@@ -297,17 +297,6 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
                     if (!mounted) return;
 
-                    final flush = Flushbar(
-                      icon: const Icon(Icons.check_circle, color: Colors.white),
-                      message: t.transactionSaved,
-                      duration: const Duration(seconds: 2),
-                      margin: const EdgeInsets.all(16),
-                      borderRadius: BorderRadius.circular(12),
-                      backgroundColor: Colors.green.shade600,
-                    );
-
-                    await flush.show(context);
-
                     if (context.mounted) {
                       Navigator.of(context).pop();
                     }

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/providers/balance_visibility_provider.dart';
-import '../../../core/providers/selected_month_provider.dart';
+import '../../../core/providers/time_filter_provider.dart';
 
 import '../providers/dashboard_provider.dart';
 import '../domain/dashboard_filter.dart';
@@ -26,12 +26,7 @@ class DashboardPage extends ConsumerStatefulWidget {
 }
 
 class _DashboardPageState extends ConsumerState<DashboardPage> {
-  DashboardFilter filter = DashboardFilter.total;
-
   bool showIncome = false;
-
-  DateTime? customStart;
-  DateTime? customEnd;
 
   int periodMonths = 6;
 
@@ -39,12 +34,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
 
+    final timeState = ref.watch(timeFilterProvider);
+    final filter = timeState.filter;
+    final selectedMonth = timeState.month;
+    final customStart = timeState.start;
+    final customEnd = timeState.end;
     final stats = ref.watch(
       dashboardProvider(
-        DashboardQuery(filter: filter, start: customStart, end: customEnd),
+        DashboardQuery(
+          filter: DashboardFilter.values[filter.index],
+          start: customStart,
+          end: customEnd,
+        ),
       ),
     );
-    final selectedMonth = ref.watch(selectedMonthProvider);
     final showBalance = ref.watch(balanceVisibilityProvider);
 
     final transactionsAsync = ref.watch(transactionProvider);
@@ -141,35 +144,36 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             labels: [t.total, t.month, t.period],
             selectedIndex: filter.index,
             onChanged: (index) {
-              setState(() {
-                filter = DashboardFilter.values[index];
-              });
+              final selected = TimeFilter.values[index];
+
+              ref.read(timeFilterProvider.notifier).setFilter(selected);
+
+              if (selected == TimeFilter.month) {
+                ref.read(timeFilterProvider.notifier).setMonth(DateTime.now());
+              }
             },
           ),
 
           const SizedBox(height: 12),
 
           /// MONTH SELECTOR
-          if (filter == DashboardFilter.month) ...[
+          if (filter == TimeFilter.month) ...[
             RevolutMonthSelector(
               initialDate: selectedMonth,
               onChanged: (date) {
-                ref.read(selectedMonthProvider.notifier).state = date;
+                ref.read(timeFilterProvider.notifier).setMonth(date);
               },
             ),
             const SizedBox(height: 12),
           ],
 
           /// PERIOD SELECTOR
-          if (filter == DashboardFilter.period) ...[
+          if (filter == TimeFilter.period) ...[
             PeriodSelector(
               start: customStart,
               end: customEnd,
               onChanged: (start, end) {
-                setState(() {
-                  customStart = start;
-                  customEnd = end;
-                });
+                ref.read(timeFilterProvider.notifier).setPeriod(start, end);
               },
             ),
             const SizedBox(height: 12),
@@ -201,13 +205,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 Row(
                   children: [
                     _StatBox(
-                      label: t.income,
+                      label: t.incomes,
                       value: hide(currency.format(stats.income / 100)),
                       icon: Icons.arrow_upward,
                     ),
                     const SizedBox(width: 10),
                     _StatBox(
-                      label: t.expense,
+                      label: t.expenses,
                       value: hide(currency.format(stats.expense / 100)),
                       icon: Icons.arrow_downward,
                     ),
@@ -266,7 +270,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               for (final tx in transactions) {
                 if (tx.isIncome != showIncome) continue;
 
-                if (filter == DashboardFilter.month) {
+                if (filter == TimeFilter.month) {
                   if (tx.date.month != selectedMonth.month ||
                       tx.date.year != selectedMonth.year) {
                     continue;

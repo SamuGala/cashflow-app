@@ -228,6 +228,13 @@ class _QuickAddTransactionSheetState
 
     final mostUsed = filtered.take(4).toList();
 
+    /// se la categoria selezionata non è tra le mostUsed → aggiungila
+    if (selectedCategory != null &&
+        !mostUsed.any((c) => c.id == selectedCategory!.id)) {
+      mostUsed.removeLast(); // mantiene sempre 4 elementi
+      mostUsed.insert(0, selectedCategory!);
+    }
+
     final amountValue = double.tryParse(amount);
 
     final canSave =
@@ -315,48 +322,49 @@ class _QuickAddTransactionSheetState
 
             const SizedBox(height: 20),
 
-            InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2100),
-                );
+            if (!recurring)
+              InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2100),
+                  );
 
-                if (picked != null) {
-                  setState(() {
-                    selectedDate = picked;
-                  });
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey.shade300),
-                  color: Theme.of(context).colorScheme.surface,
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.calendar_today, size: 18),
-                    const SizedBox(width: 10),
-                    Text(
-                      DateFormat.yMMMd(
-                        Localizations.localeOf(context).toString(),
-                      ).format(selectedDate),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const Spacer(),
-                    const Icon(Icons.expand_more),
-                  ],
+                  if (picked != null) {
+                    setState(() {
+                      selectedDate = picked;
+                    });
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey.shade300),
+                    color: Theme.of(context).colorScheme.surface,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 18),
+                      const SizedBox(width: 10),
+                      Text(
+                        DateFormat.yMMMd(
+                          Localizations.localeOf(context).toString(),
+                        ).format(selectedDate),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.expand_more),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
             const SizedBox(height: 16),
 
@@ -378,6 +386,7 @@ class _QuickAddTransactionSheetState
                 const SizedBox(height: 10),
 
                 Wrap(
+                  key: ValueKey(mostUsed.map((e) => e.id).join()),
                   spacing: 10,
                   runSpacing: 10,
                   children: [
@@ -460,7 +469,7 @@ class _QuickAddTransactionSheetState
                             ),
                             Text(
                               recurring
-                                  ? "${t.everyMonth} • ${t.day} $recurringDay"
+                                  ? "${t.everyMonth} • $recurringDay"
                                   : t.recurrentMsg,
                               style: TextStyle(
                                 fontSize: 12,
@@ -475,86 +484,87 @@ class _QuickAddTransactionSheetState
                         onChanged: (v) {
                           setState(() {
                             recurring = v;
+                            if (v) {
+                              recurringDay = selectedDate.day;
+                            }
                           });
                         },
                       ),
                     ],
                   ),
                 ),
+              ],
 
-                if (recurring)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: _pickRecurringDay,
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_month),
-                            const SizedBox(width: 10),
-                            Text(
-                              t.dayOfMonth,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
+              if (recurring)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: _pickRecurringDay,
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_month),
+                          const SizedBox(width: 10),
+                          Text(
+                            t.dayOfMonth,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const Spacer(),
+                          Text(
+                            recurringDay.toString(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
                             ),
-                            const Spacer(),
-                            Text(
-                              recurringDay.toString(),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
+                ),
 
-                const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    color: Theme.of(context).colorScheme.surface,
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.notes_rounded,
-                        size: 20,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: noteController,
-                          decoration: InputDecoration(
-                            hintText: t.note,
-                            border: InputBorder.none,
-                          ),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.notes_rounded,
+                      size: 20,
+                      color: Colors.grey.shade600,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: noteController,
+                        decoration: InputDecoration(
+                          hintText: t.note,
+                          border: InputBorder.none,
+                        ),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ],
 
             if (showKeypad) ...[
@@ -627,16 +637,72 @@ class _QuickAddTransactionSheetState
                           final notifier = ref.read(
                             transactionProvider.notifier,
                           );
+                          final t = AppLocalizations.of(context)!;
 
-                          await notifier.addTransaction(
-                            amountCents: cents,
-                            isIncome: isIncome,
-                            categoryId: selectedCategory!.id,
-                            date: selectedDate,
-                            note: noteController.text.trim().isEmpty
-                                ? null
-                                : noteController.text.trim(),
-                          );
+                          if (recurring) {
+                            await notifier.addRecurringTransaction(
+                              amountCents: cents,
+                              isIncome: isIncome,
+                              categoryId: selectedCategory!.id,
+                              dayOfMonth: recurringDay,
+                              startDate: selectedDate,
+                              note: noteController.text.trim().isEmpty
+                                  ? null
+                                  : noteController.text.trim(),
+                            );
+
+                            /// genera subito eventuali movimenti mancanti
+                            await ref
+                                .read(databaseProvider)
+                                .generateRecurringTransactions();
+
+                            ref.invalidate(recurringProvider);
+                            ref.invalidate(transactionProvider);
+
+                            if (context.mounted) {
+                              final locale = Localizations.localeOf(
+                                context,
+                              ).toString();
+
+                              final nextDate = DateTime(
+                                DateTime.now().year,
+                                DateTime.now().month,
+                                recurringDay,
+                              );
+
+                              final formatted = DateFormat.yMMMd(
+                                locale,
+                              ).format(nextDate);
+
+                              final messenger = ScaffoldMessenger.of(context);
+
+                              messenger
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "${t.recurringCreationMsg} • $formatted",
+                                    ),
+                                    duration: const Duration(seconds: 4),
+                                    behavior: SnackBarBehavior.floating,
+                                    margin: const EdgeInsets.all(16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                );
+                            }
+                          } else {
+                            await notifier.addTransaction(
+                              amountCents: cents,
+                              isIncome: isIncome,
+                              categoryId: selectedCategory!.id,
+                              date: selectedDate,
+                              note: noteController.text.trim().isEmpty
+                                  ? null
+                                  : noteController.text.trim(),
+                            );
+                          }
 
                           if (context.mounted) Navigator.pop(context);
                         },

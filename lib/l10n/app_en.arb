@@ -73,7 +73,7 @@
 "reactivatePauseMsg": "Recurring transaction paused",
 "dayOfMonth": "Day of the month",
 "save": "Save",
-"recurringCreationMsg": "Recurring transaction created • you will see it in your account on ",
+"recurringCreationMsg": "Recurring transaction created ",
 "deleteMovement": "Delete transaction?",
 "deleteMovementSure": "This action cannot be undone",
 "deletedMovement": "Transaction deleted",

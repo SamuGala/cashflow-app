@@ -23,8 +23,24 @@ class RootApp extends StatefulWidget {
   State<RootApp> createState() => _RootAppState();
 }
 
-class _RootAppState extends State<RootApp> {
+class _RootAppState extends State<RootApp> with WidgetsBindingObserver {
   bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// quando l'app torna in foreground
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final container = ProviderScope.containerOf(context);
+      final db = container.read(databaseProvider);
+      db.generateRecurringTransactions();
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -39,6 +55,12 @@ class _RootAppState extends State<RootApp> {
         await db.generateRecurringTransactions();
       });
     }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override

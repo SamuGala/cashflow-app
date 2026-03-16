@@ -228,7 +228,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get save => 'Salva';
 
   @override
-  String get recurringCreationMsg => 'Ricorrenza creata • la vedrai nel tuo account il ';
+  String get recurringCreationMsg => 'Ricorrenza creata  ';
 
   @override
   String get deleteMovement => 'Eliminare il movimento?';

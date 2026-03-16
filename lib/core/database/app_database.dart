@@ -217,38 +217,54 @@ class AppDatabase extends _$AppDatabase {
     )..where((r) => r.active.equals(true))).get();
 
     for (final r in recurring) {
-      final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+      /// non generare prima della startDate
+      if (now.isBefore(r.startDate)) continue;
 
-      final day = r.dayOfMonth > daysInMonth ? daysInMonth : r.dayOfMonth;
+      /// da dove iniziare
+      DateTime cursor = r.lastGenerated ?? r.startDate;
 
-      /// se oggi non è il giorno → skip
-      if (now.day != day) continue;
+      /// normalizza al primo giorno del mese
+      cursor = DateTime(cursor.year, cursor.month, 1);
 
-      /// evita duplicati nello stesso giorno
-      if (r.lastGenerated != null) {
-        final last = r.lastGenerated!;
+      while (cursor.isBefore(now) ||
+          (cursor.year == now.year && cursor.month == now.month)) {
+        final daysInMonth = DateTime(cursor.year, cursor.month + 1, 0).day;
 
-        if (last.year == now.year &&
-            last.month == now.month &&
-            last.day == now.day) {
-          continue;
+        final day = r.dayOfMonth > daysInMonth ? daysInMonth : r.dayOfMonth;
+
+        final scheduledDate = DateTime(cursor.year, cursor.month, day);
+
+        /// genera solo se la data è passata
+        if (!scheduledDate.isAfter(now)) {
+          /// evita duplicati
+          if (r.lastGenerated == null ||
+              scheduledDate.isAfter(r.lastGenerated!)) {
+            await into(transactions).insert(
+              TransactionsCompanion.insert(
+                id: DateTime.now().microsecondsSinceEpoch.toString(),
+                amountCents: r.amountCents,
+                isIncome: r.isIncome,
+                categoryId: r.categoryId,
+                date: scheduledDate,
+
+                /// ← FIX IMPORTANTE
+                note: Value(r.note),
+                isRecurring: const Value(true),
+              ),
+            );
+
+            await (update(
+              recurringTransactions,
+            )..where((t) => t.id.equals(r.id))).write(
+              RecurringTransactionsCompanion(
+                lastGenerated: Value(scheduledDate),
+              ),
+            );
+          }
         }
+
+        cursor = DateTime(cursor.year, cursor.month + 1, 1);
       }
-
-      await into(transactions).insert(
-        TransactionsCompanion.insert(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          amountCents: r.amountCents,
-          isIncome: r.isIncome,
-          categoryId: r.categoryId,
-          date: now,
-          note: Value(r.note),
-          isRecurring: const Value(true),
-        ),
-      );
-
-      await (update(recurringTransactions)..where((t) => t.id.equals(r.id)))
-          .write(RecurringTransactionsCompanion(lastGenerated: Value(now)));
     }
   }
 

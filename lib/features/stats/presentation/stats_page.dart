@@ -10,6 +10,8 @@ import '../../../l10n/app_localizations.dart';
 
 import '../widgets/category_donut_chart.dart';
 import '../widgets/premium_fintech_chart.dart';
+import 'package:intl/intl.dart';
+import '../../../core/providers/time_filter_provider.dart';
 
 class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});
@@ -19,28 +21,25 @@ class StatsPage extends ConsumerStatefulWidget {
 }
 
 class _StatsPageState extends ConsumerState<StatsPage> {
-  DashboardFilter filter = DashboardFilter.total;
-
-  DateTime? customStart;
-  DateTime? customEnd;
-
-  DashboardQuery query = const DashboardQuery(filter: DashboardFilter.total);
-
-  void _updateQuery() {
-    setState(() {
-      query = DashboardQuery(
-        filter: filter,
-        start: customStart,
-        end: customEnd,
-      );
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final timeState = ref.watch(timeFilterProvider);
+
+    final filter = timeState.filter;
+    final start = timeState.start;
+    final end = timeState.end;
+    final month = timeState.month;
     final t = AppLocalizations.of(context)!;
 
-    final stats = ref.watch(dashboardProvider(query));
+    final stats = ref.watch(
+      dashboardProvider(
+        DashboardQuery(
+          filter: DashboardFilter.values[filter.index],
+          start: start,
+          end: end,
+        ),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -60,36 +59,46 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             labels: [t.total, t.month, t.period],
             selectedIndex: filter.index,
             onChanged: (index) {
-              filter = DashboardFilter.values[index];
-              _updateQuery();
+              ref
+                  .read(timeFilterProvider.notifier)
+                  .setFilter(TimeFilter.values[index]);
             },
           ),
 
           const SizedBox(height: 16),
 
-          if (filter == DashboardFilter.month) ...[
-            const RevolutMonthSelector(),
-            const SizedBox(height: 24),
-          ],
-
-          if (filter == DashboardFilter.period) ...[
-            PeriodSelector(
-              start: customStart,
-              end: customEnd,
-              onChanged: (start, end) {
-                customStart = start;
-                customEnd = end;
-                _updateQuery();
+          if (filter == TimeFilter.month) ...[
+            RevolutMonthSelector(
+              initialDate: month,
+              onChanged: (date) {
+                ref.read(timeFilterProvider.notifier).setMonth(date);
               },
             ),
             const SizedBox(height: 24),
           ],
 
-          const SizedBox(height: 28),
+          if (filter == TimeFilter.period) ...[
+            PeriodSelector(
+              start: start,
+              end: end,
+              onChanged: (s, e) {
+                ref.read(timeFilterProvider.notifier).setPeriod(s, e);
+              },
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          const SizedBox(height: 10),
 
           Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: CategoryDonutChart(query: query),
+            child: CategoryDonutChart(
+              query: DashboardQuery(
+                filter: DashboardFilter.values[filter.index],
+                start: start,
+                end: end,
+              ),
+            ),
           ),
 
           const SizedBox(height: 40),
@@ -110,7 +119,13 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
           const SizedBox(height: 32),
 
-          PremiumFintechChart(query: query),
+          PremiumFintechChart(
+            query: DashboardQuery(
+              filter: DashboardFilter.values[filter.index],
+              start: start,
+              end: end,
+            ),
+          ),
 
           const SizedBox(height: 40),
         ],
@@ -139,7 +154,7 @@ class PeriodSelector extends StatelessWidget {
 
     String format(DateTime? d) {
       if (d == null) return t.selectPeriod;
-      return "${d.month}/${d.year}";
+      return DateFormat.MMM(locale).addPattern(' yyyy').format(d);
     }
 
     return GestureDetector(

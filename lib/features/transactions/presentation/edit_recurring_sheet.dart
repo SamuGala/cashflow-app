@@ -36,17 +36,16 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
     final t = AppLocalizations.of(context)!;
 
     final categoriesAsync = ref.watch(categoryProvider);
-
     final categories = categoriesAsync.value ?? [];
 
-    if (categories.isEmpty) {
-      return const SizedBox();
-    }
+    if (categories.isEmpty) return const SizedBox();
 
     selectedCategory ??= categories.firstWhere(
       (c) => c.id == widget.recurring.categoryId,
       orElse: () => categories.first,
     );
+
+    final top = categories.take(5).toList();
 
     return Padding(
       padding: EdgeInsets.only(
@@ -60,7 +59,7 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
         children: [
           Text(
             t.modifyRecurrent,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
 
           const SizedBox(height: 20),
@@ -122,28 +121,44 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
 
           const SizedBox(height: 20),
 
-          /// CATEGORY
+          /// CATEGORY SELECTOR
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: categories.map((c) {
-              final selected = selectedCategory?.id == c.id;
-
-              return ChoiceChip(
-                avatar: Icon(
-                  c.isDefault
-                      ? categoryIcon(c.name)
-                      : IconData(c.icon, fontFamily: 'MaterialIcons'),
-                  size: 20,
-                  color: Color(c.color),
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              ...top.map(
+                (c) => _CategoryChip(
+                  category: c,
+                  selected: c.id == selectedCategory!.id,
+                  onTap: () {
+                    setState(() {
+                      selectedCategory = c;
+                    });
+                  },
                 ),
-                label: Text(categoryName(c.name, t)),
-                selected: selected,
-                onSelected: (_) {
-                  setState(() => selectedCategory = c);
+              ),
+
+              _OtherCategoryButton(
+                onTap: () async {
+                  final result = await showModalBottomSheet<String>(
+                    context: context,
+                    showDragHandle: true,
+                    builder: (_) => FractionallySizedBox(
+                      heightFactor: 0.55,
+                      child: const CategorySelectorSheet(),
+                    ),
+                  );
+
+                  if (result != null) {
+                    final cat = categories.firstWhere((c) => c.id == result);
+
+                    setState(() {
+                      selectedCategory = cat;
+                    });
+                  }
                 },
-              );
-            }).toList(),
+              ),
+            ],
           ),
 
           const SizedBox(height: 24),
@@ -171,6 +186,91 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
     );
   }
 }
+
+/// CATEGORY CHIP
+
+class _CategoryChip extends StatelessWidget {
+  final Category category;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _CategoryChip({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: selected
+              ? Color(category.color).withOpacity(.18)
+              : Colors.transparent,
+          border: Border.all(
+            color: selected
+                ? Color(category.color)
+                : Theme.of(context).dividerColor,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              category.isDefault
+                  ? categoryIcon(category.name)
+                  : IconData(category.icon, fontFamily: 'MaterialIcons'),
+              size: 20,
+              color: Color(category.color),
+            ),
+            const SizedBox(width: 6),
+            Text(categoryName(category.name, t)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// OTHER BUTTON
+
+class _OtherCategoryButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _OtherCategoryButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.more_horiz, size: 18),
+            const SizedBox(width: 6),
+            Text(t.otherCategories),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// KEYPAD
 
 class _AmountKeypad extends StatefulWidget {
   final int initial;
@@ -214,7 +314,6 @@ class _AmountKeypadState extends State<_AmountKeypad> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          /// amount preview
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -249,11 +348,8 @@ class _AmountKeypadState extends State<_AmountKeypad> {
                 "8",
                 "9",
               ].map((d) => _KeyButton(label: d, onTap: () => addDigit(d))),
-
               _KeyButton(label: "0", onTap: () => addDigit("0")),
-
               _KeyButton(icon: Icons.backspace, onTap: delete),
-
               const SizedBox(),
             ],
           ),
@@ -297,6 +393,36 @@ class _KeyButton extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+      ),
+    );
+  }
+}
+
+class CategorySelectorSheet extends ConsumerWidget {
+  const CategorySelectorSheet({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categories = ref.watch(categoryProvider).value ?? [];
+    final t = AppLocalizations.of(context)!;
+
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: categories.map((c) {
+          return ListTile(
+            leading: Icon(
+              c.isDefault
+                  ? categoryIcon(c.name)
+                  : IconData(c.icon, fontFamily: 'MaterialIcons'),
+              color: Color(c.color),
+            ),
+            title: Text(categoryName(c.name, t)),
+            onTap: () {
+              Navigator.pop(context, c.id);
+            },
+          );
+        }).toList(),
       ),
     );
   }

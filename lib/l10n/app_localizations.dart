@@ -538,7 +538,7 @@ abstract class AppLocalizations {
   /// No description provided for @recurringCreationMsg.
   ///
   /// In en, this message translates to:
-  /// **'Recurring transaction created • you will see it in your account on '**
+  /// **'Recurring transaction created '**
   String get recurringCreationMsg;
 
   /// No description provided for @deleteMovement.
