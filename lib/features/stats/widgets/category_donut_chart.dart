@@ -114,7 +114,7 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
               categories.first;
 
           return (category, entry.value);
-        }).toList();
+        }).toList()..sort((a, b) => b.$2.compareTo(a.$2));
 
         final total = data.fold<double>(0, (sum, e) => sum + e.$2);
 
@@ -129,90 +129,98 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
           children: [
             const SizedBox(height: 16),
 
-            /// DONUT
+            /// DONUT + CENTER LABEL
             SizedBox(
               height: 280,
-              child: AnimatedBuilder(
-                animation: controller,
-                builder: (_, __) {
-                  return PieChart(
-                    PieChartData(
-                      centerSpaceRadius: 80,
-                      sectionsSpace: 4,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  AnimatedBuilder(
+                    animation: controller,
+                    builder: (_, __) {
+                      return PieChart(
+                        PieChartData(
+                          centerSpaceRadius: 80,
+                          sectionsSpace: 6,
+                          pieTouchData: PieTouchData(
+                            enabled: true,
+                            touchCallback: (event, response) {
+                              if (response == null ||
+                                  response.touchedSection == null)
+                                return;
 
-                      pieTouchData: PieTouchData(
-                        enabled: true,
-                        touchCallback: (event, response) {
-                          if (!event.isInterestedForInteractions ||
-                              response == null ||
-                              response.touchedSection == null) {
-                            if (selectedIndex != null) {
-                              setState(() => selectedIndex = null);
-                            }
-                            return;
-                          }
+                              final index =
+                                  response.touchedSection!.touchedSectionIndex;
 
-                          final index =
-                              response.touchedSection!.touchedSectionIndex;
+                              setState(() {
+                                selectedIndex = index;
+                              });
+                            },
+                          ),
+                          sections: data.asMap().entries.map((entry) {
+                            final i = entry.key;
+                            final e = entry.value;
 
-                          if (index != selectedIndex) {
-                            setState(() => selectedIndex = index);
-                          }
-                        },
-                      ),
+                            final isSelected = selectedIndex == i;
 
-                      sections: data.asMap().entries.map((entry) {
-                        final i = entry.key;
-                        final e = entry.value;
+                            const baseRadius = 64.0;
+                            final radius = isSelected ? 85.0 : baseRadius;
 
-                        final isSelected = selectedIndex == i;
+                            final baseColor = Color(e.$1.color);
 
-                        final baseRadius = 78.0;
-                        final radius = isSelected ? 96.0 : baseRadius;
+                            return PieChartSectionData(
+                              value: e.$2 * controller.value,
+                              radius: radius,
+                              title: "",
+                              gradient: LinearGradient(
+                                colors: [baseColor.withOpacity(.8), baseColor],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        swapAnimationDuration: const Duration(
+                          milliseconds: 450,
+                        ),
+                        swapAnimationCurve: Curves.easeOutCubic,
+                      );
+                    },
+                  ),
 
-                        return PieChartSectionData(
-                          value: e.$2 * controller.value,
-                          color: Color(e.$1.color),
-                          radius: radius,
-                          title: "",
-                        );
-                      }).toList(),
+                  /// CENTER LABEL (ABBASSATA)
+                  /// CENTER LABEL
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          selected != null
+                              ? categoryName(selected.$1.name, t)
+                              : t.expenses,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          selected != null
+                              ? "€ ${(selected.$2 / 100).toStringAsFixed(2)}"
+                              : "€ ${(total / 100).toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
+                        ),
+                      ],
                     ),
-                    swapAnimationDuration: const Duration(milliseconds: 450),
-                    swapAnimationCurve: Curves.easeOutCubic,
-                  );
-                },
+                  ),
+                ],
               ),
             ),
 
-            const SizedBox(height: 24),
-
-            /// CENTER LABEL
-            Column(
-              children: [
-                Text(
-                  selected != null
-                      ? categoryName(selected.$1.name, t)
-                      : t.expenses,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  selected != null
-                      ? "€ ${(selected.$2 / 100).toStringAsFixed(2)}"
-                      : "€ ${(total / 100).toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
+            const SizedBox(height: 50),
 
             /// LEGEND
             Column(
@@ -263,16 +271,13 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
                                 : null,
                           ),
                         ),
-
                         const SizedBox(width: 12),
-
                         Expanded(
                           child: Text(
                             categoryName(e.$1.name, t),
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
-
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [

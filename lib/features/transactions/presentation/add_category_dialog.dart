@@ -17,17 +17,28 @@ final icons = [
   Icons.school,
   Icons.favorite,
   Icons.attach_money,
+  Icons.local_hospital,
+  Icons.pets,
+  Icons.card_giftcard,
+  Icons.work,
 ];
 
 final colors = [
-  Colors.blue,
-  Colors.red,
-  Colors.green,
-  Colors.orange,
-  Colors.purple,
-  Colors.teal,
-  Colors.indigo,
-  Colors.pink,
+  const Color(0xFF5B8DEF), // blue
+  const Color(0xFFFF6B6B), // red
+  const Color(0xFF2ECC71), // green
+  const Color(0xFFFF9F43), // orange
+  const Color(0xFF9B59B6), // purple
+  const Color(0xFF1ABC9C), // teal
+  const Color(0xFF4B7BEC), // indigo
+  const Color(0xFFFF6FAF), // pink
+  const Color(0xFFF1C40F), // yellow
+  const Color(0xFF16A085), // emerald
+  const Color(0xFFD35400), // burnt orange
+  const Color(0xFF34495E), // slate
+  Colors.amber,
+  Colors.cyan,
+  Colors.deepOrange,
 ];
 
 Future<Category?> showAddCategoryDialog(

@@ -133,8 +133,12 @@ class PeriodSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
+    final locale = Localizations.localeOf(context).toString();
+
     String format(DateTime? d) {
-      if (d == null) return "Select period";
+      if (d == null) return t.selectPeriod;
       return "${d.month}/${d.year}";
     }
 

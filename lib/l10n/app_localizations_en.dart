@@ -269,4 +269,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get period => 'Period';
+
+  @override
+  String get selectPeriod => 'Select period';
+
+  @override
+  String get allCategories => 'All categories';
+
+  @override
+  String get mostUsedCategories => 'Most used categories';
+
+  @override
+  String get otherCategories => 'Other';
 }

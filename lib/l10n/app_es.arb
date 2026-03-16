@@ -87,5 +87,9 @@
 "paused": "Pausado",
 "savedMore": "Este mes has gastado un {value}% menos que el mes pasado",
 "spentMore": "Este mes has gastado un {value}% más que el mes pasado",
-"period": "Período"
+"period": "Período",
+"selectPeriod": "Seleccionar período",
+"allCategories": "Todas las categorías",
+"mostUsedCategories": "Categorías más usadas",
+"otherCategories": "Otras"
 }

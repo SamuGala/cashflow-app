@@ -612,6 +612,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Period'**
   String get period;
+
+  /// No description provided for @selectPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Select period'**
+  String get selectPeriod;
+
+  /// No description provided for @allCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All categories'**
+  String get allCategories;
+
+  /// No description provided for @mostUsedCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Most used categories'**
+  String get mostUsedCategories;
+
+  /// No description provided for @otherCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get otherCategories;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

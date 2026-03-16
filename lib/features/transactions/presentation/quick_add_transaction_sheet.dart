@@ -54,16 +54,6 @@ class _QuickAddTransactionSheetState
     });
   }
 
-  void _triggerShake() {
-    setState(() => shake = true);
-
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) {
-        setState(() => shake = false);
-      }
-    });
-  }
-
   void _deleteDigit() {
     setState(() {
       final digits = amount.replaceAll('.', '');
@@ -82,6 +72,104 @@ class _QuickAddTransactionSheetState
 
       amount = "$euros.${cents.toString().padLeft(2, '0')}";
     });
+  }
+
+  void _triggerShake() {
+    setState(() => shake = true);
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        setState(() => shake = false);
+      }
+    });
+  }
+
+  Future<void> _pickCategory() async {
+    final t = AppLocalizations.of(context)!;
+
+    final categoriesAsync = ref.read(categoryProvider);
+    final transactionsAsync = ref.read(transactionProvider);
+
+    final categories =
+        categoriesAsync.value?.where((c) => c.isIncome == isIncome).toList() ??
+        [];
+
+    final transactions = transactionsAsync.value ?? [];
+
+    final Map<String, int> usage = {};
+
+    for (final tx in transactions) {
+      usage.update(tx.categoryId, (v) => v + 1, ifAbsent: () => 1);
+    }
+
+    final hasUsage = usage.isNotEmpty;
+
+    categories.sort((a, b) {
+      if (!hasUsage) {
+        return a.name.compareTo(b.name);
+      }
+
+      final countA = usage[a.id] ?? 0;
+      final countB = usage[b.id] ?? 0;
+
+      if (countA != countB) {
+        return countB.compareTo(countA);
+      }
+
+      return a.name.compareTo(b.name);
+    });
+
+    final picked = await showModalBottomSheet<Category>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) {
+        return SafeArea(
+          child: ListView(
+            children: [
+              ...categories.map(
+                (c) => ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Color(c.color).withOpacity(.15),
+                    child: Icon(
+                      c.isDefault
+                          ? categoryIcon(c.name)
+                          : IconData(c.icon, fontFamily: 'MaterialIcons'),
+                      color: Color(c.color),
+                    ),
+                  ),
+                  title: Text(categoryName(c.name, t)),
+                  trailing: selectedCategory?.id == c.id
+                      ? const Icon(Icons.check)
+                      : null,
+                  onTap: () => Navigator.pop(context, c),
+                ),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.add),
+                title: Text(t.newCategory),
+                onTap: () async {
+                  final created = await showAddCategoryDialog(
+                    context,
+                    isIncome,
+                  );
+
+                  if (created != null && context.mounted) {
+                    Navigator.pop(context, created);
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        selectedCategory = picked;
+      });
+    }
   }
 
   Future<void> _pickRecurringDay() async {
@@ -109,90 +197,36 @@ class _QuickAddTransactionSheetState
     }
   }
 
-  Future<void> _showCategoryActions(Category category) async {
-    final t = AppLocalizations.of(context)!;
-
-    /// DEFAULT CATEGORY → non modificabile
-    if (category.isDefault) {
-      final messenger = ScaffoldMessenger.of(context);
-
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(t.modifyCategory),
-            duration: const Duration(seconds: 4),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-        );
-      return;
-    }
-
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: Text(t.modifyCategory),
-              onTap: () => Navigator.pop(context, "edit"),
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: Text(t.delete),
-              onTap: () => Navigator.pop(context, "delete"),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (action == "edit") {
-      final edited = await showAddCategoryDialog(
-        context,
-        category.isIncome,
-        existing: category,
-      );
-
-      if (edited != null) {
-        setState(() {
-          selectedCategory = edited;
-        });
-      }
-    }
-
-    if (action == "delete") {
-      await ref.read(categoryProvider.notifier).deleteCategory(category.id);
-
-      setState(() {
-        if (selectedCategory?.id == category.id) {
-          selectedCategory = null;
-        }
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
 
+    final transactionsAsync = ref.watch(transactionProvider);
     final categoriesAsync = ref.watch(categoryProvider);
 
-    final categories = categoriesAsync.when(
-      data: (data) => data.where((c) => c.isIncome == isIncome).toList(),
-      loading: () => <Category>[],
-      error: (_, __) => <Category>[],
-    );
+    final transactions = transactionsAsync.value ?? [];
+    final categories = categoriesAsync.value ?? [];
 
-    final topCategories = categories.take(3).toList();
-    final otherCategories = categories.skip(3).toList();
+    final filtered = categories.where((c) => c.isIncome == isIncome).toList();
+
+    final Map<String, int> usage = {};
+
+    for (final tx in transactions) {
+      usage.update(tx.categoryId, (v) => v + 1, ifAbsent: () => 1);
+    }
+
+    filtered.sort((a, b) {
+      final countA = usage[a.id] ?? 0;
+      final countB = usage[b.id] ?? 0;
+
+      if (countA != countB) {
+        return countB.compareTo(countA);
+      }
+
+      return a.name.compareTo(b.name);
+    });
+
+    final mostUsed = filtered.take(4).toList();
 
     final amountValue = double.tryParse(amount);
 
@@ -226,7 +260,6 @@ class _QuickAddTransactionSheetState
 
             const SizedBox(height: 24),
 
-            /// AMOUNT — FINTECH STYLE
             GestureDetector(
               onTap: () {
                 setState(() {
@@ -256,9 +289,7 @@ class _QuickAddTransactionSheetState
                             color: Colors.grey.shade600,
                           ),
                         ),
-
                         const SizedBox(width: 6),
-
                         Text(
                           amount,
                           style: const TextStyle(
@@ -269,9 +300,7 @@ class _QuickAddTransactionSheetState
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 4),
-
                     Text(
                       t.amount,
                       style: TextStyle(
@@ -286,7 +315,6 @@ class _QuickAddTransactionSheetState
 
             const SizedBox(height: 20),
 
-            /// DATE PICKER
             InkWell(
               borderRadius: BorderRadius.circular(14),
               onTap: () async {
@@ -316,18 +344,14 @@ class _QuickAddTransactionSheetState
                 child: Row(
                   children: [
                     const Icon(Icons.calendar_today, size: 18),
-
                     const SizedBox(width: 10),
-
                     Text(
                       DateFormat.yMMMd(
                         Localizations.localeOf(context).toString(),
                       ).format(selectedDate),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
-
                     const Spacer(),
-
                     const Icon(Icons.expand_more),
                   ],
                 ),
@@ -336,224 +360,205 @@ class _QuickAddTransactionSheetState
 
             const SizedBox(height: 16),
 
-            /// CATEGORY
             if (!showKeypad) ...[
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  t.category,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+              if (mostUsed.isNotEmpty) ...[
+                const SizedBox(height: 4),
+
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    t.category,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  ...topCategories.map(
-                    (c) => _CategoryChip(
-                      category: c,
-                      selected: selectedCategory?.id == c.id,
-                      onTap: () {
-                        setState(() {
-                          selectedCategory = c;
-                        });
-                      },
-                      onLongPress: c.isDefault
-                          ? null
-                          : () {
-                              HapticFeedback.mediumImpact();
-                              _showCategoryActions(c);
-                            },
-                    ),
-                  ),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    ...mostUsed.map((c) {
+                      final selected = selectedCategory?.id == c.id;
 
-                  ...otherCategories.map(
-                    (c) => _CategoryChip(
-                      category: c,
-                      selected: selectedCategory?.id == c.id,
-                      onTap: () {
-                        setState(() {
-                          selectedCategory = c;
-                        });
-                      },
-                      onLongPress: c.isDefault
-                          ? null
-                          : () {
-                              HapticFeedback.mediumImpact();
-                              _showCategoryActions(c);
-                            },
-                    ),
-                  ),
-
-                  ActionChip(
-                    avatar: const Icon(Icons.add),
-                    label: Text(t.newCategory),
-                    onPressed: () async {
-                      final created = await showAddCategoryDialog(
-                        context,
-                        isIncome,
+                      return ActionChip(
+                        avatar: CircleAvatar(
+                          backgroundColor: Color(c.color).withOpacity(.15),
+                          child: Icon(
+                            c.isDefault
+                                ? categoryIcon(c.name)
+                                : IconData(c.icon, fontFamily: 'MaterialIcons'),
+                            size: 18,
+                            color: Color(c.color),
+                          ),
+                        ),
+                        label: Text(categoryName(c.name, t)),
+                        backgroundColor: selected
+                            ? Color(c.color).withOpacity(.15)
+                            : null,
+                        onPressed: () {
+                          setState(() {
+                            selectedCategory = c;
+                          });
+                        },
                       );
+                    }),
 
-                      if (created != null) {
-                        setState(() {
-                          selectedCategory = created;
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
+                    /// OTHER BUTTON
+                    ActionChip(
+                      avatar: const Icon(Icons.more_horiz),
+                      label: Text(t.otherCategories),
+                      onPressed: _pickCategory,
+                    ),
+                  ],
+                ),
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              /// RECURRING SWITCH
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: recurring
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.grey.shade300,
+                    ),
                     color: recurring
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.grey.shade300,
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.06)
+                        : Theme.of(context).colorScheme.surface,
                   ),
-                  color: recurring
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.06)
-                      : Theme.of(context).colorScheme.surface,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      height: 36,
-                      width: 36,
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(10),
+                  child: Row(
+                    children: [
+                      Container(
+                        height: 36,
+                        width: 36,
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.autorenew, size: 20),
                       ),
-                      child: const Icon(Icons.autorenew, size: 20),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            t.recurrent,
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          Text(
-                            recurring
-                                ? "${t.everyMonth} •  ${t.day} $recurringDay"
-                                : t.recurrentMsg,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t.recurrent,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    Switch(
-                      value: recurring,
-                      onChanged: (v) {
-                        setState(() {
-                          recurring = v;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-
-              if (recurring)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
-                    onTap: _pickRecurringDay,
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.calendar_month),
-
-                          const SizedBox(width: 10),
-
-                          Text(
-                            t.dayOfMonth,
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-
-                          const Spacer(),
-
-                          Text(
-                            recurringDay.toString(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
+                            Text(
+                              recurring
+                                  ? "${t.everyMonth} • ${t.day} $recurringDay"
+                                  : t.recurrentMsg,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                      Switch(
+                        value: recurring,
+                        onChanged: (v) {
+                          setState(() {
+                            recurring = v;
+                          });
+                        },
+                      ),
+                    ],
                   ),
                 ),
 
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  color: Theme.of(context).colorScheme.surface,
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.notes_rounded,
-                      size: 20,
-                      color: Colors.grey.shade600,
-                    ),
-
-                    const SizedBox(width: 10),
-
-                    Expanded(
-                      child: TextField(
-                        controller: noteController,
-                        decoration: InputDecoration(
-                          hintText: t.note,
-                          border: InputBorder.none,
+                if (recurring)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: _pickRecurringDay,
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.grey.shade300),
                         ),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_month),
+                            const SizedBox(width: 10),
+                            Text(
+                              t.dayOfMonth,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              recurringDay.toString(),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
+                  ),
+
+                const SizedBox(height: 16),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    color: Theme.of(context).colorScheme.surface,
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.notes_rounded,
+                        size: 20,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: noteController,
+                          decoration: InputDecoration(
+                            hintText: t.note,
+                            border: InputBorder.none,
+                          ),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ],
 
-            /// KEYPAD
             if (showKeypad) ...[
               const SizedBox(height: 24),
-
               GridView.count(
                 crossAxisCount: 3,
                 shrinkWrap: true,
@@ -569,15 +574,12 @@ class _QuickAddTransactionSheetState
                       },
                     ),
                   ),
-
                   _KeyButton(label: "0", onTap: () => _addDigit("0")),
                   _KeyButton(icon: Icons.backspace, onTap: _deleteDigit),
                   const SizedBox(),
                 ],
               ),
-
               const SizedBox(height: 12),
-
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -626,95 +628,22 @@ class _QuickAddTransactionSheetState
                             transactionProvider.notifier,
                           );
 
-                          if (recurring) {
-                            await notifier.addRecurringTransaction(
-                              amountCents: cents,
-                              isIncome: isIncome,
-                              categoryId: selectedCategory!.id,
-                              dayOfMonth: recurringDay,
-                              startDate: selectedDate,
-                              note: noteController.text.trim().isEmpty
-                                  ? null
-                                  : noteController.text.trim(),
-                            );
-
-                            await ref
-                                .read(databaseProvider)
-                                .generateRecurringTransactions();
-
-                            ref.invalidate(recurringProvider);
-                            ref.invalidate(transactionProvider);
-
-                            final locale = Localizations.localeOf(
-                              context,
-                            ).toString();
-                            final formattedDate = DateFormat.yMMMd(
-                              locale,
-                            ).format(selectedDate);
-
-                            if (context.mounted) {
-                              final messenger = ScaffoldMessenger.of(context);
-
-                              messenger
-                                ..hideCurrentSnackBar()
-                                ..showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      "${t.recurringCreationMsg}$formattedDate",
-                                    ),
-                                    duration: const Duration(seconds: 4),
-                                    behavior: SnackBarBehavior.floating,
-                                    margin: const EdgeInsets.all(16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                  ),
-                                );
-                            }
-                          } else {
-                            await notifier.addTransaction(
-                              amountCents: cents,
-                              isIncome: isIncome,
-                              categoryId: selectedCategory!.id,
-                              date: selectedDate,
-                              note: noteController.text.trim().isEmpty
-                                  ? null
-                                  : noteController.text.trim(),
-                            );
-
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: Colors.green,
-                                  behavior: SnackBarBehavior.floating,
-                                  margin: const EdgeInsets.all(16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  content: Text(
-                                    t.transactionSaved,
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                                  duration: const Duration(seconds: 2),
-                                ),
-                              );
-                            }
-                          }
+                          await notifier.addTransaction(
+                            amountCents: cents,
+                            isIncome: isIncome,
+                            categoryId: selectedCategory!.id,
+                            date: selectedDate,
+                            note: noteController.text.trim().isEmpty
+                                ? null
+                                : noteController.text.trim(),
+                          );
 
                           if (context.mounted) Navigator.pop(context);
                         },
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child: Text(
-                            t.saveTransaction,
-                            key: ValueKey(canSave),
-                          ),
-                        ),
+                        child: Text(t.saveTransaction),
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
@@ -727,7 +656,6 @@ class _QuickAddTransactionSheetState
                           ),
                         ),
                         onPressed: () {
-                          HapticFeedback.selectionClick();
                           Navigator.pop(context);
                         },
                         child: Text(t.cancel),
@@ -737,103 +665,6 @@ class _QuickAddTransactionSheetState
                 ),
               ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryChip extends StatefulWidget {
-  final Category category;
-  final bool selected;
-
-  final VoidCallback onTap;
-  final VoidCallback? onLongPress;
-
-  const _CategoryChip({
-    required this.category,
-    required this.selected,
-    required this.onTap,
-    required this.onLongPress,
-  });
-
-  @override
-  State<_CategoryChip> createState() => _CategoryChipState();
-}
-
-class _CategoryChipState extends State<_CategoryChip> {
-  double scale = 1;
-
-  void _press() {
-    if (widget.onLongPress != null) {
-      setState(() {
-        scale = 0.94;
-      });
-    }
-  }
-
-  void _release() {
-    setState(() {
-      scale = 1;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context)!;
-
-    return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: widget.onLongPress != null ? (_) => _press() : null,
-      onTapCancel: _release,
-      onTapUp: (_) => _release(),
-      onLongPress: widget.onLongPress,
-      child: AnimatedScale(
-        scale: scale,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: widget.selected
-                ? Color(widget.category.color)
-                : Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: widget.selected
-                  ? Color(widget.category.color)
-                  : Colors.grey.shade300,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.selected)
-                const Padding(
-                  padding: EdgeInsets.only(right: 6),
-                  child: Icon(Icons.check, size: 16, color: Colors.white),
-                ),
-              Icon(
-                widget.category.isDefault
-                    ? categoryIcon(widget.category.name)
-                    : IconData(
-                        widget.category.icon,
-                        fontFamily: 'MaterialIcons',
-                      ),
-                size: 20,
-                color: Color(widget.category.color),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                categoryName(widget.category.name, t),
-                style: TextStyle(
-                  color: widget.selected ? Colors.white : null,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
