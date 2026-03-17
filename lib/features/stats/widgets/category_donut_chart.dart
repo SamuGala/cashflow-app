@@ -4,9 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../transactions/providers/transaction_provider.dart';
 import '../../transactions/providers/category_provider.dart';
-import '../../../core/providers/selected_month_provider.dart';
+import '../../../core/providers/time_filter_provider.dart';
 
-import '../../dashboard/domain/dashboard_filter.dart';
 import '../../dashboard/providers/dashboard_provider.dart';
 
 import '../../../l10n/app_localizations.dart';
@@ -58,7 +57,8 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
   Widget build(BuildContext context) {
     final txAsync = ref.watch(transactionProvider);
     final categoriesAsync = ref.watch(categoryProvider);
-    final selectedMonth = ref.watch(selectedMonthProvider);
+    final timeState = ref.watch(timeFilterProvider);
+    final selectedMonth = timeState.month;
 
     final t = AppLocalizations.of(context)!;
 
@@ -74,15 +74,15 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
 
         Iterable filtered = transactions;
 
-        if (widget.query.filter == DashboardFilter.month) {
+        if (widget.query.filter == TimeFilter.month) {
+          final month = widget.query.start ?? selectedMonth;
+
           filtered = transactions.where(
-            (tx) =>
-                tx.date.month == selectedMonth.month &&
-                tx.date.year == selectedMonth.year,
+            (tx) => tx.date.month == month.month && tx.date.year == month.year,
           );
         }
 
-        if (widget.query.filter == DashboardFilter.period &&
+        if (widget.query.filter == TimeFilter.period &&
             widget.query.start != null &&
             widget.query.end != null) {
           filtered = transactions.where(

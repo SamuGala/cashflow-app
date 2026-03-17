@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../dashboard/widgets/revolut_month_selector.dart';
 import '../../dashboard/presentation/dashboard_page.dart';
-import '../../dashboard/domain/dashboard_filter.dart';
 import '../../dashboard/providers/dashboard_provider.dart';
 
 import '../../../l10n/app_localizations.dart';
@@ -32,13 +31,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     final t = AppLocalizations.of(context)!;
 
     final stats = ref.watch(
-      dashboardProvider(
-        DashboardQuery(
-          filter: DashboardFilter.values[filter.index],
-          start: start,
-          end: end,
-        ),
-      ),
+      dashboardProvider(DashboardQuery(filter: filter, start: start, end: end)),
     );
 
     return Scaffold(
@@ -94,8 +87,8 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             padding: const EdgeInsets.only(top: 12),
             child: CategoryDonutChart(
               query: DashboardQuery(
-                filter: DashboardFilter.values[filter.index],
-                start: start,
+                filter: filter,
+                start: filter == TimeFilter.month ? month : start,
                 end: end,
               ),
             ),
@@ -121,8 +114,8 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
           PremiumFintechChart(
             query: DashboardQuery(
-              filter: DashboardFilter.values[filter.index],
-              start: start,
+              filter: filter,
+              start: filter == TimeFilter.month ? month : start,
               end: end,
             ),
           ),

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/dashboard_provider.dart';
-import '../domain/dashboard_filter.dart';
+import '../../../core/providers/time_filter_provider.dart';
 import '../../../l10n/app_localizations.dart';
 
 class MonthSummaryCard extends ConsumerWidget {
@@ -12,8 +12,12 @@ class MonthSummaryCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(
-      dashboardProvider(const DashboardQuery(filter: DashboardFilter.month)),
-    );
+  dashboardProvider(
+    DashboardQuery(
+      filter: TimeFilter.month,
+    ),
+  ),
+);
 
     final t = AppLocalizations.of(context)!;
 

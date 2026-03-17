@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../transactions/providers/transaction_provider.dart';
-import '../../../core/providers/selected_month_provider.dart';
+import '../../../core/providers/time_filter_provider.dart';
 
 import '../../dashboard/providers/dashboard_provider.dart';
-import '../../dashboard/domain/dashboard_filter.dart';
 import '../../../l10n/app_localizations.dart';
 
 class PremiumFintechChart extends ConsumerStatefulWidget {
@@ -50,7 +49,8 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final txAsync = ref.watch(transactionProvider);
-    final selectedMonth = ref.watch(selectedMonthProvider);
+    final timeState = ref.watch(timeFilterProvider);
+    final selectedMonth = timeState.month;
 
     return txAsync.when(
       loading: () => const SizedBox(
@@ -61,15 +61,15 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
       data: (transactions) {
         Iterable filtered = transactions;
 
-        if (widget.query.filter == DashboardFilter.month) {
+        if (widget.query.filter == TimeFilter.month) {
+          final month = widget.query.start ?? DateTime.now();
+
           filtered = transactions.where(
-            (tx) =>
-                tx.date.month == selectedMonth.month &&
-                tx.date.year == selectedMonth.year,
+            (tx) => tx.date.month == month.month && tx.date.year == month.year,
           );
         }
 
-        if (widget.query.filter == DashboardFilter.period &&
+        if (widget.query.filter == TimeFilter.period &&
             widget.query.start != null &&
             widget.query.end != null) {
           filtered = transactions.where(
@@ -82,7 +82,7 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
         final Map<int, double> income = {};
         final Map<int, double> expense = {};
 
-        final monthly = widget.query.filter == DashboardFilter.month;
+        final monthly = widget.query.filter == TimeFilter.month;
 
         for (final tx in filtered) {
           final key = monthly ? tx.date.day : tx.date.month;

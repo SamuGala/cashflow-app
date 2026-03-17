@@ -81,7 +81,7 @@
 "selectYear": "Select year",
 "existingCategory": "Category already exists",
 "saveCategory": "Save category",
-"cancelAll": "All data has been deleted",
+"canceledAll": "All data has been deleted",
 "searchBar": "Search transaction",
 "paused": "Paused",
 "savedMore": "You spent {value}% less than last month",

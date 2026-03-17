@@ -298,7 +298,7 @@ abstract class AppLocalizations {
   /// No description provided for @cancelAll.
   ///
   /// In en, this message translates to:
-  /// **'All data has been deleted'**
+  /// **'Delete all data'**
   String get cancelAll;
 
   /// No description provided for @categoryRemoved.
@@ -582,6 +582,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save category'**
   String get saveCategory;
+
+  /// No description provided for @canceledAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All data has been deleted'**
+  String get canceledAll;
 
   /// No description provided for @searchBar.
   ///

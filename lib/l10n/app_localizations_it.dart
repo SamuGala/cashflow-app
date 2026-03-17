@@ -108,7 +108,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get data => 'Dati';
 
   @override
-  String get cancelAll => 'Tutti i dati sono stati cancellati';
+  String get cancelAll => 'Cancella tutti i dati';
 
   @override
   String get categoryRemoved => 'Categoria rimossa';
@@ -250,6 +250,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get saveCategory => 'Salva categoria';
+
+  @override
+  String get canceledAll => 'Tutti i dati sono stati cancellati';
 
   @override
   String get searchBar => 'Cerca movimento';

@@ -248,7 +248,7 @@ class DataSection extends ConsumerWidget {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(t.cancelAll),
+                          content: Text(t.canceledAll),
                           behavior: SnackBarBehavior.floating,
                           margin: const EdgeInsets.all(16),
                           shape: RoundedRectangleBorder(

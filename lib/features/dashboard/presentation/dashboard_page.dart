@@ -7,8 +7,6 @@ import '../../../core/providers/balance_visibility_provider.dart';
 import '../../../core/providers/time_filter_provider.dart';
 
 import '../providers/dashboard_provider.dart';
-import '../domain/dashboard_filter.dart';
-
 import '../../transactions/providers/transaction_provider.dart';
 import '../../transactions/providers/category_provider.dart';
 
@@ -41,11 +39,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final customEnd = timeState.end;
     final stats = ref.watch(
       dashboardProvider(
-        DashboardQuery(
-          filter: DashboardFilter.values[filter.index],
-          start: customStart,
-          end: customEnd,
-        ),
+        DashboardQuery(filter: filter, start: customStart, end: customEnd),
       ),
     );
     final showBalance = ref.watch(balanceVisibilityProvider);
@@ -66,7 +60,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     bool expenseIncreased = false;
 
     /// Insight mese
-    if (filter == DashboardFilter.month) {
+    if (filter == TimeFilter.month) {
       final lastMonth = DateTime(selectedMonth.year, selectedMonth.month - 1);
 
       final thisMonthExpense = transactions
@@ -221,7 +215,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
           ),
 
-          if (filter == DashboardFilter.month && insightMessage != null)
+          if (filter == TimeFilter.month && insightMessage != null)
             Container(
               margin: const EdgeInsets.only(top: 14),
               padding: const EdgeInsets.all(12),
@@ -277,7 +271,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   }
                 }
 
-                if (filter == DashboardFilter.period &&
+                if (filter == TimeFilter.period &&
                     customStart != null &&
                     customEnd != null) {
                   if (tx.date.isBefore(customStart!) ||

@@ -82,7 +82,7 @@
 "selectYear": "Seleccionar año",
 "existingCategory": "La categoría ya existe",
 "saveCategory": "Guardar categoría",
-"cancelAll": "Todos los datos han sido eliminados",
+"canceledAll": "Todos los datos han sido eliminados",
 "searchBar": "Busca movimiento",
 "paused": "Pausado",
 "savedMore": "Este mes has gastado un {value}% menos que el mes pasado",
