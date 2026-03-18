@@ -15,6 +15,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../transactions/domain/category.dart';
 import '../../../core/utils/category_localization.dart';
 import '../../transactions/presentation/quick_add_transaction_sheet.dart';
+import '../../transactions/domain/transaction.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -39,7 +40,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final customEnd = timeState.end;
     final stats = ref.watch(
       dashboardProvider(
-        DashboardQuery(filter: filter, start: customStart, end: customEnd),
+        DashboardQuery(
+          filter: filter,
+          start: filter == TimeFilter.month ? selectedMonth : customStart,
+          end: customEnd,
+        ),
       ),
     );
     final showBalance = ref.watch(balanceVisibilityProvider);
@@ -261,25 +266,31 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             builder: (_) {
               final Map<String, int> totals = {};
 
-              for (final tx in transactions) {
-                if (tx.isIncome != showIncome) continue;
+             Iterable<TransactionModel> filtered = transactions;
 
-                if (filter == TimeFilter.month) {
-                  if (tx.date.month != selectedMonth.month ||
-                      tx.date.year != selectedMonth.year) {
-                    continue;
-                  }
-                }
+              if (filter == TimeFilter.month) {
+                filtered = transactions.where(
+                  (tx) =>
+                      tx.date.month == selectedMonth.month &&
+                      tx.date.year == selectedMonth.year,
+                );
+              }
 
-                if (filter == TimeFilter.period &&
-                    customStart != null &&
-                    customEnd != null) {
-                  if (tx.date.isBefore(customStart!) ||
-                      tx.date.isAfter(customEnd!)) {
-                    continue;
-                  }
-                }
+              if (filter == TimeFilter.period &&
+                  customStart != null &&
+                  customEnd != null) {
+                filtered = transactions.where(
+                  (tx) =>
+                      !tx.date.isBefore(customStart) &&
+                      !tx.date.isAfter(customEnd),
+                );
+              }
 
+              final filteredByType = filtered.where(
+                (tx) => tx.isIncome == showIncome,
+              );
+
+              for (final tx in filteredByType) {
                 totals.update(
                   tx.categoryId,
                   (v) => v + tx.amountCents,

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/providers/selected_month_provider.dart';
+import '../../../core/providers/time_filter_provider.dart';
 import '../../transactions/providers/transaction_provider.dart';
 import '../../transactions/domain/transaction.dart';
 
@@ -13,7 +13,7 @@ class MonthlySummary {
 
 final monthlySummaryProvider = Provider<MonthlySummary>((ref) {
   final transactionsAsync = ref.watch(transactionProvider);
-  final month = ref.watch(selectedMonthProvider);
+  final month = ref.watch(timeFilterProvider);
 
   final transactions = transactionsAsync.value ?? const <TransactionModel>[];
 
@@ -21,7 +21,7 @@ final monthlySummaryProvider = Provider<MonthlySummary>((ref) {
   int expense = 0;
 
   for (final t in transactions) {
-    if (t.date.month == month.month && t.date.year == month.year) {
+    if (t.date.month == month.month && t.date.year == month.month.year) {
       if (t.isIncome) {
         income += t.amountCents;
       } else {

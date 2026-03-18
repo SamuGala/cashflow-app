@@ -277,16 +277,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
 
                           if (timeFilter == TimeFilter.period &&
                               selectedRange != null) {
-                            return tx.date.isAfter(
-                                  selectedRange!.start.subtract(
-                                    const Duration(days: 1),
-                                  ),
-                                ) &&
-                                tx.date.isBefore(
-                                  selectedRange!.end.add(
-                                    const Duration(days: 1),
-                                  ),
-                                );
+                            return !tx.date.isBefore(selectedRange.start) &&
+                                !tx.date.isAfter(selectedRange.end);
                           }
 
                           return true;
@@ -314,7 +306,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                               note.contains(query);
                         }).toList();
 
-                        if (sorted.isEmpty) {
+                        if (filteredSearch.isEmpty) {
                           return Center(child: Text(t.noTransactions));
                         }
 

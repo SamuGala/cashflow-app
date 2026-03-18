@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/providers/selected_month_provider.dart';
+import '../../../core/providers/time_filter_provider.dart';
 
 class RevolutMonthSelector extends ConsumerStatefulWidget {
   final DateTime? initialDate;
@@ -42,32 +42,51 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
     );
   }
 
+  @override
+  void didUpdateWidget(covariant RevolutMonthSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final newDate = widget.initialDate;
+
+    if (newDate == null) return;
+
+    /// se cambia il mese da fuori → sincronizza UI
+    if (newDate.month != selected.month || newDate.year != selected.year) {
+      setState(() {
+        selected = newDate;
+        currentYear = newDate.year;
+      });
+
+      /// aggiorna anche il page controller
+      controller.animateToPage(
+        newDate.month - 1,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
   void updateMonth(int month) {
     final newDate = DateTime(currentYear, month);
 
-    /// evita update inutili
     if (selected.month == month && selected.year == currentYear) return;
 
     setState(() {
       selected = newDate;
     });
 
-    /// aggiorna provider dopo il frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      if (widget.onChanged != null) {
-        widget.onChanged!(newDate);
-        return;
-      }
-
-      final current = ref.read(selectedMonthProvider);
+      final current = ref.read(timeFilterProvider).month;
 
       if (current.month == newDate.month && current.year == newDate.year) {
         return;
       }
 
-      ref.read(selectedMonthProvider.notifier).setMonth(newDate);
+      ref.read(timeFilterProvider.notifier).setMonth(newDate);
+
+      widget.onChanged?.call(newDate);
     });
   }
 
