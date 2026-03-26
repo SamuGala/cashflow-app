@@ -90,5 +90,10 @@
 "selectPeriod": "Seleziona periodo",
 "allCategories": "Tutte le categorie",
 "mostUsedCategories": "Categorie più usate",
-"otherCategories": "Altre"
+"otherCategories": "Altre",
+"deleteCategory": "Elimina categoria",
+"deleteCategoryConfirm": "Sei sicuro di voler eliminare questa categoria?",
+"createPin": "Crea PIN",
+"confirmPin": "Conferma PIN",
+"enterPin": "Inserisci PIN"
 }

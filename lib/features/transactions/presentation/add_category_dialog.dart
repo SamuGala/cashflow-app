@@ -63,6 +63,7 @@ class _AddCategoryDialog extends ConsumerStatefulWidget {
 }
 
 class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
+  String? error;
   final controller = TextEditingController();
 
   int icon = Icons.shopping_cart.codePoint;
@@ -141,8 +142,13 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
             /// NAME
             TextField(
               controller: controller,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(labelText: t.nameCategory),
+              onChanged: (_) => setState(() {
+                error = null;
+              }),
+              decoration: InputDecoration(
+                labelText: t.nameCategory,
+                errorText: error,
+              ),
             ),
 
             const SizedBox(height: 24),
@@ -278,22 +284,9 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
             if (name.isEmpty) return;
 
             if (await _categoryExists(name)) {
-              final messenger = ScaffoldMessenger.of(context);
-
-              messenger
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    content: Text(t.existingCategory),
-                    duration: const Duration(seconds: 4),
-                    behavior: SnackBarBehavior.floating,
-                    margin: const EdgeInsets.all(16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                );
-
+              setState(() {
+                error = t.existingCategory;
+              });
               return;
             }
 

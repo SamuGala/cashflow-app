@@ -284,4 +284,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get otherCategories => 'Other';
+
+  @override
+  String get deleteCategory => 'Delete category';
+
+  @override
+  String get deleteCategoryConfirm => 'Are you sure you want to delete this category?';
+
+  @override
+  String get createPin => 'Create PIN';
+
+  @override
+  String get confirmPin => 'Confirm PIN';
+
+  @override
+  String get enterPin => 'Enter PIN';
 }

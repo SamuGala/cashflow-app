@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_provider.dart';
 import 'pin_storage.dart';
 import 'biometric_service.dart';
+import 'package:pocket_vault/l10n/app_localizations.dart';
 
 class PinPage extends ConsumerStatefulWidget {
   const PinPage({super.key});
@@ -266,11 +267,13 @@ class _PinPageState extends ConsumerState<PinPage>
 
     String title;
 
-    if (isSetup) {
-      title = confirmPin.isEmpty ? "Create PIN" : "Confirm PIN";
-    } else {
-      title = "Enter PIN";
-    }
+    final t = AppLocalizations.of(context)!;
+
+if (isSetup) {
+  title = confirmPin.isEmpty ? t.createPin : t.confirmPin;
+} else {
+  title = t.enterPin;
+}
 
     return Scaffold(
       body: AnimatedBuilder(

@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../presentation/providers/theme_provider.dart';
-import '../presentation/providers/locale_provider.dart';
+import 'package:pocket_vault/core/providers/locale_provider.dart';
 import '../../transactions/providers/transaction_provider.dart';
 
 import '../../../l10n/app_localizations.dart';

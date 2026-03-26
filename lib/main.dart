@@ -5,6 +5,8 @@ import 'package:drift/drift.dart';
 import 'core/database/database_provider.dart';
 import 'core/security/auth_provider.dart';
 import 'core/security/pin_page.dart';
+import 'package:pocket_vault/core/providers/locale_provider.dart';
+import 'l10n/app_localizations.dart';
 
 import 'app/app.dart';
 
@@ -65,19 +67,6 @@ class _RootAppState extends State<RootApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, _) {
-        final unlocked = ref.watch(authProvider);
-
-        if (!unlocked) {
-          return const MaterialApp(
-            debugShowCheckedModeBanner: false,
-            home: PinPage(),
-          );
-        }
-
-        return const CashflowApp();
-      },
-    );
+    return const CashflowApp();
   }
 }
