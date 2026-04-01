@@ -1,6 +1,7 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.samuelegalasso.pocketsvault">
     <application
-        android:label="cashflow_app"
+        android:label="Pockets Vault"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
