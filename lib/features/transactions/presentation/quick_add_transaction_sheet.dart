@@ -297,12 +297,27 @@ class _QuickAddTransactionSheetState
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          amount,
-                          style: const TextStyle(
-                            fontSize: 34,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -1,
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 120),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return Transform.translate(
+                              offset: Offset(
+                                0,
+                                (1 - value) * 6,
+                              ), // slide up leggero
+                              child: Opacity(opacity: value, child: child),
+                            );
+                          },
+                          child: Text(
+                            amount,
+                            key: ValueKey(amount),
+                            style: const TextStyle(
+                              fontSize: 34,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1,
+                            ),
                           ),
                         ),
                       ],
@@ -552,6 +567,8 @@ class _QuickAddTransactionSheetState
                     Expanded(
                       child: TextField(
                         controller: noteController,
+                        textCapitalization: TextCapitalization.sentences,
+                        keyboardType: TextInputType.text,
                         decoration: InputDecoration(
                           hintText: t.note,
                           border: InputBorder.none,
@@ -568,8 +585,9 @@ class _QuickAddTransactionSheetState
             ],
 
             if (showKeypad) ...[
-              const SizedBox(height: 24),
               GridView.count(
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
                 crossAxisCount: 3,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -584,9 +602,27 @@ class _QuickAddTransactionSheetState
                       },
                     ),
                   ),
-                  _KeyButton(label: "0", onTap: () => _addDigit("0")),
-                  _KeyButton(icon: Icons.backspace, onTap: _deleteDigit),
+
+                  /// EMPTY (sinistra)
                   const SizedBox(),
+
+                  /// ZERO (centrale)
+                  _KeyButton(
+                    label: "0",
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _addDigit("0");
+                    },
+                  ),
+
+                  /// BACKSPACE (destra)
+                  _KeyButton(
+                    icon: Icons.backspace,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _deleteDigit();
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -737,7 +773,7 @@ class _QuickAddTransactionSheetState
   }
 }
 
-class _KeyButton extends StatelessWidget {
+class _KeyButton extends StatefulWidget {
   final String? label;
   final IconData? icon;
   final VoidCallback onTap;
@@ -745,20 +781,61 @@ class _KeyButton extends StatelessWidget {
   const _KeyButton({this.label, this.icon, required this.onTap});
 
   @override
+  State<_KeyButton> createState() => _KeyButtonState();
+}
+
+class _KeyButtonState extends State<_KeyButton> {
+  double scale = 1;
+  double opacity = 1;
+
+  void _down() => setState(() {
+    scale = 0.92;
+    opacity = 0.6;
+  });
+
+  void _up() => setState(() {
+    scale = 1;
+    opacity = 1;
+  });
+
+  @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Center(
-        child: icon != null
-            ? Icon(icon, size: 22)
-            : Text(
-                label!,
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) {
+        _down();
+        HapticFeedback.lightImpact();
+      },
+      onTapUp: (_) {
+        _up();
+        widget.onTap();
+      },
+      onTapCancel: _up,
+      child: AnimatedScale(
+        scale: scale,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeOut,
+        child: AnimatedOpacity(
+          opacity: opacity,
+          duration: const Duration(milliseconds: 80),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: widget.icon != null
+                  ? Icon(widget.icon, size: 22)
+                  : Text(
+                      widget.label!,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+            ),
+          ),
+        ),
       ),
     );
   }
