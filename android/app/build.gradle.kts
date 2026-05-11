@@ -30,7 +30,7 @@ android {
         applicationId = "com.samuelegalasso.pocketsvault"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 3
+        versionCode = 4
         versionName = "1.1.3"
     }
 
