@@ -52,7 +52,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
 
     final currency = NumberFormat.currency(
       locale: locale,
-      symbol: NumberFormat.simpleCurrency(locale: locale).currencySymbol,
+      symbol: '€',
+      decimalDigits: 2,
     );
 
     final dateFormat = DateFormat.yMMMMd(locale);
