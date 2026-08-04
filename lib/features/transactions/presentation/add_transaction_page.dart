@@ -1,7 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:another_flushbar/flushbar.dart';
 
 import '../domain/category.dart';
 import '../domain/transaction.dart';
@@ -11,6 +12,11 @@ import 'category_selector.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/category_localization.dart';
 import 'package:flutter/services.dart';
+import '../../../core/input_formatters/capitalize_first_letter_formatter.dart';
+import '../../../core/currency/currency_metadata.dart';
+import '../../../core/currency/currency_provider.dart';
+import '../../../core/currency/currency_selector.dart';
+import '../../../core/receipts/receipt_storage_service.dart';
 
 class AddTransactionPage extends ConsumerStatefulWidget {
   const AddTransactionPage({super.key, this.transaction});
@@ -30,9 +36,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   final noteController = TextEditingController();
 
   DateTime selectedDate = DateTime.now();
+  String? selectedCurrency;
+  String? receiptPath;
 
   bool categoryInitialized = false;
-
   void _triggerShake() {
     setState(() => shake = true);
 
@@ -52,8 +59,13 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     if (tx != null) {
       isIncome = tx.isIncome;
       selectedDate = tx.date;
-      amountController.text = (tx.amountCents / 100).toStringAsFixed(2);
+      selectedCurrency = tx.originalCurrency;
+      amountController.text = amountInputText(
+        tx.originalAmountMinor,
+        tx.originalCurrency,
+      );
       noteController.text = tx.note ?? "";
+      receiptPath = tx.receiptPath;
     }
   }
 
@@ -115,6 +127,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     final canSave =
         selectedCategory != null && parsedAmount != null && parsedAmount > 0;
     final t = AppLocalizations.of(context)!;
+    final baseCurrency =
+        ref.watch(currencyProvider).value?.baseCurrency ?? 'EUR';
+    final currencyState = ref.watch(currencyProvider).value;
+    selectedCurrency ??= baseCurrency;
     final locale = Localizations.localeOf(context).toString();
     final dateFormat = DateFormat.yMMMd(locale);
 
@@ -169,9 +185,37 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
               ),
               decoration: InputDecoration(
                 labelText: t.amount,
-                prefixText: "€ ",
+                prefixIconConstraints: const BoxConstraints(minWidth: 82),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 8),
+                  child: CurrencySelector(
+                    value: selectedCurrency!,
+                    compact: true,
+                    onChanged: (currency) {
+                      setState(() => selectedCurrency = currency);
+                    },
+                  ),
+                ),
               ),
             ),
+
+            if (parsedAmount != null &&
+                parsedAmount > 0 &&
+                selectedCurrency != baseCurrency &&
+                currencyState != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 7, left: 12),
+                child: Text(
+                  _conversionPreview(
+                        parsedAmount,
+                        selectedCurrency!,
+                        currencyState,
+                        locale,
+                      ) ??
+                      t.conversionOnSave,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
 
             const SizedBox(height: 16),
 
@@ -198,14 +242,11 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                             radius: 14,
                             backgroundColor: Color(
                               selectedCategory!.color,
-                            ).withOpacity(0.2),
+                            ).withValues(alpha: 0.2),
                             child: Icon(
                               selectedCategory!.isDefault
                                   ? categoryIcon(selectedCategory!.name)
-                                  : IconData(
-                                      selectedCategory!.icon,
-                                      fontFamily: 'MaterialIcons',
-                                    ),
+                                  : customCategoryIcon(selectedCategory!.icon),
                               size: 20,
                               color: Color(selectedCategory!.color),
                             ),
@@ -235,8 +276,47 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             /// NOTE
             TextField(
               controller: noteController,
+              onChanged: (_) => setState(() {}),
+              textCapitalization: TextCapitalization.sentences,
+              inputFormatters: const [CapitalizeFirstLetterFormatter()],
               decoration: InputDecoration(labelText: t.note),
             ),
+
+            const SizedBox(height: 8),
+            if (receiptPath != null)
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 16 / 7,
+                      child: Image.file(
+                        File(receiptPath!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const Center(
+                          child: Icon(Icons.broken_image_outlined),
+                        ),
+                      ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.receipt_long),
+                      title: Text(t.receiptAttached),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () async {
+                          final path = receiptPath;
+                          setState(() => receiptPath = null);
+                          if (path != widget.transaction?.receiptPath) {
+                            await ref
+                                .read(receiptStorageServiceProvider)
+                                .remove(path);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             const SizedBox(height: 32),
 
@@ -268,7 +348,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
                     if (parsedAmount == null || parsedAmount <= 0) return;
 
-                    final amountCents = (parsedAmount * 100).round();
+                    final amountCents = majorToMinor(
+                      parsedAmount,
+                      selectedCurrency!,
+                    );
 
                     final notifier = ref.read(transactionProvider.notifier);
 
@@ -282,6 +365,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         note: noteController.text.trim().isEmpty
                             ? null
                             : noteController.text.trim(),
+                        currencyCode: selectedCurrency,
+                        receiptPath: receiptPath,
                       );
                     } else {
                       await notifier.addTransaction(
@@ -292,7 +377,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         note: noteController.text.trim().isEmpty
                             ? null
                             : noteController.text.trim(),
+                        currencyCode: selectedCurrency,
+                        receiptPath: receiptPath,
                       );
+                    }
+                    final previousReceipt = widget.transaction?.receiptPath;
+                    if (previousReceipt != null &&
+                        previousReceipt != receiptPath) {
+                      await ref
+                          .read(receiptStorageServiceProvider)
+                          .remove(previousReceipt);
                     }
 
                     if (!mounted) return;
@@ -312,5 +406,32 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
         ),
       ),
     );
+  }
+
+  String? _conversionPreview(
+    double amount,
+    String sourceCurrency,
+    CurrencyState currencyState,
+    String locale,
+  ) {
+    try {
+      final conversion = ref
+          .read(currencyRatesServiceProvider)
+          .convert(
+            amountMinor: majorToMinor(amount, sourceCurrency),
+            sourceCurrency: sourceCurrency,
+            baseCurrency: currencyState.baseCurrency,
+            ratesPerEuro: currencyState.rates.ratesPerEuro,
+          );
+      return AppLocalizations.of(context)!.convertedToMainCurrency(
+        formatMoney(
+          conversion.baseAmountMinor,
+          conversion.baseCurrency,
+          locale,
+        ),
+      );
+    } catch (_) {
+      return null;
+    }
   }
 }

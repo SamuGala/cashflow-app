@@ -9,7 +9,7 @@ class AppLocalizationsIt extends AppLocalizations {
   AppLocalizationsIt([String locale = 'it']) : super(locale);
 
   @override
-  String get appName => 'Pocket Vault';
+  String get appName => 'Pockets Vault';
 
   @override
   String get addTransaction => 'Aggiungi movimento';
@@ -174,6 +174,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get education => 'Studio';
 
   @override
+  String get otherCategory => 'Altro';
+
+  @override
   String get recurrents => 'Ricorrenti';
 
   @override
@@ -299,4 +302,427 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get enterPin => 'Inserisci PIN';
+
+  @override
+  String get enableBiometrics => 'Attiva lo sblocco biometrico';
+
+  @override
+  String get enableBiometricsMessage => 'Usa Face ID o l’impronta per sbloccare Pockets Vault?';
+
+  @override
+  String get notNow => 'Non ora';
+
+  @override
+  String get enable => 'Attiva';
+
+  @override
+  String get biometricUnlock => 'Sblocco biometrico';
+
+  @override
+  String get deleteDigit => 'Elimina cifra';
+
+  @override
+  String get clearPin => 'Cancella PIN';
+
+  @override
+  String get home => 'Home';
+
+  @override
+  String get systemTheme => 'Sistema';
+
+  @override
+  String get mainCurrency => 'Valuta principale';
+
+  @override
+  String get updateRates => 'Aggiorna tassi';
+
+  @override
+  String get automaticLock => 'Blocco automatico';
+
+  @override
+  String get backupPortability => 'Backup e portabilità';
+
+  @override
+  String get encryptedBackupCaption => 'Cifratura AES-256, export CSV e ripristino locale';
+
+  @override
+  String get exportEncryptedBackup => 'Esporta backup cifrato';
+
+  @override
+  String get exportTransactionsCsv => 'Esporta movimenti CSV';
+
+  @override
+  String get importBackup => 'Importa backup';
+
+  @override
+  String get safeMergeOrReplace => 'Unione sicura o sostituzione completa';
+
+  @override
+  String get localSmartRules => 'Regole intelligenti locali';
+
+  @override
+  String get privateCategorization => 'Categorizzazione privata, senza inviare dati';
+
+  @override
+  String get noRules => 'Nessuna regola';
+
+  @override
+  String get noRulesHint => 'Puoi memorizzarne una mentre aggiungi un movimento.';
+
+  @override
+  String get availableToSpend => 'Disponibile da spendere';
+
+  @override
+  String get budgets => 'Budget';
+
+  @override
+  String get optionalMonthlyBudgets => 'Budget mensili facoltativi e modificabili in qualsiasi momento';
+
+  @override
+  String get noBudget => 'Nessun budget';
+
+  @override
+  String get forecast90Days => 'Previsione a 90 giorni';
+
+  @override
+  String get noForecastMovements => 'Nessun movimento ricorrente previsto.';
+
+  @override
+  String get savingsGoals => 'Obiettivi di risparmio';
+
+  @override
+  String get manage => 'Gestisci';
+
+  @override
+  String get createGoalHint => 'Crea un obiettivo e monitora i progressi.';
+
+  @override
+  String get newGoal => 'Nuovo obiettivo';
+
+  @override
+  String get noGoals => 'Nessun obiettivo';
+
+  @override
+  String get rememberCategory => 'Ricorda questa categoria';
+
+  @override
+  String get rememberCategoryHint => 'Suggeriscila per descrizioni simili, solo sul dispositivo.';
+
+  @override
+  String get addReceipt => 'Aggiungi ricevuta';
+
+  @override
+  String get receiptAttached => 'Ricevuta allegata';
+
+  @override
+  String get takePhoto => 'Scatta una foto';
+
+  @override
+  String get chooseLibrary => 'Scegli dalla libreria';
+
+  @override
+  String get repeatEvery => 'Ripeti ogni';
+
+  @override
+  String get endDate => 'Data di fine';
+
+  @override
+  String get none => 'Nessuna';
+
+  @override
+  String get undo => 'Annulla';
+
+  @override
+  String get recurrenceDeleted => 'Ricorrenza eliminata';
+
+  @override
+  String get availableThisMonth => 'Disponibile questo mese';
+
+  @override
+  String get availableAllTime => 'Disponibile complessivo';
+
+  @override
+  String get availableForPeriod => 'Disponibile nel periodo';
+
+  @override
+  String get availableFormula => 'Entrate − spese − risparmi accantonati − ricorrenze previste';
+
+  @override
+  String get reservedSavings => 'Accantonati';
+
+  @override
+  String get scheduledUpcoming => 'In arrivo';
+
+  @override
+  String get categoryLimits => 'Limiti per categoria';
+
+  @override
+  String activeBudgets(Object count) {
+    return '$count attivi';
+  }
+
+  @override
+  String remainingBudget(Object amount) {
+    return 'Restano $amount';
+  }
+
+  @override
+  String budgetExceededBy(Object amount) {
+    return 'Superato di $amount';
+  }
+
+  @override
+  String get setOptionalLimit => 'Imposta un limite facoltativo';
+
+  @override
+  String budgetForCategory(Object category) {
+    return 'Budget mensile · $category';
+  }
+
+  @override
+  String amountInCurrency(Object currency) {
+    return 'Importo in $currency';
+  }
+
+  @override
+  String get enterPositiveAmount => 'Inserisci un importo maggiore di zero.';
+
+  @override
+  String get budgetDeleted => 'Budget eliminato';
+
+  @override
+  String get budgetPeriodHint => 'I limiti mensili sono proporzionati all’intervallo selezionato.';
+
+  @override
+  String get forecastRecurring => 'Previsione ricorrenze';
+
+  @override
+  String get forecastExplanation => 'Stima dal saldo attuale usando solo le ricorrenze programmate.';
+
+  @override
+  String get currentBalance => 'Saldo attuale';
+
+  @override
+  String forecastAfter(Object duration) {
+    return 'Tra $duration';
+  }
+
+  @override
+  String recurringIncluded(Object count) {
+    return '$count movimenti ricorrenti inclusi nel calcolo.';
+  }
+
+  @override
+  String get oneMonth => '1 mese';
+
+  @override
+  String monthsCount(Object count) {
+    return '$count mesi';
+  }
+
+  @override
+  String get oneYear => '1 anno';
+
+  @override
+  String yearsCount(Object count) {
+    return '$count anni';
+  }
+
+  @override
+  String get savingsReservedHint => 'Gli importi accantonati riducono il disponibile, ma restano parte del saldo.';
+
+  @override
+  String allocatedInSelection(Object amount) {
+    return 'Accantonato nel periodo: $amount';
+  }
+
+  @override
+  String get reserveFunds => 'Accantona';
+
+  @override
+  String get releaseFunds => 'Sblocca fondi';
+
+  @override
+  String get addSavings => 'Aggiungi risparmio';
+
+  @override
+  String get releaseSavings => 'Sblocca risparmio';
+
+  @override
+  String get goalName => 'Nome';
+
+  @override
+  String goalTarget(Object name) {
+    return 'Obiettivo · $name';
+  }
+
+  @override
+  String get deleteGoal => 'Eliminare l’obiettivo?';
+
+  @override
+  String get deleteGoalReleasesFunds => 'I fondi accantonati torneranno disponibili. La cronologia resta conservata e i movimenti non vengono modificati.';
+
+  @override
+  String get goalDeleted => 'Obiettivo eliminato';
+
+  @override
+  String maximumAmount(Object amount) {
+    return 'Massimo $amount';
+  }
+
+  @override
+  String get receiptOptional => 'Ricevuta opzionale';
+
+  @override
+  String get receiptPurpose => 'Legge importo, data, esercente e categoria direttamente sul dispositivo.';
+
+  @override
+  String get receiptStoredLocally => 'Scansione privata sul dispositivo, con revisione prima del salvataggio.';
+
+  @override
+  String get receiptLinked => 'Allegata a questo movimento';
+
+  @override
+  String get receiptPermissionDenied => 'Permesso non concesso. Abilita foto e fotocamera nelle Impostazioni.';
+
+  @override
+  String get cameraUnavailable => 'Fotocamera non disponibile su questo dispositivo.';
+
+  @override
+  String get libraryUnavailable => 'Libreria foto non disponibile su questo dispositivo.';
+
+  @override
+  String get receiptAttachFailed => 'Impossibile allegare la ricevuta.';
+
+  @override
+  String convertedToMainCurrency(Object amount) {
+    return '≈ $amount nella valuta principale';
+  }
+
+  @override
+  String get conversionOnSave => 'Il cambio verrà calcolato al salvataggio.';
+
+  @override
+  String get ecbRefreshNeeded => 'Conversione BCE · aggiornamento necessario';
+
+  @override
+  String ecbRatesDate(Object date) {
+    return 'Tassi BCE del $date';
+  }
+
+  @override
+  String get rateApp => 'Valuta l’app';
+
+  @override
+  String get shareApp => 'Condividi l’app';
+
+  @override
+  String get protectBackup => 'Proteggi il backup';
+
+  @override
+  String get unlockBackup => 'Sblocca il backup';
+
+  @override
+  String get continueAction => 'Continua';
+
+  @override
+  String get exportCanceled => 'Esportazione annullata.';
+
+  @override
+  String get backupReady => 'Backup pronto per essere salvato o condiviso.';
+
+  @override
+  String get csvReady => 'CSV pronto per essere salvato o condiviso.';
+
+  @override
+  String get importMode => 'Modalità di importazione';
+
+  @override
+  String get importModeExplanation => 'Unisci mantiene i dati attuali e aggiorna gli elementi con lo stesso identificativo. Sostituisci cancella prima tutti i dati finanziari locali.';
+
+  @override
+  String get merge => 'Unisci';
+
+  @override
+  String get replace => 'Sostituisci';
+
+  @override
+  String get backupRestored => 'Backup ripristinato correttamente.';
+
+  @override
+  String get minimumPassword => 'Usa almeno 8 caratteri.';
+
+  @override
+  String get passwordsDoNotMatch => 'Le password non coincidono.';
+
+  @override
+  String get minimumEightCharacters => 'Minimo 8 caratteri';
+
+  @override
+  String get confirmPassword => 'Conferma password';
+
+  @override
+  String get changeCurrency => 'Cambia valuta';
+
+  @override
+  String recursEvery(Object frequency, Object interval) {
+    return 'Ogni $interval $frequency';
+  }
+
+  @override
+  String get savingsUpdateFailed => 'Impossibile aggiornare l’obiettivo di risparmio.';
+
+  @override
+  String get hideAmounts => 'Nascondi importi';
+
+  @override
+  String get showAmounts => 'Mostra importi';
+
+  @override
+  String get scanReceipt => 'Scansiona ricevuta';
+
+  @override
+  String get receiptScanHint => 'Fotografa o scegli una ricevuta per compilare automaticamente la spesa.';
+
+  @override
+  String get scanWithCamera => 'Scansiona con la fotocamera';
+
+  @override
+  String get scanFromLibrary => 'Scansiona una foto';
+
+  @override
+  String get cameraFlash => 'Flash';
+
+  @override
+  String get receiptScanReview => 'Controlla la scansione';
+
+  @override
+  String get receiptScanCheckData => 'Abbiamo trovato questi dati. Controllali e correggili prima di continuare.';
+
+  @override
+  String get receiptScanNoData => 'Non abbiamo trovato dati affidabili. Inseriscili manualmente o allega soltanto la foto.';
+
+  @override
+  String get receiptMerchant => 'Esercente';
+
+  @override
+  String get receiptScanPrivate => 'OCR e analisi avvengono interamente su questo dispositivo.';
+
+  @override
+  String get attachOnly => 'Solo allegato';
+
+  @override
+  String get useDetectedData => 'Usa i dati';
+
+  @override
+  String get receiptScanApplied => 'Dati della ricevuta applicati. Controlla e salva il movimento.';
+
+  @override
+  String get receiptScanning => 'Analisi della ricevuta…';
+
+  @override
+  String get dataTemporarilyUnavailable => 'Dati temporaneamente non disponibili.';
+
+  @override
+  String get retry => 'Riprova';
 }

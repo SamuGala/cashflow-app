@@ -14,6 +14,8 @@ class Categories extends Table {
 
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
 
+  DateTimeColumn get lastUsedAt => dateTime().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

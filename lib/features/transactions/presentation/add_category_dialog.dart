@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../../core/utils/category_localization.dart';
 import '../providers/category_provider.dart';
 import '../domain/category.dart';
+import '../../../core/input_formatters/capitalize_first_letter_formatter.dart';
 
 final icons = [
   Icons.shopping_cart,
@@ -67,7 +69,7 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
   final controller = TextEditingController();
 
   int icon = Icons.shopping_cart.codePoint;
-  int color = Colors.blue.value;
+  int color = Colors.blue.toARGB32();
 
   @override
   void initState() {
@@ -88,6 +90,12 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
           c.name.toLowerCase() == name.toLowerCase() &&
           c.id != widget.existing?.id,
     );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -115,11 +123,8 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
                 children: [
                   CircleAvatar(
                     radius: 22,
-                    backgroundColor: Color(color).withOpacity(.18),
-                    child: Icon(
-                      IconData(icon, fontFamily: 'MaterialIcons'),
-                      color: Color(color),
-                    ),
+                    backgroundColor: Color(color).withValues(alpha: .18),
+                    child: Icon(customCategoryIcon(icon), color: Color(color)),
                   ),
 
                   const SizedBox(width: 14),
@@ -142,6 +147,8 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
             /// NAME
             TextField(
               controller: controller,
+              textCapitalization: TextCapitalization.sentences,
+              inputFormatters: const [CapitalizeFirstLetterFormatter()],
               onChanged: (_) => setState(() {
                 error = null;
               }),
@@ -230,11 +237,11 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
               spacing: 12,
               runSpacing: 12,
               children: colors.map((c) {
-                final selected = color == c.value;
+                final selected = color == c.toARGB32();
 
                 return GestureDetector(
                   onTap: () {
-                    setState(() => color = c.value);
+                    setState(() => color = c.toARGB32());
                   },
 
                   child: AnimatedContainer(
@@ -250,7 +257,7 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
                       boxShadow: selected
                           ? [
                               BoxShadow(
-                                color: c.withOpacity(.6),
+                                color: c.withValues(alpha: .6),
                                 blurRadius: 10,
                                 spreadRadius: 1,
                               ),
@@ -283,7 +290,10 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
 
             if (name.isEmpty) return;
 
-            if (await _categoryExists(name)) {
+            final alreadyExists = await _categoryExists(name);
+            if (!mounted) return;
+
+            if (alreadyExists) {
               setState(() {
                 error = t.existingCategory;
               });
@@ -300,9 +310,8 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
                     color: color,
                   );
 
-              if (mounted) {
-                Navigator.pop(context, created);
-              }
+              if (!context.mounted) return;
+              Navigator.pop(context, created);
             } else {
               final updated = widget.existing!.copyWith(
                 name: name,
@@ -312,9 +321,8 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
 
               await ref.read(categoryProvider.notifier).updateCategory(updated);
 
-              if (mounted) {
-                Navigator.pop(context, updated);
-              }
+              if (!context.mounted) return;
+              Navigator.pop(context, updated);
             }
           },
           child: Text(t.saveCategory),

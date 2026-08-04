@@ -8,6 +8,10 @@ import '../../../core/database/database_provider.dart';
 import '../domain/transaction.dart';
 import '../providers/category_provider.dart';
 import '../providers/recurring_provider.dart';
+import '../../../core/currency/currency_provider.dart';
+import '../domain/recurrence_calculator.dart';
+import '../../../core/widgets/widget_sync_service.dart';
+import '../../../core/receipts/receipt_storage_service.dart';
 
 final transactionProvider =
     AsyncNotifierProvider<TransactionNotifier, List<TransactionModel>>(
@@ -17,13 +21,23 @@ final transactionProvider =
 class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
   final _uuid = const Uuid();
 
+  void _syncWidget(List<TransactionModel> transactions) {
+    unawaited(
+      WidgetSyncService().sync(
+        transactions: transactions,
+        currencyCode: ref.read(currencyProvider).value?.baseCurrency ?? 'EUR',
+      ),
+    );
+  }
+
   @override
   Future<List<TransactionModel>> build() async {
+    ref.watch(currencyProvider.select((value) => value.value?.baseCurrency));
     final db = ref.read(databaseProvider);
 
     final rows = await db.getAllTransactions();
 
-    return rows
+    final transactions = rows
         .map(
           (r) => TransactionModel(
             id: r.id,
@@ -33,9 +47,19 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
             date: r.date,
             note: r.note,
             isRecurring: r.isRecurring,
+            originalAmountMinor: r.originalAmountMinor,
+            originalCurrency: r.originalCurrency ?? 'EUR',
+            eurAmountMicros: r.eurAmountMicros,
+            exchangeRateToEur: r.exchangeRateToEur ?? 1,
+            receiptPath: r.receiptPath,
+            createdAt: r.createdAt,
+            recurringSourceId: r.recurringSourceId,
+            recurringOccurrenceKey: r.recurringOccurrenceKey,
           ),
         )
         .toList();
+    _syncWidget(transactions);
+    return transactions;
   }
 
   Future<void> addTransaction({
@@ -44,17 +68,35 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
     required String categoryId,
     required DateTime date,
     String? note,
+    String? currencyCode,
+    String? receiptPath,
   }) async {
     final db = ref.read(databaseProvider);
+    final conversion = await ref
+        .read(currencyProvider.notifier)
+        .convert(
+          amountMinor: amountCents,
+          sourceCurrency:
+              currencyCode ??
+              ref.read(currencyProvider).value?.baseCurrency ??
+              'EUR',
+        );
+    final createdAt = DateTime.now();
 
     final transaction = TransactionModel(
       id: _uuid.v4(),
-      amountCents: amountCents,
+      amountCents: conversion.baseAmountMinor,
       isIncome: isIncome,
       categoryId: categoryId,
       date: date,
       note: note,
       isRecurring: false,
+      originalAmountMinor: conversion.originalAmountMinor,
+      originalCurrency: conversion.originalCurrency,
+      eurAmountMicros: conversion.eurAmountMicros,
+      exchangeRateToEur: conversion.exchangeRateToEur,
+      receiptPath: receiptPath,
+      createdAt: createdAt,
     );
 
     await db.insertTransaction(
@@ -66,11 +108,20 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
         date: transaction.date,
         note: Value(transaction.note),
         isRecurring: const Value(false),
+        originalAmountMinor: Value(transaction.originalAmountMinor),
+        originalCurrency: Value(transaction.originalCurrency),
+        eurAmountMicros: Value(transaction.eurAmountMicros),
+        exchangeRateToEur: Value(transaction.exchangeRateToEur),
+        receiptPath: Value(receiptPath),
+        createdAt: Value(createdAt),
       ),
     );
+    await ref.read(categoryProvider.notifier).markUsed(categoryId);
 
     final current = state.value ?? [];
-    state = AsyncData([...current, transaction]);
+    final updated = [...current, transaction];
+    state = AsyncData(updated);
+    _syncWidget(updated);
   }
 
   Future<void> restoreTransaction(TransactionModel tx) async {
@@ -85,11 +136,21 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
         date: tx.date,
         note: Value(tx.note),
         isRecurring: Value(tx.isRecurring),
+        originalAmountMinor: Value(tx.originalAmountMinor),
+        originalCurrency: Value(tx.originalCurrency),
+        eurAmountMicros: Value(tx.eurAmountMicros),
+        exchangeRateToEur: Value(tx.exchangeRateToEur),
+        receiptPath: Value(tx.receiptPath),
+        createdAt: Value(tx.createdAt),
+        recurringSourceId: Value(tx.recurringSourceId),
+        recurringOccurrenceKey: Value(tx.recurringOccurrenceKey),
       ),
     );
 
     final current = state.value ?? [];
-    state = AsyncData([...current, tx]);
+    final updated = [...current, tx];
+    state = AsyncData(updated);
+    _syncWidget(updated);
   }
 
   Future<void> addRecurringTransaction({
@@ -99,17 +160,42 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
     required int dayOfMonth,
     required DateTime startDate,
     String? note,
+    String? currencyCode,
+    RecurrenceFrequency frequency = RecurrenceFrequency.monthly,
+    int interval = 1,
+    int? dayOfWeek,
+    int? monthOfYear,
+    DateTime? endDate,
   }) async {
     final db = ref.read(databaseProvider);
+    final conversion = await ref
+        .read(currencyProvider.notifier)
+        .convert(
+          amountMinor: amountCents,
+          sourceCurrency:
+              currencyCode ??
+              ref.read(currencyProvider).value?.baseCurrency ??
+              'EUR',
+        );
 
     await db.insertRecurringTransaction(
-      amountCents: amountCents,
+      amountCents: conversion.baseAmountMinor,
       isIncome: isIncome,
       categoryId: categoryId,
       dayOfMonth: dayOfMonth,
       startDate: startDate,
       note: note,
+      originalAmountMinor: conversion.originalAmountMinor,
+      originalCurrency: conversion.originalCurrency,
+      eurAmountMicros: conversion.eurAmountMicros,
+      exchangeRateToEur: conversion.exchangeRateToEur,
+      frequency: frequency,
+      interval: interval,
+      dayOfWeek: dayOfWeek,
+      monthOfYear: monthOfYear,
+      endDate: endDate,
     );
+    await ref.read(categoryProvider.notifier).markUsed(categoryId);
   }
 
   Future<void> deleteTransaction(String id) async {
@@ -118,7 +204,9 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
     await db.deleteTransactionById(id);
 
     final current = state.value ?? [];
-    state = AsyncData(current.where((t) => t.id != id).toList());
+    final updated = current.where((t) => t.id != id).toList();
+    state = AsyncData(updated);
+    _syncWidget(updated);
   }
 
   Future<void> updateTransaction({
@@ -128,17 +216,34 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
     required String categoryId,
     required DateTime date,
     String? note,
+    String? currencyCode,
+    String? receiptPath,
   }) async {
     final db = ref.read(databaseProvider);
+    final conversion = await ref
+        .read(currencyProvider.notifier)
+        .convert(
+          amountMinor: amountCents,
+          sourceCurrency:
+              currencyCode ??
+              ref.read(currencyProvider).value?.baseCurrency ??
+              'EUR',
+        );
 
     await db.updateTransaction(
       id: id,
-      amountCents: amountCents,
+      amountCents: conversion.baseAmountMinor,
       isIncome: isIncome,
       categoryId: categoryId,
       date: date,
       note: note,
+      originalAmountMinor: conversion.originalAmountMinor,
+      originalCurrency: conversion.originalCurrency,
+      eurAmountMicros: conversion.eurAmountMicros,
+      exchangeRateToEur: conversion.exchangeRateToEur,
+      receiptPath: receiptPath,
     );
+    await ref.read(categoryProvider.notifier).markUsed(categoryId);
 
     final current = state.value ?? [];
 
@@ -146,28 +251,46 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
       if (t.id == id) {
         return TransactionModel(
           id: id,
-          amountCents: amountCents,
+          amountCents: conversion.baseAmountMinor,
           isIncome: isIncome,
           categoryId: categoryId,
           date: date,
           note: note,
           isRecurring: t.isRecurring,
+          originalAmountMinor: conversion.originalAmountMinor,
+          originalCurrency: conversion.originalCurrency,
+          eurAmountMicros: conversion.eurAmountMicros,
+          exchangeRateToEur: conversion.exchangeRateToEur,
+          receiptPath: receiptPath,
+          createdAt: t.createdAt,
+          recurringSourceId: t.recurringSourceId,
+          recurringOccurrenceKey: t.recurringOccurrenceKey,
         );
       }
       return t;
     }).toList();
 
     state = AsyncData(updated);
+    _syncWidget(updated);
   }
 
   /// DELETE ALL DATA
   Future<void> deleteAllData() async {
     final db = ref.read(databaseProvider);
+    final receiptPaths = (state.value ?? const [])
+        .map((transaction) => transaction.receiptPath)
+        .whereType<String>()
+        .toSet();
 
     await db.clearAllData();
+    final receiptStorage = ref.read(receiptStorageServiceProvider);
+    for (final path in receiptPaths) {
+      await receiptStorage.remove(path);
+    }
     ref.invalidate(categoryProvider);
     ref.invalidate(recurringProvider);
 
     state = const AsyncData([]);
+    _syncWidget(const []);
   }
 }

@@ -10,7 +10,8 @@ import '../../dashboard/providers/dashboard_provider.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/category_localization.dart';
-import '../../transactions/domain/category.dart';
+import '../../../core/currency/currency_metadata.dart';
+import '../../../core/currency/currency_provider.dart';
 
 class CategoryDonutChart extends ConsumerStatefulWidget {
   final DashboardQuery query;
@@ -61,6 +62,8 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
     final selectedMonth = timeState.month;
 
     final t = AppLocalizations.of(context)!;
+    final currency = ref.watch(currencyProvider).value?.baseCurrency ?? 'EUR';
+    final locale = Localizations.localeOf(context).toString();
 
     return txAsync.when(
       loading: () => const SizedBox(
@@ -137,7 +140,7 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
                 children: [
                   AnimatedBuilder(
                     animation: controller,
-                    builder: (_, __) {
+                    builder: (_, _) {
                       return PieChart(
                         PieChartData(
                           centerSpaceRadius: 80,
@@ -146,8 +149,9 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
                             enabled: true,
                             touchCallback: (event, response) {
                               if (response == null ||
-                                  response.touchedSection == null)
+                                  response.touchedSection == null) {
                                 return;
+                              }
 
                               final index =
                                   response.touchedSection!.touchedSectionIndex;
@@ -173,17 +177,18 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
                               radius: radius,
                               title: "",
                               gradient: LinearGradient(
-                                colors: [baseColor.withOpacity(.8), baseColor],
+                                colors: [
+                                  baseColor.withValues(alpha: .8),
+                                  baseColor,
+                                ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
                             );
                           }).toList(),
                         ),
-                        swapAnimationDuration: const Duration(
-                          milliseconds: 450,
-                        ),
-                        swapAnimationCurve: Curves.easeOutCubic,
+                        duration: const Duration(milliseconds: 450),
+                        curve: Curves.easeOutCubic,
                       );
                     },
                   ),
@@ -206,8 +211,12 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
                         const SizedBox(height: 4),
                         Text(
                           selected != null
-                              ? "€ ${(selected.$2 / 100).toStringAsFixed(2)}"
-                              : "€ ${(total / 100).toStringAsFixed(2)}",
+                              ? formatMoney(
+                                  selected.$2.round(),
+                                  currency,
+                                  locale,
+                                )
+                              : formatMoney(total.round(), currency, locale),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 24,
@@ -229,7 +238,7 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
                 final e = entry.value;
 
                 final percent = ((e.$2 / total) * 100).toStringAsFixed(1);
-                final amount = (e.$2 / 100).toStringAsFixed(2);
+                final amount = formatMoney(e.$2.round(), currency, locale);
 
                 final selectedRow = selectedIndex == i;
 
@@ -247,7 +256,7 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
                     ),
                     decoration: BoxDecoration(
                       color: selectedRow
-                          ? Color(e.$1.color).withOpacity(.12)
+                          ? Color(e.$1.color).withValues(alpha: .12)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -263,7 +272,9 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
                             boxShadow: selectedRow
                                 ? [
                                     BoxShadow(
-                                      color: Color(e.$1.color).withOpacity(.6),
+                                      color: Color(
+                                        e.$1.color,
+                                      ).withValues(alpha: .6),
                                       blurRadius: 10,
                                       spreadRadius: 2,
                                     ),
@@ -289,7 +300,7 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart>
                               ),
                             ),
                             Text(
-                              "€ $amount",
+                              amount,
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,

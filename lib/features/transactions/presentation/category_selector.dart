@@ -63,6 +63,43 @@ class _CategorySelector extends ConsumerWidget {
             child: const Icon(Icons.delete, color: Colors.white),
           ),
 
+          confirmDismiss: (_) async {
+            final canDelete = await ref
+                .read(categoryProvider.notifier)
+                .canDeleteCategory(category.id);
+            if (!context.mounted) return false;
+            if (!canDelete) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Categoria utilizzata: sposta prima movimenti, ricorrenze, '
+                    'o budget collegati.',
+                  ),
+                ),
+              );
+              return false;
+            }
+
+            return await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: Text(t.deleteCategory),
+                    content: Text(t.deleteCategoryConfirm),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, false),
+                        child: Text(t.cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(dialogContext, true),
+                        child: Text(t.delete),
+                      ),
+                    ],
+                  ),
+                ) ??
+                false;
+          },
+
           onDismissed: (_) {
             if (!category.isDefault) {
               ref.read(categoryProvider.notifier).deleteCategory(category.id);
@@ -73,7 +110,7 @@ class _CategorySelector extends ConsumerWidget {
             leading: Icon(
               category.isDefault
                   ? categoryIcon(category.name)
-                  : IconData(category.icon, fontFamily: 'MaterialIcons'),
+                  : customCategoryIcon(category.icon),
               color: Color(category.color),
             ),
 
@@ -87,22 +124,11 @@ class _CategorySelector extends ConsumerWidget {
             onLongPress: category.isDefault
                 ? null
                 : () async {
-                    final edited = await showAddCategoryDialog(
+                    await showAddCategoryDialog(
                       context,
                       isIncome,
                       existing: category,
                     );
-
-                    if (edited != null) {
-                      await ref
-                          .read(categoryProvider.notifier)
-                          .addCategory(
-                            name: edited.name,
-                            isIncome: edited.isIncome,
-                            icon: edited.icon,
-                            color: edited.color,
-                          );
-                    }
                   },
           ),
         );

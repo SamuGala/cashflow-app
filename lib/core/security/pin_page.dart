@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,7 +58,7 @@ class _PinPageState extends ConsumerState<PinPage>
       return;
     }
 
-    biometricsEnabled = biometrics;
+    setState(() => biometricsEnabled = biometrics);
 
     if (biometricsEnabled) {
       final ok = await biometric.authenticate();
@@ -72,21 +74,20 @@ class _PinPageState extends ConsumerState<PinPage>
 
     if (!canUse || !mounted) return;
 
+    final t = AppLocalizations.of(context)!;
     final enable = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Enable Face ID"),
-        content: const Text(
-          "Use Face ID to unlock Cashflow?",
-        ),
+        title: Text(t.enableBiometrics),
+        content: Text(t.enableBiometricsMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("No"),
+            child: Text(t.notNow),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Yes"),
+            child: Text(t.enable),
           ),
         ],
       ),
@@ -94,7 +95,7 @@ class _PinPageState extends ConsumerState<PinPage>
 
     if (enable == true) {
       await storage.enableBiometrics();
-      biometricsEnabled = true;
+      if (mounted) setState(() => biometricsEnabled = true);
     }
   }
 
@@ -164,154 +165,223 @@ class _PinPageState extends ConsumerState<PinPage>
     });
   }
 
-  Widget dot(bool filled) {
+  void clearPin() {
+    if (pin.isEmpty) return;
+    HapticFeedback.mediumImpact();
+    setState(() => pin = '');
+  }
+
+  Future<void> _authenticateBiometrically() async {
+    final ok = await biometric.authenticate();
+    if (ok && mounted) {
+      ref.read(authProvider.notifier).unlock();
+    }
+  }
+
+  @override
+  void dispose() {
+    shakeController.dispose();
+    super.dispose();
+  }
+
+  Widget dot(BuildContext context, bool filled) {
+    final colors = Theme.of(context).colorScheme;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
-      width: filled ? 18 : 14,
-      height: filled ? 18 : 14,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
+      width: 13,
+      height: 13,
+      margin: const EdgeInsets.symmetric(horizontal: 7),
       decoration: BoxDecoration(
-        color: filled ? Colors.black : Colors.grey.shade300,
+        color: filled ? colors.primary : Colors.transparent,
         shape: BoxShape.circle,
+        border: Border.all(
+          color: filled ? colors.primary : colors.outline,
+          width: 1.6,
+        ),
       ),
     );
   }
 
-  Widget key(String text) {
-    return InkResponse(
-      radius: 36,
+  Widget key(BuildContext context, String text) {
+    return _PinKeyButton(
+      semanticsLabel: text,
       onTap: () => addDigit(text),
-      child: Container(
-        alignment: Alignment.center,
-        width: 78,
-        height: 78,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.grey.shade200,
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 27, fontWeight: FontWeight.w600),
       ),
     );
   }
 
-  Widget buildKeypad() {
+  Widget buildKeypad(BuildContext context, AppLocalizations t) {
+    Widget row(List<Widget> children) => Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: children,
+    );
+
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [key("1"), key("2"), key("3")],
-        ),
-        const SizedBox(height: 18),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [key("4"), key("5"), key("6")],
-        ),
-        const SizedBox(height: 18),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [key("7"), key("8"), key("9")],
-        ),
-        const SizedBox(height: 18),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            biometricsEnabled
-                ? InkResponse(
-                    onTap: () async {
-                      final ok = await biometric.authenticate();
-
-                      if (ok && mounted) {
-                        ref.read(authProvider.notifier).unlock();
-                      }
-                    },
-                    child: const SizedBox(
-                      width: 78,
-                      height: 78,
-                      child: Icon(
-                        Icons.face,
-                        size: 30,
-                      ),
-                    ),
-                  )
-                : const SizedBox(width: 78),
-
-            key("0"),
-
-            InkResponse(
-              radius: 36,
-              onTap: removeDigit,
-              child: const SizedBox(
-                width: 78,
-                height: 78,
-                child: Icon(Icons.backspace_outlined),
-              ),
-            ),
-          ],
-        ),
+        row([key(context, '1'), key(context, '2'), key(context, '3')]),
+        const SizedBox(height: 10),
+        row([key(context, '4'), key(context, '5'), key(context, '6')]),
+        const SizedBox(height: 10),
+        row([key(context, '7'), key(context, '8'), key(context, '9')]),
+        const SizedBox(height: 10),
+        row([
+          biometricsEnabled
+              ? _PinKeyButton(
+                  semanticsLabel: t.biometricUnlock,
+                  isAction: true,
+                  onTap: _authenticateBiometrically,
+                  child: const Icon(Icons.fingerprint_rounded, size: 30),
+                )
+              : const SizedBox.square(dimension: 68),
+          key(context, '0'),
+          _PinKeyButton(
+            semanticsLabel: t.deleteDigit,
+            semanticsHint: t.clearPin,
+            isAction: true,
+            onTap: removeDigit,
+            onLongPress: clearPin,
+            child: const Icon(Icons.backspace_outlined, size: 25),
+          ),
+        ]),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final shake = Tween<double>(begin: 0, end: 10).animate(
-      CurvedAnimation(parent: shakeController, curve: Curves.elasticIn),
-    );
-
     String title;
 
     final t = AppLocalizations.of(context)!;
 
-if (isSetup) {
-  title = confirmPin.isEmpty ? t.createPin : t.confirmPin;
-} else {
-  title = t.enterPin;
-}
+    if (isSetup) {
+      title = confirmPin.isEmpty ? t.createPin : t.confirmPin;
+    } else {
+      title = t.enterPin;
+    }
 
     return Scaffold(
-      body: AnimatedBuilder(
-        animation: shakeController,
-        builder: (_, child) {
-          return Transform.translate(
-            offset: Offset(shake.value, 0),
-            child: child,
-          );
-        },
-        child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 40),
-
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: math.max(0, constraints.maxHeight - 40),
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 310),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Icon(
+                          Icons.lock_rounded,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
+                          size: 29,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      AnimatedBuilder(
+                        animation: shakeController,
+                        builder: (context, child) {
+                          final decay = 1 - shakeController.value;
+                          final offset =
+                              math.sin(shakeController.value * math.pi * 5) *
+                              9 *
+                              decay;
+                          return Transform.translate(
+                            offset: Offset(offset, 0),
+                            child: child,
+                          );
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            6,
+                            (i) => dot(context, i < pin.length),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 46),
+                      buildKeypad(context, t),
+                    ],
+                  ),
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-              const SizedBox(height: 40),
+class _PinKeyButton extends StatelessWidget {
+  const _PinKeyButton({
+    required this.semanticsLabel,
+    required this.onTap,
+    required this.child,
+    this.onLongPress,
+    this.isAction = false,
+    this.semanticsHint,
+  });
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  6,
-                  (i) => dot(i < pin.length),
-                ),
-              ),
+  final String semanticsLabel;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final Widget child;
+  final bool isAction;
+  final String? semanticsHint;
 
-              const SizedBox(height: 60),
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
 
-              buildKeypad(),
-            ],
+    return Semantics(
+      button: true,
+      label: semanticsLabel,
+      hint: semanticsHint,
+      child: SizedBox.square(
+        dimension: 68,
+        child: Material(
+          color: isAction ? Colors.transparent : colors.surface,
+          elevation: isAction ? 0 : 1,
+          shadowColor: colors.shadow.withValues(alpha: .12),
+          shape: CircleBorder(
+            side: BorderSide(
+              color: isAction
+                  ? Colors.transparent
+                  : colors.outlineVariant.withValues(alpha: .8),
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onTap,
+            onLongPress: onLongPress,
+            child: Center(child: child),
           ),
         ),
       ),

@@ -1,5 +1,5 @@
 name: pocket_vault
-description: "A new Flutter project."
+description: "Private, local-first personal finance and cash-flow tracker."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.4+5
+version: 2.0.0+11
 
 environment:
   sdk: ^3.11.1
@@ -44,6 +44,10 @@ dependencies:
   drift: ^2.32.0
   sqlite3_flutter_libs: ^0.6.0+eol
   path_provider: ^2.1.5
+  # 9.4.1 fixes the iOS native-asset build hook used transitively by
+  # path_provider_foundation. Pin it to keep simulator and TestFlight bundles
+  # deterministic until the next dependency review.
+  objective_c: 9.4.1
   path: ^1.9.1
   drift_flutter: ^0.3.0
   another_flushbar: ^1.12.32
@@ -55,10 +59,20 @@ dependencies:
   package_info_plus: ^8.0.0
   in_app_review: ^2.0.8
   shared_preferences: ^2.2.2
+  http: ^1.6.0
+  xml: ^7.0.1
+  file_picker: ^11.0.2
+  cryptography: ^2.9.0
+  cryptography_flutter: ^2.3.4
+  camera: ^0.12.0+2
+  image_picker: ^1.2.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
+  sqlite3: ^3.5.0
   flutter_lints: ^6.0.0
   drift_dev: ^2.32.0
   build_runner: ^2.12.2
@@ -82,6 +96,8 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   generate: true
+  assets:
+    - assets/icon/app_icon.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

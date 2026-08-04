@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +12,9 @@ import '../../../core/utils/category_localization.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/database/app_database.dart';
 import 'edit_recurring_sheet.dart';
+import '../../../core/currency/currency_metadata.dart';
+import '../../../core/currency/currency_provider.dart';
+import '../../../shared/widgets/inline_load_error.dart';
 
 class RecurringList extends ConsumerWidget {
   const RecurringList({super.key});
@@ -19,12 +24,22 @@ class RecurringList extends ConsumerWidget {
     final t = AppLocalizations.of(context)!;
     final recurringAsync = ref.watch(recurringProvider);
     final categoriesAsync = ref.watch(categoryProvider);
+    final baseCurrency =
+        ref.watch(currencyProvider).value?.baseCurrency ?? 'EUR';
+    final locale = Localizations.localeOf(context).toString();
 
     final categories = categoriesAsync.value ?? [];
 
     return recurringAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(e.toString())),
+      error: (_, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: InlineLoadError(
+            onRetry: () => ref.invalidate(recurringProvider),
+          ),
+        ),
+      ),
       data: (items) {
         if (items.isEmpty) {
           return Center(child: Text(t.noRecurrent));
@@ -42,7 +57,7 @@ class RecurringList extends ConsumerWidget {
                     name: "food",
                     isIncome: false,
                     icon: 0,
-                    color: Colors.grey.value,
+                    color: Colors.grey.toARGB32(),
                     isDefault: false,
                   );
 
@@ -106,10 +121,36 @@ class RecurringList extends ConsumerWidget {
 
                 return false;
               },
-              onDismissed: (_) {
-                ref.read(recurringProvider.notifier).deleteRecurring(r.id);
+              onDismissed: (_) async {
+                await ref
+                    .read(recurringProvider.notifier)
+                    .deleteRecurring(r.id);
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: Text(t.recurrenceDeleted),
+                      action: SnackBarAction(
+                        label: t.undo,
+                        onPressed: () => unawaited(
+                          ref
+                              .read(recurringProvider.notifier)
+                              .restoreRecurring(r),
+                        ),
+                      ),
+                    ),
+                  );
               },
-              child: _RecurringTile(recurring: r, category: category),
+              child: _RecurringTile(
+                recurring: r,
+                category: category,
+                formattedAmount: formatMoney(
+                  r.amountCents,
+                  baseCurrency,
+                  locale,
+                ),
+              ),
             );
           }).toList(),
         );
@@ -121,8 +162,13 @@ class RecurringList extends ConsumerWidget {
 class _RecurringTile extends StatefulWidget {
   final RecurringTransaction recurring;
   final Category category;
+  final String formattedAmount;
 
-  const _RecurringTile({required this.recurring, required this.category});
+  const _RecurringTile({
+    required this.recurring,
+    required this.category,
+    required this.formattedAmount,
+  });
 
   @override
   State<_RecurringTile> createState() => _RecurringTileState();
@@ -160,7 +206,7 @@ class _RecurringTileState extends State<_RecurringTile> {
                 width: 42,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Color(widget.category.color).withOpacity(0.15),
+                  color: Color(widget.category.color).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Stack(
@@ -170,10 +216,7 @@ class _RecurringTileState extends State<_RecurringTile> {
                       child: Icon(
                         widget.category.isDefault
                             ? categoryIcon(widget.category.name)
-                            : IconData(
-                                widget.category.icon,
-                                fontFamily: 'MaterialIcons',
-                              ),
+                            : customCategoryIcon(widget.category.icon),
                         size: 20,
                         color: Color(widget.category.color),
                       ),
@@ -211,7 +254,8 @@ class _RecurringTileState extends State<_RecurringTile> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "${widget.recurring.isIncome ? '+' : '-'} € ${(widget.recurring.amountCents / 100).toStringAsFixed(2)}",
+                      '${widget.recurring.isIncome ? '+' : '-'} '
+                      '${widget.formattedAmount}',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: widget.recurring.isIncome
@@ -295,27 +339,26 @@ class _RecurringActions extends ConsumerWidget {
                   .read(recurringProvider.notifier)
                   .toggleActive(recurring.id, newState);
 
+              if (!context.mounted) return;
+              final messenger = ScaffoldMessenger.of(context);
+
               Navigator.pop(context);
 
-              if (context.mounted) {
-                final messenger = ScaffoldMessenger.of(context);
-
-                messenger
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        newState ? t.reactivateMsg : t.reactivatePauseMsg,
-                      ),
-                      duration: const Duration(seconds: 4),
-                      behavior: SnackBarBehavior.floating,
-                      margin: const EdgeInsets.all(16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      newState ? t.reactivateMsg : t.reactivatePauseMsg,
                     ),
-                  );
-              }
+                    duration: const Duration(seconds: 4),
+                    behavior: SnackBarBehavior.floating,
+                    margin: const EdgeInsets.all(16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                );
             },
           ),
         ],

@@ -7,7 +7,7 @@ final mockCategories = [
     name: 'Stipendio',
     isIncome: true,
     icon: Icons.payments.codePoint,
-    color: Colors.green.value,
+    color: Colors.green.toARGB32(),
     isDefault: true,
   ),
   Category(
@@ -15,7 +15,7 @@ final mockCategories = [
     name: 'Regalo',
     isIncome: true,
     icon: Icons.card_giftcard.codePoint,
-    color: Colors.blue.value,
+    color: Colors.blue.toARGB32(),
     isDefault: true,
   ),
   Category(
@@ -23,7 +23,7 @@ final mockCategories = [
     name: 'Affitto',
     isIncome: false,
     icon: Icons.home.codePoint,
-    color: Colors.orange.value,
+    color: Colors.orange.toARGB32(),
     isDefault: true,
   ),
   Category(
@@ -31,7 +31,7 @@ final mockCategories = [
     name: 'Spesa',
     isIncome: false,
     icon: Icons.shopping_cart.codePoint,
-    color: Colors.purple.value,
+    color: Colors.purple.toARGB32(),
     isDefault: true,
   ),
   Category(
@@ -39,7 +39,7 @@ final mockCategories = [
     name: 'Trasporti',
     isIncome: false,
     icon: Icons.directions_bus.codePoint,
-    color: Colors.indigo.value,
+    color: Colors.indigo.toARGB32(),
     isDefault: true,
   ),
 ];

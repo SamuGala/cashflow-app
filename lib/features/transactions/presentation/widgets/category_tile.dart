@@ -16,11 +16,11 @@ class CategoryTile extends StatelessWidget {
 
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: Color(category.color).withOpacity(0.2),
+        backgroundColor: Color(category.color).withValues(alpha: 0.2),
         child: Icon(
           category.isDefault
               ? categoryIcon(category.name)
-              : IconData(category.icon, fontFamily: 'MaterialIcons'),
+              : customCategoryIcon(category.icon),
           color: Color(category.color),
         ),
       ),

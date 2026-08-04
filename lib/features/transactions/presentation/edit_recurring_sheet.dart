@@ -7,6 +7,9 @@ import '../providers/category_provider.dart';
 import '../domain/category.dart';
 import '../../../core/utils/category_localization.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/currency/currency_metadata.dart';
+import '../../../core/currency/currency_selector.dart';
+import '../domain/recurrence_calculator.dart';
 
 class EditRecurringSheet extends ConsumerStatefulWidget {
   final RecurringTransaction recurring;
@@ -20,6 +23,10 @@ class EditRecurringSheet extends ConsumerStatefulWidget {
 class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
   late int amountCents;
   late int day;
+  late String currencyCode;
+  late RecurrenceFrequency frequency;
+  late int recurrenceInterval;
+  DateTime? endDate;
 
   Category? selectedCategory;
 
@@ -27,8 +34,13 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
   void initState() {
     super.initState();
 
-    amountCents = widget.recurring.amountCents;
+    amountCents =
+        widget.recurring.originalAmountMinor ?? widget.recurring.amountCents;
+    currencyCode = widget.recurring.originalCurrency ?? 'EUR';
     day = widget.recurring.dayOfMonth;
+    frequency = recurrenceFrequencyFromName(widget.recurring.frequency);
+    recurrenceInterval = widget.recurring.interval;
+    endDate = widget.recurring.endDate;
   }
 
   @override
@@ -36,7 +48,9 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
     final t = AppLocalizations.of(context)!;
 
     final categoriesAsync = ref.watch(categoryProvider);
-    final categories = categoriesAsync.value ?? [];
+    final categories = (categoriesAsync.value ?? [])
+        .where((category) => category.isIncome == widget.recurring.isIncome)
+        .toList();
 
     if (categories.isEmpty) return const SizedBox();
 
@@ -71,7 +85,10 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
                 context: context,
                 isScrollControlled: true,
                 showDragHandle: true,
-                builder: (_) => _AmountKeypad(initial: amountCents),
+                builder: (_) => _AmountKeypad(
+                  initial: amountCents,
+                  currencyCode: currencyCode,
+                ),
               );
 
               if (!mounted) return;
@@ -85,10 +102,10 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text("€", style: TextStyle(fontSize: 20)),
+                Text(currencyCode, style: const TextStyle(fontSize: 20)),
                 const SizedBox(width: 6),
                 Text(
-                  (amountCents / 100).toStringAsFixed(2),
+                  amountInputText(amountCents, currencyCode),
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
@@ -100,23 +117,98 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
 
           const SizedBox(height: 20),
 
-          /// DAY
+          CurrencySelector(
+            value: currencyCode,
+            onChanged: (currency) {
+              setState(() {
+                currencyCode = currency;
+                amountCents = 0;
+              });
+            },
+          ),
+
+          const SizedBox(height: 20),
+
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(t.dayOfMonth),
+              Expanded(child: Text(t.repeatEvery)),
               DropdownButton<int>(
-                value: day,
+                value: recurrenceInterval,
                 items: List.generate(
-                  31,
-                  (i) =>
-                      DropdownMenuItem(value: i + 1, child: Text("${i + 1}")),
+                  12,
+                  (index) => DropdownMenuItem(
+                    value: index + 1,
+                    child: Text('${index + 1}'),
+                  ),
                 ),
-                onChanged: (v) {
-                  if (v != null) setState(() => day = v);
-                },
+                onChanged: (value) =>
+                    setState(() => recurrenceInterval = value ?? 1),
+              ),
+              const SizedBox(width: 8),
+              DropdownButton<RecurrenceFrequency>(
+                value: frequency,
+                items: RecurrenceFrequency.values
+                    .map(
+                      (value) => DropdownMenuItem(
+                        value: value,
+                        child: Text(value.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) => setState(
+                  () => frequency = value ?? RecurrenceFrequency.monthly,
+                ),
               ),
             ],
+          ),
+
+          if (frequency == RecurrenceFrequency.monthly ||
+              frequency == RecurrenceFrequency.yearly)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(t.dayOfMonth),
+                DropdownButton<int>(
+                  value: day,
+                  items: List.generate(
+                    31,
+                    (i) =>
+                        DropdownMenuItem(value: i + 1, child: Text('${i + 1}')),
+                  ),
+                  onChanged: (v) {
+                    if (v != null) setState(() => day = v);
+                  },
+                ),
+              ],
+            ),
+
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.event_busy_outlined),
+            title: Text(t.endDate),
+            subtitle: Text(
+              endDate == null
+                  ? t.none
+                  : MaterialLocalizations.of(
+                      context,
+                    ).formatMediumDate(endDate!),
+            ),
+            trailing: endDate == null
+                ? const Icon(Icons.chevron_right)
+                : IconButton(
+                    onPressed: () => setState(() => endDate = null),
+                    icon: const Icon(Icons.close),
+                  ),
+            onTap: () async {
+              final value = await showDatePicker(
+                context: context,
+                initialDate:
+                    endDate ?? DateTime.now().add(const Duration(days: 30)),
+                firstDate: DateTime.now(),
+                lastDate: DateTime.now().add(const Duration(days: 365 * 20)),
+              );
+              if (value != null) setState(() => endDate = value);
+            },
           ),
 
           const SizedBox(height: 20),
@@ -145,7 +237,9 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
                     showDragHandle: true,
                     builder: (_) => FractionallySizedBox(
                       heightFactor: 0.55,
-                      child: const CategorySelectorSheet(),
+                      child: CategorySelectorSheet(
+                        isIncome: widget.recurring.isIncome,
+                      ),
                     ),
                   );
 
@@ -174,6 +268,16 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
                       amountCents: amountCents,
                       categoryId: selectedCategory!.id,
                       dayOfMonth: day,
+                      currencyCode: currencyCode,
+                      frequency: frequency,
+                      interval: recurrenceInterval,
+                      dayOfWeek: frequency == RecurrenceFrequency.weekly
+                          ? widget.recurring.startDate.weekday
+                          : null,
+                      monthOfYear: frequency == RecurrenceFrequency.yearly
+                          ? widget.recurring.startDate.month
+                          : null,
+                      endDate: endDate,
                     );
 
                 if (context.mounted) Navigator.pop(context);
@@ -211,7 +315,7 @@ class _CategoryChip extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           color: selected
-              ? Color(category.color).withOpacity(.18)
+              ? Color(category.color).withValues(alpha: .18)
               : Colors.transparent,
           border: Border.all(
             color: selected
@@ -225,7 +329,7 @@ class _CategoryChip extends StatelessWidget {
             Icon(
               category.isDefault
                   ? categoryIcon(category.name)
-                  : IconData(category.icon, fontFamily: 'MaterialIcons'),
+                  : customCategoryIcon(category.icon),
               size: 20,
               color: Color(category.color),
             ),
@@ -274,8 +378,9 @@ class _OtherCategoryButton extends StatelessWidget {
 
 class _AmountKeypad extends StatefulWidget {
   final int initial;
+  final String currencyCode;
 
-  const _AmountKeypad({required this.initial});
+  const _AmountKeypad({required this.initial, required this.currencyCode});
 
   @override
   State<_AmountKeypad> createState() => _AmountKeypadState();
@@ -317,10 +422,10 @@ class _AmountKeypadState extends State<_AmountKeypad> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text("€", style: TextStyle(fontSize: 24)),
+              Text(widget.currencyCode, style: const TextStyle(fontSize: 24)),
               const SizedBox(width: 6),
               Text(
-                (cents / 100).toStringAsFixed(2),
+                amountInputText(cents, widget.currencyCode),
                 style: const TextStyle(
                   fontSize: 40,
                   fontWeight: FontWeight.w700,
@@ -399,11 +504,15 @@ class _KeyButton extends StatelessWidget {
 }
 
 class CategorySelectorSheet extends ConsumerWidget {
-  const CategorySelectorSheet({super.key});
+  final bool isIncome;
+
+  const CategorySelectorSheet({super.key, required this.isIncome});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categories = ref.watch(categoryProvider).value ?? [];
+    final categories = (ref.watch(categoryProvider).value ?? [])
+        .where((category) => category.isIncome == isIncome)
+        .toList();
     final t = AppLocalizations.of(context)!;
 
     return SafeArea(
@@ -412,9 +521,7 @@ class CategorySelectorSheet extends ConsumerWidget {
         children: categories.map((c) {
           return ListTile(
             leading: Icon(
-              c.isDefault
-                  ? categoryIcon(c.name)
-                  : IconData(c.icon, fontFamily: 'MaterialIcons'),
+              c.isDefault ? categoryIcon(c.name) : customCategoryIcon(c.icon),
               color: Color(c.color),
             ),
             title: Text(categoryName(c.name, t)),

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,10 +14,23 @@ import 'add_category_dialog.dart';
 
 import '../../../core/utils/category_localization.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../core/database/database_provider.dart';
+import '../../../core/input_formatters/capitalize_first_letter_formatter.dart';
+import '../../../core/currency/currency_metadata.dart';
+import '../../../core/currency/currency_provider.dart';
+import '../../../core/currency/currency_selector.dart';
+import '../domain/recurrence_calculator.dart';
+import '../../../core/receipts/receipt_storage_service.dart';
+import '../../../core/receipts/receipt_scan_review_sheet.dart';
 
 class QuickAddTransactionSheet extends ConsumerStatefulWidget {
-  const QuickAddTransactionSheet({super.key});
+  const QuickAddTransactionSheet({
+    super.key,
+    this.initialReceipt,
+    this.scrollController,
+  });
+
+  final ReceiptScanReviewResult? initialReceipt;
+  final ScrollController? scrollController;
 
   @override
   ConsumerState<QuickAddTransactionSheet> createState() =>
@@ -23,7 +39,7 @@ class QuickAddTransactionSheet extends ConsumerStatefulWidget {
 
 class _QuickAddTransactionSheetState
     extends ConsumerState<QuickAddTransactionSheet> {
-  String amount = "0.00";
+  int amountMinor = 0;
   bool shake = false;
   final noteController = TextEditingController();
 
@@ -31,47 +47,76 @@ class _QuickAddTransactionSheetState
 
   bool recurring = false;
   int recurringDay = DateTime.now().day;
+  RecurrenceFrequency recurringFrequency = RecurrenceFrequency.monthly;
+  int recurringInterval = 1;
+  DateTime? recurringEndDate;
 
   bool isIncome = false;
   bool showKeypad = false;
 
   DateTime selectedDate = DateTime.now();
+  String? selectedCurrency;
+  String? receiptPath;
+  bool _receiptCommitted = false;
+  String? _pendingCategoryId;
+  double _dismissDragDistance = 0;
+  bool _isDismissing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final scanned = widget.initialReceipt;
+    if (scanned == null) return;
+    receiptPath = scanned.draft.imagePath;
+    if (!scanned.appliesDetectedData) return;
+    final extraction = scanned.draft.extraction;
+    if (extraction == null) return;
+    isIncome = false;
+    selectedCurrency = extraction.currencyCode;
+    amountMinor = extraction.amountMinor ?? 0;
+    selectedDate = extraction.date ?? selectedDate;
+    _pendingCategoryId = extraction.categoryId;
+    noteController.text = extraction.merchant ?? '';
+  }
+
+  @override
+  void dispose() {
+    final uncommittedReceipt = receiptPath;
+    if (!_receiptCommitted && uncommittedReceipt != null) {
+      unawaited(
+        File(
+          uncommittedReceipt,
+        ).delete().catchError((_) => File(uncommittedReceipt)),
+      );
+    }
+    noteController.dispose();
+    super.dispose();
+  }
 
   void _addDigit(String digit) {
+    _addDigits(digit);
+  }
+
+  void _addDigits(String digits) {
     setState(() {
-      final digits = amount.replaceAll('.', '');
-
-      if (digits.length >= 9) return;
-
-      final newDigits = digits + digit;
-
-      final value = int.parse(newDigits);
-
-      final euros = value ~/ 100;
-      final cents = value % 100;
-
-      amount = "$euros.${cents.toString().padLeft(2, '0')}";
+      var next = amountMinor;
+      for (final digit in digits.split('')) {
+        if (next.toString().length >= 9 && next != 0) break;
+        next = (next * 10) + int.parse(digit);
+      }
+      amountMinor = next;
     });
   }
 
   void _deleteDigit() {
     setState(() {
-      final digits = amount.replaceAll('.', '');
-
-      if (digits.length <= 1) {
-        amount = "0.00";
-        return;
-      }
-
-      final newDigits = digits.substring(0, digits.length - 1);
-
-      final value = int.parse(newDigits);
-
-      final euros = value ~/ 100;
-      final cents = value % 100;
-
-      amount = "$euros.${cents.toString().padLeft(2, '0')}";
+      amountMinor ~/= 10;
     });
+  }
+
+  void _clearAmount() {
+    if (amountMinor == 0) return;
+    setState(() => amountMinor = 0);
   }
 
   void _triggerShake() {
@@ -84,40 +129,40 @@ class _QuickAddTransactionSheetState
     });
   }
 
+  void _dismissFromDrag() {
+    if (_isDismissing || !mounted) return;
+    _isDismissing = true;
+    Navigator.of(context).maybePop();
+  }
+
+  void _updateDismissDrag(DragUpdateDetails details) {
+    if (_isDismissing) return;
+    _dismissDragDistance = (_dismissDragDistance + details.delta.dy).clamp(
+      0,
+      120,
+    );
+    if (_dismissDragDistance >= 72) _dismissFromDrag();
+  }
+
+  void _endDismissDrag(DragEndDetails details) {
+    if (_isDismissing) return;
+    if (details.primaryVelocity != null && details.primaryVelocity! > 500) {
+      _dismissFromDrag();
+      return;
+    }
+    _dismissDragDistance = 0;
+  }
+
   Future<void> _pickCategory() async {
     final t = AppLocalizations.of(context)!;
+    final baseCurrency =
+        ref.read(currencyProvider).value?.baseCurrency ?? 'EUR';
+    selectedCurrency ??= baseCurrency;
 
     final categoriesAsync = ref.read(categoryProvider);
-    final transactionsAsync = ref.read(transactionProvider);
-
     final categories =
         categoriesAsync.value?.where((c) => c.isIncome == isIncome).toList() ??
         [];
-
-    final transactions = transactionsAsync.value ?? [];
-
-    final Map<String, int> usage = {};
-
-    for (final tx in transactions) {
-      usage.update(tx.categoryId, (v) => v + 1, ifAbsent: () => 1);
-    }
-
-    final hasUsage = usage.isNotEmpty;
-
-    categories.sort((a, b) {
-      if (!hasUsage) {
-        return a.name.compareTo(b.name);
-      }
-
-      final countA = usage[a.id] ?? 0;
-      final countB = usage[b.id] ?? 0;
-
-      if (countA != countB) {
-        return countB.compareTo(countA);
-      }
-
-      return a.name.compareTo(b.name);
-    });
 
     final picked = await showModalBottomSheet<Category>(
       context: context,
@@ -129,11 +174,11 @@ class _QuickAddTransactionSheetState
               ...categories.map(
                 (c) => ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: Color(c.color).withOpacity(.15),
+                    backgroundColor: Color(c.color).withValues(alpha: .15),
                     child: Icon(
                       c.isDefault
                           ? categoryIcon(c.name)
-                          : IconData(c.icon, fontFamily: 'MaterialIcons'),
+                          : customCategoryIcon(c.icon),
                       color: Color(c.color),
                     ),
                   ),
@@ -149,13 +194,14 @@ class _QuickAddTransactionSheetState
                 leading: const Icon(Icons.add),
                 title: Text(t.newCategory),
                 onTap: () async {
+                  final navigator = Navigator.of(context);
                   final created = await showAddCategoryDialog(
                     context,
                     isIncome,
                   );
 
-                  if (created != null && context.mounted) {
-                    Navigator.pop(context, created);
+                  if (created != null && navigator.mounted) {
+                    navigator.pop(created);
                   }
                 },
               ),
@@ -197,48 +243,54 @@ class _QuickAddTransactionSheetState
     }
   }
 
+  String _frequencyLabel(RecurrenceFrequency frequency) {
+    final language = Localizations.localeOf(context).languageCode;
+    return switch ((frequency, language)) {
+      (RecurrenceFrequency.daily, 'it') => 'Giorni',
+      (RecurrenceFrequency.weekly, 'it') => 'Settimane',
+      (RecurrenceFrequency.monthly, 'it') => 'Mesi',
+      (RecurrenceFrequency.yearly, 'it') => 'Anni',
+      (RecurrenceFrequency.daily, 'es') => 'Días',
+      (RecurrenceFrequency.weekly, 'es') => 'Semanas',
+      (RecurrenceFrequency.monthly, 'es') => 'Meses',
+      (RecurrenceFrequency.yearly, 'es') => 'Años',
+      (RecurrenceFrequency.daily, _) => 'Days',
+      (RecurrenceFrequency.weekly, _) => 'Weeks',
+      (RecurrenceFrequency.monthly, _) => 'Months',
+      (RecurrenceFrequency.yearly, _) => 'Years',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
+    final currencyState = ref.watch(currencyProvider).value;
+    final baseCurrency = currencyState?.baseCurrency ?? 'EUR';
+    selectedCurrency ??= baseCurrency;
 
-    final transactionsAsync = ref.watch(transactionProvider);
     final categoriesAsync = ref.watch(categoryProvider);
 
-    final transactions = transactionsAsync.value ?? [];
     final categories = categoriesAsync.value ?? [];
 
+    if (selectedCategory == null && _pendingCategoryId != null) {
+      selectedCategory = categories
+          .where((category) => category.id == _pendingCategoryId)
+          .firstOrNull;
+      if (selectedCategory != null) _pendingCategoryId = null;
+    }
+
     final filtered = categories.where((c) => c.isIncome == isIncome).toList();
+    final recentCategories = filtered.take(4).toList();
 
-    final Map<String, int> usage = {};
-
-    for (final tx in transactions) {
-      usage.update(tx.categoryId, (v) => v + 1, ifAbsent: () => 1);
-    }
-
-    filtered.sort((a, b) {
-      final countA = usage[a.id] ?? 0;
-      final countB = usage[b.id] ?? 0;
-
-      if (countA != countB) {
-        return countB.compareTo(countA);
-      }
-
-      return a.name.compareTo(b.name);
-    });
-
-    final mostUsed = filtered.take(4).toList();
-
-    /// se la categoria selezionata non è tra le mostUsed → aggiungila
     if (selectedCategory != null &&
-        !mostUsed.any((c) => c.id == selectedCategory!.id)) {
-      mostUsed.removeLast(); // mantiene sempre 4 elementi
-      mostUsed.insert(0, selectedCategory!);
+        !recentCategories.any((c) => c.id == selectedCategory!.id)) {
+      if (recentCategories.length == 4) {
+        recentCategories.removeLast();
+      }
+      recentCategories.insert(0, selectedCategory!);
     }
 
-    final amountValue = double.tryParse(amount);
-
-    final canSave =
-        amountValue != null && amountValue > 0 && selectedCategory != null;
+    final canSave = amountMinor > 0 && selectedCategory != null;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -248,9 +300,37 @@ class _QuickAddTransactionSheetState
         top: 16,
       ),
       child: SingleChildScrollView(
+        controller: widget.scrollController,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Semantics(
+              label: MaterialLocalizations.of(context).closeButtonTooltip,
+              child: GestureDetector(
+                key: const ValueKey('quick-add-drag-handle'),
+                behavior: HitTestBehavior.opaque,
+                onVerticalDragUpdate: _updateDismissDrag,
+                onVerticalDragEnd: _endDismissDrag,
+                onVerticalDragCancel: () => _dismissDragDistance = 0,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 22,
+                  child: Center(
+                    child: Container(
+                      width: 42,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurfaceVariant.withValues(alpha: .38),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
             SegmentedButton<bool>(
               segments: [
                 ButtonSegment(value: true, label: Text(t.income)),
@@ -275,59 +355,91 @@ class _QuickAddTransactionSheetState
               },
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 18),
+                constraints: const BoxConstraints(minHeight: 150),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   color: Theme.of(context).colorScheme.surface,
                   border: Border.all(color: Colors.grey.shade300),
                 ),
-                child: Column(
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          "€",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade600,
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: CurrencySelector(
+                        value: selectedCurrency!,
+                        compact: true,
+                        onChanged: (currency) {
+                          setState(() {
+                            selectedCurrency = currency;
+                            amountMinor = 0;
+                          });
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            t.amount,
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(color: Colors.grey.shade600),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0, end: 1),
-                          duration: const Duration(milliseconds: 120),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, value, child) {
-                            return Transform.translate(
-                              offset: Offset(
-                                0,
-                                (1 - value) * 6,
-                              ), // slide up leggero
-                              child: Opacity(opacity: value, child: child),
-                            );
-                          },
-                          child: Text(
-                            amount,
-                            key: ValueKey(amount),
-                            style: const TextStyle(
-                              fontSize: 34,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1,
+                          const SizedBox(height: 7),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 140),
+                                transitionBuilder: (child, animation) =>
+                                    FadeTransition(
+                                      opacity: animation,
+                                      child: ScaleTransition(
+                                        scale: Tween(
+                                          begin: .97,
+                                          end: 1.0,
+                                        ).animate(animation),
+                                        child: child,
+                                      ),
+                                    ),
+                                child: Text(
+                                  amountInputText(
+                                    amountMinor,
+                                    selectedCurrency!,
+                                  ),
+                                  key: ValueKey(
+                                    '$amountMinor:$selectedCurrency',
+                                  ),
+                                  style: const TextStyle(
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -1.2,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      t.amount,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
+                          if (amountMinor > 0 &&
+                              selectedCurrency != baseCurrency &&
+                              currencyState != null) ...[
+                            const SizedBox(height: 5),
+                            Text(
+                              _conversionPreview(
+                                    currencyState,
+                                    baseCurrency,
+                                    Localizations.localeOf(context).toString(),
+                                  ) ??
+                                  t.conversionOnSave,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ],
@@ -337,54 +449,53 @@ class _QuickAddTransactionSheetState
 
             const SizedBox(height: 20),
 
-            if (!recurring)
-              InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: selectedDate,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2100),
-                  );
+            InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDate,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2100),
+                );
 
-                  if (picked != null) {
-                    setState(() {
-                      selectedDate = picked;
-                    });
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.grey.shade300),
-                    color: Theme.of(context).colorScheme.surface,
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today, size: 18),
-                      const SizedBox(width: 10),
-                      Text(
-                        DateFormat.yMMMd(
-                          Localizations.localeOf(context).toString(),
-                        ).format(selectedDate),
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const Spacer(),
-                      const Icon(Icons.expand_more),
-                    ],
-                  ),
+                if (picked != null) {
+                  setState(() {
+                    selectedDate = picked;
+                  });
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey.shade300),
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today, size: 18),
+                    const SizedBox(width: 10),
+                    Text(
+                      DateFormat.yMMMd(
+                        Localizations.localeOf(context).toString(),
+                      ).format(selectedDate),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.expand_more),
+                  ],
                 ),
               ),
+            ),
 
             const SizedBox(height: 16),
 
             if (!showKeypad) ...[
-              if (mostUsed.isNotEmpty) ...[
+              if (recentCategories.isNotEmpty) ...[
                 const SizedBox(height: 4),
 
                 Align(
@@ -401,27 +512,29 @@ class _QuickAddTransactionSheetState
                 const SizedBox(height: 10),
 
                 Wrap(
-                  key: ValueKey(mostUsed.map((e) => e.id).join()),
+                  key: ValueKey(recentCategories.map((e) => e.id).join()),
                   spacing: 10,
                   runSpacing: 10,
                   children: [
-                    ...mostUsed.map((c) {
+                    ...recentCategories.map((c) {
                       final selected = selectedCategory?.id == c.id;
 
                       return ActionChip(
                         avatar: CircleAvatar(
-                          backgroundColor: Color(c.color).withOpacity(.15),
+                          backgroundColor: Color(
+                            c.color,
+                          ).withValues(alpha: .15),
                           child: Icon(
                             c.isDefault
                                 ? categoryIcon(c.name)
-                                : IconData(c.icon, fontFamily: 'MaterialIcons'),
+                                : customCategoryIcon(c.icon),
                             size: 18,
                             color: Color(c.color),
                           ),
                         ),
                         label: Text(categoryName(c.name, t)),
                         backgroundColor: selected
-                            ? Color(c.color).withOpacity(.15)
+                            ? Color(c.color).withValues(alpha: .15)
                             : null,
                         onPressed: () {
                           setState(() {
@@ -455,7 +568,7 @@ class _QuickAddTransactionSheetState
                     color: recurring
                         ? Theme.of(
                             context,
-                          ).colorScheme.primary.withOpacity(0.06)
+                          ).colorScheme.primary.withValues(alpha: 0.06)
                         : Theme.of(context).colorScheme.surface,
                   ),
                   child: Row(
@@ -466,7 +579,7 @@ class _QuickAddTransactionSheetState
                         decoration: BoxDecoration(
                           color: Theme.of(
                             context,
-                          ).colorScheme.primary.withOpacity(0.15),
+                          ).colorScheme.primary.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.autorenew, size: 20),
@@ -484,7 +597,12 @@ class _QuickAddTransactionSheetState
                             ),
                             Text(
                               recurring
-                                  ? "${t.everyMonth} • $recurringDay"
+                                  ? t.recursEvery(
+                                      recurringInterval,
+                                      _frequencyLabel(
+                                        recurringFrequency,
+                                      ).toLowerCase(),
+                                    )
                                   : t.recurrentMsg,
                               style: TextStyle(
                                 fontSize: 12,
@@ -513,33 +631,97 @@ class _QuickAddTransactionSheetState
               if (recurring)
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
-                    onTap: _pickRecurringDay,
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.calendar_month),
-                          const SizedBox(width: 10),
-                          Text(
-                            t.dayOfMonth,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          const Spacer(),
-                          Text(
-                            recurringDay.toString(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: Text(t.repeatEvery)),
+                            DropdownButton<int>(
+                              value: recurringInterval,
+                              underline: const SizedBox(),
+                              items: List.generate(
+                                12,
+                                (index) => DropdownMenuItem(
+                                  value: index + 1,
+                                  child: Text('${index + 1}'),
+                                ),
+                              ),
+                              onChanged: (value) => setState(
+                                () => recurringInterval = value ?? 1,
+                              ),
                             ),
+                            const SizedBox(width: 8),
+                            DropdownButton<RecurrenceFrequency>(
+                              value: recurringFrequency,
+                              underline: const SizedBox(),
+                              items: RecurrenceFrequency.values
+                                  .map(
+                                    (value) => DropdownMenuItem(
+                                      value: value,
+                                      child: Text(_frequencyLabel(value)),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) => setState(() {
+                                recurringFrequency =
+                                    value ?? RecurrenceFrequency.monthly;
+                              }),
+                            ),
+                          ],
+                        ),
+                        if (recurringFrequency == RecurrenceFrequency.monthly ||
+                            recurringFrequency == RecurrenceFrequency.yearly)
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.calendar_month),
+                            title: Text(t.dayOfMonth),
+                            trailing: Text(
+                              '$recurringDay',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            onTap: _pickRecurringDay,
                           ),
-                        ],
-                      ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.event_busy_outlined),
+                          title: Text(t.endDate),
+                          subtitle: Text(
+                            recurringEndDate == null
+                                ? t.none
+                                : DateFormat.yMMMd(
+                                    Localizations.localeOf(context).toString(),
+                                  ).format(recurringEndDate!),
+                          ),
+                          trailing: recurringEndDate == null
+                              ? const Icon(Icons.chevron_right)
+                              : IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () =>
+                                      setState(() => recurringEndDate = null),
+                                ),
+                          onTap: () async {
+                            final value = await showDatePicker(
+                              context: context,
+                              initialDate:
+                                  recurringEndDate ??
+                                  selectedDate.add(const Duration(days: 30)),
+                              firstDate: selectedDate,
+                              lastDate: DateTime(selectedDate.year + 20),
+                            );
+                            if (value != null) {
+                              setState(() => recurringEndDate = value);
+                            }
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -567,7 +749,11 @@ class _QuickAddTransactionSheetState
                     Expanded(
                       child: TextField(
                         controller: noteController,
+                        onChanged: (_) => setState(() {}),
                         textCapitalization: TextCapitalization.sentences,
+                        inputFormatters: const [
+                          CapitalizeFirstLetterFormatter(),
+                        ],
                         keyboardType: TextInputType.text,
                         decoration: InputDecoration(
                           hintText: t.note,
@@ -582,59 +768,87 @@ class _QuickAddTransactionSheetState
                   ],
                 ),
               ),
+
+              if (!recurring && receiptPath != null)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.receipt_long),
+                  title: Text(t.receiptAttached),
+                  subtitle: Text(t.receiptLinked),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () async {
+                      final path = receiptPath;
+                      setState(() => receiptPath = null);
+                      await ref
+                          .read(receiptStorageServiceProvider)
+                          .remove(path);
+                    },
+                  ),
+                ),
             ],
 
             if (showKeypad) ...[
-              GridView.count(
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                crossAxisCount: 3,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 1.6,
-                children: [
-                  ...["1", "2", "3", "4", "5", "6", "7", "8", "9"].map(
-                    (d) => _KeyButton(
-                      label: d,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        _addDigit(d);
-                      },
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerLow.withValues(alpha: .62),
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: GridView.count(
+                  mainAxisSpacing: 2,
+                  crossAxisSpacing: 8,
+                  crossAxisCount: 3,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  childAspectRatio: 1.72,
+                  children: [
+                    ...['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(
+                      (digit) => _KeyButton(
+                        key: ValueKey('quick-amount-key-$digit'),
+                        label: digit,
+                        onTap: () => _addDigit(digit),
+                      ),
                     ),
-                  ),
-
-                  /// EMPTY (sinistra)
-                  const SizedBox(),
-
-                  /// ZERO (centrale)
-                  _KeyButton(
-                    label: "0",
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      _addDigit("0");
-                    },
-                  ),
-
-                  /// BACKSPACE (destra)
-                  _KeyButton(
-                    icon: Icons.backspace,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      _deleteDigit();
-                    },
-                  ),
-                ],
+                    _KeyButton(
+                      key: const ValueKey('quick-amount-key-00'),
+                      label: '00',
+                      onTap: () => _addDigits('00'),
+                    ),
+                    _KeyButton(
+                      key: const ValueKey('quick-amount-key-0'),
+                      label: '0',
+                      onTap: () => _addDigit('0'),
+                    ),
+                    _KeyButton(
+                      key: const ValueKey('quick-amount-backspace'),
+                      icon: Icons.backspace_outlined,
+                      semanticsLabel: t.deleteDigit,
+                      onTap: _deleteDigit,
+                      onLongPress: _clearAmount,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(17),
+                    ),
+                  ),
                   onPressed: () {
                     setState(() {
                       showKeypad = false;
                     });
                   },
-                  child: const Text("OK"),
+                  icon: const Icon(Icons.check_rounded),
+                  label: Text(t.confirm),
                 ),
               ),
             ],
@@ -669,7 +883,7 @@ class _QuickAddTransactionSheetState
                             return;
                           }
 
-                          final cents = (amountValue! * 100).round();
+                          final cents = amountMinor;
                           final notifier = ref.read(
                             transactionProvider.notifier,
                           );
@@ -685,12 +899,21 @@ class _QuickAddTransactionSheetState
                               note: noteController.text.trim().isEmpty
                                   ? null
                                   : noteController.text.trim(),
+                              currencyCode: selectedCurrency,
+                              frequency: recurringFrequency,
+                              interval: recurringInterval,
+                              dayOfWeek:
+                                  recurringFrequency ==
+                                      RecurrenceFrequency.weekly
+                                  ? selectedDate.weekday
+                                  : null,
+                              monthOfYear:
+                                  recurringFrequency ==
+                                      RecurrenceFrequency.yearly
+                                  ? selectedDate.month
+                                  : null,
+                              endDate: recurringEndDate,
                             );
-
-                            /// genera subito eventuali movimenti mancanti
-                            await ref
-                                .read(databaseProvider)
-                                .generateRecurringTransactions();
 
                             ref.invalidate(recurringProvider);
                             ref.invalidate(transactionProvider);
@@ -737,7 +960,10 @@ class _QuickAddTransactionSheetState
                               note: noteController.text.trim().isEmpty
                                   ? null
                                   : noteController.text.trim(),
+                              currencyCode: selectedCurrency,
+                              receiptPath: receiptPath,
                             );
+                            _receiptCommitted = true;
                           }
 
                           if (context.mounted) Navigator.pop(context);
@@ -750,7 +976,7 @@ class _QuickAddTransactionSheetState
                       width: double.infinity,
                       child: FilledButton(
                         style: FilledButton.styleFrom(
-                          backgroundColor: Colors.red.withOpacity(0.08),
+                          backgroundColor: Colors.red.withValues(alpha: 0.08),
                           foregroundColor: Colors.red,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -771,14 +997,45 @@ class _QuickAddTransactionSheetState
       ),
     );
   }
+
+  String? _conversionPreview(
+    CurrencyState currencyState,
+    String baseCurrency,
+    String locale,
+  ) {
+    try {
+      final conversion = ref
+          .read(currencyRatesServiceProvider)
+          .convert(
+            amountMinor: amountMinor,
+            sourceCurrency: selectedCurrency!,
+            baseCurrency: baseCurrency,
+            ratesPerEuro: currencyState.rates.ratesPerEuro,
+          );
+      return AppLocalizations.of(context)!.convertedToMainCurrency(
+        formatMoney(conversion.baseAmountMinor, baseCurrency, locale),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 class _KeyButton extends StatefulWidget {
   final String? label;
   final IconData? icon;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final String? semanticsLabel;
 
-  const _KeyButton({this.label, this.icon, required this.onTap});
+  const _KeyButton({
+    super.key,
+    this.label,
+    this.icon,
+    required this.onTap,
+    this.onLongPress,
+    this.semanticsLabel,
+  });
 
   @override
   State<_KeyButton> createState() => _KeyButtonState();
@@ -786,51 +1043,52 @@ class _KeyButton extends StatefulWidget {
 
 class _KeyButtonState extends State<_KeyButton> {
   double scale = 1;
-  double opacity = 1;
-
-  void _down() => setState(() {
-    scale = 0.92;
-    opacity = 0.6;
-  });
-
-  void _up() => setState(() {
-    scale = 1;
-    opacity = 1;
-  });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) {
-        _down();
-        HapticFeedback.lightImpact();
-      },
-      onTapUp: (_) {
-        _up();
-        widget.onTap();
-      },
-      onTapCancel: _up,
+    final colors = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      label: widget.semanticsLabel ?? widget.label,
       child: AnimatedScale(
         scale: scale,
-        duration: const Duration(milliseconds: 100),
+        duration: const Duration(milliseconds: 90),
         curve: Curves.easeOut,
-        child: AnimatedOpacity(
-          opacity: opacity,
-          duration: const Duration(milliseconds: 80),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(6),
+        child: Material(
+          color: Colors.transparent,
+          shape: const StadiumBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(999),
+            overlayColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.pressed)) {
+                return colors.primary.withValues(alpha: .11);
+              }
+              return Colors.transparent;
+            }),
+            onHighlightChanged: (highlighted) {
+              if (mounted) setState(() => scale = highlighted ? .91 : 1);
+            },
+            onTap: () {
+              HapticFeedback.lightImpact();
+              widget.onTap();
+            },
+            onLongPress: widget.onLongPress == null
+                ? null
+                : () {
+                    HapticFeedback.mediumImpact();
+                    widget.onLongPress!();
+                  },
+            child: Center(
               child: widget.icon != null
-                  ? Icon(widget.icon, size: 22)
+                  ? Icon(widget.icon, size: 24, color: colors.onSurfaceVariant)
                   : Text(
                       widget.label!,
-                      style: const TextStyle(
-                        fontSize: 26,
+                      style: TextStyle(
+                        color: colors.onSurface,
+                        fontSize: widget.label == '00' ? 22 : 28,
                         fontWeight: FontWeight.w600,
-                        letterSpacing: -0.5,
+                        letterSpacing: -.65,
                       ),
                     ),
             ),

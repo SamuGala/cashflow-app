@@ -4,7 +4,6 @@ import '../../transactions/providers/transaction_provider.dart';
 import '../../transactions/providers/category_provider.dart';
 import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
-import 'package:flutter/material.dart';
 
 class CategoryExpense {
   final Category category;
@@ -20,6 +19,8 @@ final categoryExpenseProvider = Provider<List<CategoryExpense>>((ref) {
   final List<Category> categories = categoriesAsync.value ?? [];
 
   final transactions = transactionsAsync.value ?? const <TransactionModel>[];
+
+  if (categories.isEmpty) return [];
 
   final Map<String, int> totals = {};
 

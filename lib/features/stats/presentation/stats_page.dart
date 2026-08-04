@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../dashboard/widgets/revolut_month_selector.dart';
-import '../../dashboard/presentation/dashboard_page.dart';
 import '../../dashboard/providers/dashboard_provider.dart';
+import '../../../shared/widgets/premium_segmented_selector.dart';
 
 import '../../../l10n/app_localizations.dart';
 
@@ -11,6 +11,7 @@ import '../widgets/category_donut_chart.dart';
 import '../widgets/premium_fintech_chart.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/time_filter_provider.dart';
+import '../../forecast/presentation/cashflow_forecast_card.dart';
 
 class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});
@@ -30,98 +31,91 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     final month = timeState.month;
     final t = AppLocalizations.of(context)!;
 
-    final stats = ref.watch(
-      dashboardProvider(DashboardQuery(filter: filter, start: start, end: end)),
-    );
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          t.stats,
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          PremiumSegmentedSelector(
-            labels: [t.total, t.month, t.period],
-            selectedIndex: filter.index,
-            onChanged: (index) {
-              ref
-                  .read(timeFilterProvider.notifier)
-                  .setFilter(TimeFilter.values[index]);
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          if (filter == TimeFilter.month) ...[
-            RevolutMonthSelector(
-              initialDate: month,
-              onChanged: (date) {
-                ref.read(timeFilterProvider.notifier).setMonth(date);
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: [
+            PremiumSegmentedSelector(
+              labels: [t.total, t.month, t.period],
+              selectedIndex: filter.index,
+              onChanged: (index) {
+                ref
+                    .read(timeFilterProvider.notifier)
+                    .setFilter(TimeFilter.values[index]);
               },
             ),
-            const SizedBox(height: 24),
-          ],
 
-          if (filter == TimeFilter.period) ...[
-            PeriodSelector(
-              start: start,
-              end: end,
-              onChanged: (s, e) {
-                ref.read(timeFilterProvider.notifier).setPeriod(s, e);
-              },
+            const SizedBox(height: 16),
+
+            if (filter == TimeFilter.month) ...[
+              RevolutMonthSelector(
+                initialDate: month,
+                onChanged: (date) {
+                  ref.read(timeFilterProvider.notifier).setMonth(date);
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            if (filter == TimeFilter.period) ...[
+              PeriodSelector(
+                start: start,
+                end: end,
+                onChanged: (s, e) {
+                  ref.read(timeFilterProvider.notifier).setPeriod(s, e);
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            const SizedBox(height: 10),
+
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: CategoryDonutChart(
+                query: DashboardQuery(
+                  filter: filter,
+                  start: filter == TimeFilter.month ? month : start,
+                  end: end,
+                ),
+              ),
             ),
+
             const SizedBox(height: 24),
-          ],
 
-          const SizedBox(height: 10),
+            const CashflowForecastCard(),
 
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: CategoryDonutChart(
+            const SizedBox(height: 28),
+
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            PremiumFintechChart(
               query: DashboardQuery(
                 filter: filter,
                 start: filter == TimeFilter.month ? month : start,
                 end: end,
               ),
             ),
-          ),
 
-          const SizedBox(height: 40),
-
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  Theme.of(context).dividerColor.withOpacity(0.2),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          PremiumFintechChart(
-            query: DashboardQuery(
-              filter: filter,
-              start: filter == TimeFilter.month ? month : start,
-              end: end,
-            ),
-          ),
-
-          const SizedBox(height: 40),
-        ],
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }

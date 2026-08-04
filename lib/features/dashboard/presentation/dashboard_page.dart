@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import '../../../core/providers/balance_visibility_provider.dart';
 import '../../../core/providers/time_filter_provider.dart';
 
-import '../providers/dashboard_provider.dart';
 import '../../transactions/providers/transaction_provider.dart';
 import '../../transactions/providers/category_provider.dart';
 
@@ -15,7 +14,15 @@ import '../../../l10n/app_localizations.dart';
 import '../../transactions/domain/category.dart';
 import '../../../core/utils/category_localization.dart';
 import '../../transactions/presentation/quick_add_transaction_sheet.dart';
-import '../../transactions/domain/transaction.dart';
+import '../../../core/currency/currency_metadata.dart';
+import '../../../core/currency/currency_provider.dart';
+import '../../budgets/presentation/budget_card.dart';
+import '../../goals/presentation/savings_goals_card.dart';
+import '../../../shared/widgets/premium_segmented_selector.dart';
+import '../../../core/receipts/receipt_scan_review_sheet.dart';
+import '../../../core/receipts/receipt_capture_page.dart';
+import '../../../core/receipts/receipt_scanner_service.dart';
+import '../../../core/receipts/receipt_storage_service.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -26,8 +33,89 @@ class DashboardPage extends ConsumerStatefulWidget {
 
 class _DashboardPageState extends ConsumerState<DashboardPage> {
   bool showIncome = false;
+  bool _isScanningReceipt = false;
 
-  int periodMonths = 6;
+  Future<void> _openQuickAdd({ReceiptScanReviewResult? receipt}) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      useSafeArea: true,
+      showDragHandle: false,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * .94,
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 1,
+        minChildSize: .32,
+        maxChildSize: 1,
+        shouldCloseOnMinExtent: true,
+        builder: (_, scrollController) => QuickAddTransactionSheet(
+          initialReceipt: receipt,
+          scrollController: scrollController,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _scanReceipt() async {
+    if (_isScanningReceipt) return;
+    setState(() => _isScanningReceipt = true);
+    final storage = ref.read(receiptStorageServiceProvider);
+    try {
+      final categories = await ref.read(categoryProvider.future);
+      final fallbackCurrency =
+          ref.read(currencyProvider).value?.baseCurrency ?? 'EUR';
+      if (!mounted) return;
+      final imagePath = await showReceiptCapture(
+        context: context,
+        storage: storage,
+      );
+      if (imagePath == null) return;
+      final draft = await ref
+          .read(receiptScannerServiceProvider)
+          .scanStoredImage(
+            imagePath: imagePath,
+            categories: categories,
+            fallbackCurrency: fallbackCurrency,
+          );
+      if (!mounted) {
+        await storage.remove(draft.imagePath);
+        return;
+      }
+      final reviewed = await showReceiptScanReview(
+        context: context,
+        draft: draft,
+        categories: categories,
+      );
+      if (reviewed == null || !mounted) {
+        await storage.remove(draft.imagePath);
+        return;
+      }
+      await _openQuickAdd(receipt: reviewed);
+    } on PlatformException catch (error) {
+      if (!mounted) return;
+      final t = AppLocalizations.of(context)!;
+      final permissionDenied = error.code.toLowerCase().contains('denied');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            permissionDenied ? t.receiptPermissionDenied : t.cameraUnavailable,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      final t = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t.receiptAttachFailed)));
+    } finally {
+      if (mounted) setState(() => _isScanningReceipt = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,15 +126,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final selectedMonth = timeState.month;
     final customStart = timeState.start;
     final customEnd = timeState.end;
-    final stats = ref.watch(
-      dashboardProvider(
-        DashboardQuery(
-          filter: filter,
-          start: filter == TimeFilter.month ? selectedMonth : customStart,
-          end: customEnd,
-        ),
-      ),
-    );
     final showBalance = ref.watch(balanceVisibilityProvider);
 
     final transactionsAsync = ref.watch(transactionProvider);
@@ -56,7 +135,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final List<Category> categories = categoriesAsync.value ?? [];
 
     final locale = Localizations.localeOf(context).toString();
-    final currency = NumberFormat.currency(locale: locale, symbol: '€');
+    final baseCurrency =
+        ref.watch(currencyProvider).value?.baseCurrency ?? 'EUR';
 
     String hide(String value) => showBalance ? value : "••••";
 
@@ -99,443 +179,289 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     }
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        elevation: 2,
-        child: const Icon(Icons.add),
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            showDragHandle: true,
-            builder: (_) => const QuickAddTransactionSheet(),
-          );
-        },
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 50, 16, 20),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          /// HEADER
-          Row(
-            children: [
-              Text(
-                t.appName,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                icon: Icon(
-                  showBalance ? Icons.visibility : Icons.visibility_off,
-                ),
-                onPressed: () {
-                  ref.read(balanceVisibilityProvider.notifier).toggle();
-                },
-              ),
-            ],
+          FloatingActionButton.small(
+            key: const ValueKey('scan-receipt-button'),
+            heroTag: 'scan-receipt',
+            tooltip: t.scanReceipt,
+            onPressed: _isScanningReceipt ? null : _scanReceipt,
+            child: _isScanningReceipt
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2.4),
+                  )
+                : const Icon(Icons.photo_camera_outlined),
           ),
-
-          const SizedBox(height: 14),
-
-          /// FILTER
-          PremiumSegmentedSelector(
-            labels: [t.total, t.month, t.period],
-            selectedIndex: filter.index,
-            onChanged: (index) {
-              final selected = TimeFilter.values[index];
-
-              ref.read(timeFilterProvider.notifier).setFilter(selected);
-
-              if (selected == TimeFilter.month) {
-                ref.read(timeFilterProvider.notifier).setMonth(DateTime.now());
-              }
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          /// MONTH SELECTOR
-          if (filter == TimeFilter.month) ...[
-            RevolutMonthSelector(
-              initialDate: selectedMonth,
-              onChanged: (date) {
-                ref.read(timeFilterProvider.notifier).setMonth(date);
-              },
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          /// PERIOD SELECTOR
-          if (filter == TimeFilter.period) ...[
-            PeriodSelector(
-              start: customStart,
-              end: customEnd,
-              onChanged: (start, end) {
-                ref.read(timeFilterProvider.notifier).setPeriod(start, end);
-              },
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          /// BALANCE CARD
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xff6366F1), Color(0xff4F46E5)],
-              ),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(t.balance, style: const TextStyle(color: Colors.white70)),
-                const SizedBox(height: 6),
-                Text(
-                  hide(currency.format(stats.balance / 100)),
-                  style: const TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    _StatBox(
-                      label: t.incomes,
-                      value: hide(currency.format(stats.income / 100)),
-                      icon: Icons.arrow_upward,
-                    ),
-                    const SizedBox(width: 10),
-                    _StatBox(
-                      label: t.expenses,
-                      value: hide(currency.format(stats.expense / 100)),
-                      icon: Icons.arrow_downward,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          if (filter == TimeFilter.month && insightMessage != null)
-            Container(
-              margin: const EdgeInsets.only(top: 14),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: expenseIncreased
-                    ? Colors.orange.withOpacity(.08)
-                    : Colors.green.withOpacity(.08),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    expenseIncreased ? Icons.trending_up : Icons.trending_down,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(insightMessage)),
-                ],
-              ),
-            ),
-
-          const SizedBox(height: 18),
-
-          /// INCOME / EXPENSE TOGGLE
-          Row(
-            children: [
-              ChoiceChip(
-                label: Text(t.expenses),
-                selected: !showIncome,
-                onSelected: (_) => setState(() => showIncome = false),
-              ),
-              const SizedBox(width: 8),
-              ChoiceChip(
-                label: Text(t.incomes),
-                selected: showIncome,
-                onSelected: (_) => setState(() => showIncome = true),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          Builder(
-            builder: (_) {
-              final Map<String, int> totals = {};
-
-             Iterable<TransactionModel> filtered = transactions;
-
-              if (filter == TimeFilter.month) {
-                filtered = transactions.where(
-                  (tx) =>
-                      tx.date.month == selectedMonth.month &&
-                      tx.date.year == selectedMonth.year,
-                );
-              }
-
-              if (filter == TimeFilter.period &&
-                  customStart != null &&
-                  customEnd != null) {
-                filtered = transactions.where(
-                  (tx) =>
-                      !tx.date.isBefore(customStart) &&
-                      !tx.date.isAfter(customEnd),
-                );
-              }
-
-              final filteredByType = filtered.where(
-                (tx) => tx.isIncome == showIncome,
-              );
-
-              for (final tx in filteredByType) {
-                totals.update(
-                  tx.categoryId,
-                  (v) => v + tx.amountCents,
-                  ifAbsent: () => tx.amountCents,
-                );
-              }
-
-              final entries = totals.entries.toList()
-                ..sort((a, b) => b.value.compareTo(a.value));
-
-              if (entries.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(t.noTransactions),
-                );
-              }
-
-              final totalExpense = entries.fold<int>(
-                0,
-                (sum, e) => sum + e.value,
-              );
-
-              return Column(
-                children: entries.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final e = entry.value;
-
-                  final category = categories.firstWhere(
-                    (c) => c.id == e.key,
-                    orElse: () => categories.first,
-                  );
-
-                  final amount = currency.format(e.value / 100);
-                  final percent = e.value / totalExpense;
-
-                  final topCategory = entries.first.key;
-
-                  return TweenAnimationBuilder(
-                    duration: Duration(milliseconds: 250 + index * 60),
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    builder: (context, double value, child) {
-                      return Opacity(
-                        opacity: value,
-                        child: Transform.translate(
-                          offset: Offset(0, 16 * (1 - value)),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Theme.of(context).colorScheme.surfaceContainer
-                            : Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                height: 44,
-                                width: 44,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: category.id == topCategory
-                                      ? Color(category.color).withOpacity(0.1)
-                                      : Theme.of(context).colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Icon(
-                                  category.isDefault
-                                      ? categoryIcon(category.name)
-                                      : IconData(
-                                          category.icon,
-                                          fontFamily: 'MaterialIcons',
-                                        ),
-                                  size: 28,
-                                  color: Color(category.color),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  categoryName(category.name, t),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    hide(amount),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  Text(
-                                    "${(percent * 100).toStringAsFixed(0)}%",
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0, end: percent),
-                              duration: const Duration(milliseconds: 700),
-                              curve: Curves.easeOut,
-                              builder: (context, value, _) {
-                                return LinearProgressIndicator(
-                                  value: value,
-                                  minHeight: 7,
-                                  backgroundColor: Colors.grey.withOpacity(
-                                    0.15,
-                                  ),
-                                  valueColor: AlwaysStoppedAnimation(
-                                    Color(category.color),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
+          const SizedBox(height: 10),
+          FloatingActionButton(
+            key: const ValueKey('add-transaction-button'),
+            heroTag: 'add-transaction',
+            elevation: 2,
+            tooltip: t.addTransaction,
+            onPressed: () => _openQuickAdd(),
+            child: const Icon(Icons.add),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _StatBox extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-
-  const _StatBox({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(.12),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 6),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(color: Colors.white70)),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+            /// TIME FILTER
+            PremiumSegmentedSelector(
+              labels: [t.total, t.month, t.period],
+              selectedIndex: filter.index,
+              onChanged: (index) {
+                final selected = TimeFilter.values[index];
+
+                ref.read(timeFilterProvider.notifier).setFilter(selected);
+
+                if (selected == TimeFilter.month) {
+                  ref
+                      .read(timeFilterProvider.notifier)
+                      .setMonth(DateTime.now());
+                }
+              },
+            ),
+
+            const SizedBox(height: 14),
+
+            /// MONTH SELECTOR
+            if (filter == TimeFilter.month) ...[
+              RevolutMonthSelector(
+                initialDate: selectedMonth,
+                onChanged: (date) {
+                  ref.read(timeFilterProvider.notifier).setMonth(date);
+                },
+              ),
+              const SizedBox(height: 14),
+            ],
+
+            /// PERIOD SELECTOR
+            if (filter == TimeFilter.period) ...[
+              PeriodSelector(
+                start: customStart,
+                end: customEnd,
+                onChanged: (start, end) {
+                  ref.read(timeFilterProvider.notifier).setPeriod(start, end);
+                },
+              ),
+              const SizedBox(height: 14),
+            ],
+
+            const BudgetCard(),
+
+            const SizedBox(height: 14),
+            const SavingsGoalsCard(),
+
+            if (filter == TimeFilter.month && insightMessage != null)
+              Container(
+                margin: const EdgeInsets.only(top: 14),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: expenseIncreased
+                      ? Colors.orange.withValues(alpha: .08)
+                      : Colors.green.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: (expenseIncreased ? Colors.orange : Colors.green)
+                        .withValues(alpha: .18),
                   ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      expenseIncreased
+                          ? Icons.trending_up
+                          : Icons.trending_down,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(insightMessage)),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 18),
+
+            /// INCOME / EXPENSE TOGGLE
+            Row(
+              children: [
+                ChoiceChip(
+                  label: Text(t.expenses),
+                  selected: !showIncome,
+                  onSelected: (_) => setState(() => showIncome = false),
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: Text(t.incomes),
+                  selected: showIncome,
+                  onSelected: (_) => setState(() => showIncome = true),
                 ),
               ],
             ),
+
+            const SizedBox(height: 14),
+
+            Builder(
+              builder: (_) {
+                final Map<String, int> totals = {};
+
+                final filtered = transactions.where(
+                  (tx) => isInSelectedTimeWindow(tx.date, timeState),
+                );
+
+                final filteredByType = filtered.where(
+                  (tx) => tx.isIncome == showIncome,
+                );
+
+                for (final tx in filteredByType) {
+                  totals.update(
+                    tx.categoryId,
+                    (v) => v + tx.amountCents,
+                    ifAbsent: () => tx.amountCents,
+                  );
+                }
+
+                final entries = totals.entries.toList()
+                  ..removeWhere(
+                    (entry) =>
+                        !categories.any((category) => category.id == entry.key),
+                  )
+                  ..sort((a, b) => b.value.compareTo(a.value));
+
+                if (entries.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(t.noTransactions),
+                  );
+                }
+
+                final totalExpense = entries.fold<int>(
+                  0,
+                  (sum, e) => sum + e.value,
+                );
+
+                return Column(
+                  children: entries.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final e = entry.value;
+
+                    final category = categories.firstWhere(
+                      (c) => c.id == e.key,
+                      orElse: () => categories.first,
+                    );
+
+                    final amount = formatMoney(e.value, baseCurrency, locale);
+                    final percent = e.value / totalExpense;
+
+                    final topCategory = entries.first.key;
+
+                    return TweenAnimationBuilder(
+                      duration: Duration(milliseconds: 250 + index * 60),
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      builder: (context, double value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, 16 * (1 - value)),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.surfaceContainer
+                              : Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.outlineVariant.withValues(alpha: .65),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  height: 46,
+                                  width: 46,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: category.id == topCategory
+                                        ? Color(
+                                            category.color,
+                                          ).withValues(alpha: 0.1)
+                                        : Theme.of(context).colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Icon(
+                                    category.isDefault
+                                        ? categoryIcon(category.name)
+                                        : customCategoryIcon(category.icon),
+                                    size: 28,
+                                    color: Color(category.color),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    categoryName(category.name, t),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  hide(amount),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: TweenAnimationBuilder<double>(
+                                tween: Tween(begin: 0, end: percent),
+                                duration: const Duration(milliseconds: 700),
+                                curve: Curves.easeOut,
+                                builder: (context, value, _) {
+                                  return LinearProgressIndicator(
+                                    value: value,
+                                    minHeight: 7,
+                                    backgroundColor: Colors.grey.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Color(category.color),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class PremiumSegmentedSelector extends StatelessWidget {
-  final List<String> labels;
-  final int selectedIndex;
-  final Function(int) onChanged;
-
-  const PremiumSegmentedSelector({
-    super.key,
-    required this.labels,
-    required this.selectedIndex,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 44,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: List.generate(labels.length, (index) {
-          final active = selectedIndex == index;
-
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                onChanged(index);
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: active
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  labels[index],
-                  style: TextStyle(
-                    color: active ? Colors.white : Colors.grey,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
       ),
     );
   }
@@ -559,7 +485,7 @@ class PeriodSelector extends StatelessWidget {
 
     String format(DateTime? d) {
       if (d == null) return "—";
-      return DateFormat.yMMM(locale).format(d);
+      return DateFormat.yMMMd(locale).format(d);
     }
 
     return GestureDetector(

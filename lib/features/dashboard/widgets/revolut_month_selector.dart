@@ -66,6 +66,12 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
     }
   }
 
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
   void updateMonth(int month) {
     final newDate = DateTime(currentYear, month);
 

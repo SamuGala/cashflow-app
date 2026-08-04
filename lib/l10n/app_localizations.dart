@@ -100,7 +100,7 @@ abstract class AppLocalizations {
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
-  /// **'Pocket Vault'**
+  /// **'Pockets Vault'**
   String get appName;
 
   /// No description provided for @addTransaction.
@@ -427,6 +427,12 @@ abstract class AppLocalizations {
   /// **'Education'**
   String get education;
 
+  /// No description provided for @otherCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get otherCategory;
+
   /// No description provided for @recurrents.
   ///
   /// In en, this message translates to:
@@ -672,6 +678,792 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter PIN'**
   String get enterPin;
+
+  /// No description provided for @enableBiometrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable biometric unlock'**
+  String get enableBiometrics;
+
+  /// No description provided for @enableBiometricsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Face ID or your fingerprint to unlock Pockets Vault?'**
+  String get enableBiometricsMessage;
+
+  /// No description provided for @notNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get notNow;
+
+  /// No description provided for @enable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get enable;
+
+  /// No description provided for @biometricUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric unlock'**
+  String get biometricUnlock;
+
+  /// No description provided for @deleteDigit.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete digit'**
+  String get deleteDigit;
+
+  /// No description provided for @clearPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear PIN'**
+  String get clearPin;
+
+  /// No description provided for @home.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
+  /// No description provided for @systemTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get systemTheme;
+
+  /// No description provided for @mainCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Main currency'**
+  String get mainCurrency;
+
+  /// No description provided for @updateRates.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh rates'**
+  String get updateRates;
+
+  /// No description provided for @automaticLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic lock'**
+  String get automaticLock;
+
+  /// No description provided for @backupPortability.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup and portability'**
+  String get backupPortability;
+
+  /// No description provided for @encryptedBackupCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'AES-256 encryption, CSV export and local restore'**
+  String get encryptedBackupCaption;
+
+  /// No description provided for @exportEncryptedBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Export encrypted backup'**
+  String get exportEncryptedBackup;
+
+  /// No description provided for @exportTransactionsCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Export transactions as CSV'**
+  String get exportTransactionsCsv;
+
+  /// No description provided for @importBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Import backup'**
+  String get importBackup;
+
+  /// No description provided for @safeMergeOrReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe merge or complete replacement'**
+  String get safeMergeOrReplace;
+
+  /// No description provided for @localSmartRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Local smart rules'**
+  String get localSmartRules;
+
+  /// No description provided for @privateCategorization.
+  ///
+  /// In en, this message translates to:
+  /// **'Private categorization without sending data'**
+  String get privateCategorization;
+
+  /// No description provided for @noRules.
+  ///
+  /// In en, this message translates to:
+  /// **'No rules'**
+  String get noRules;
+
+  /// No description provided for @noRulesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can remember one while adding a transaction.'**
+  String get noRulesHint;
+
+  /// No description provided for @availableToSpend.
+  ///
+  /// In en, this message translates to:
+  /// **'Available to spend'**
+  String get availableToSpend;
+
+  /// No description provided for @budgets.
+  ///
+  /// In en, this message translates to:
+  /// **'Budgets'**
+  String get budgets;
+
+  /// No description provided for @optionalMonthlyBudgets.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional monthly budgets, editable at any time'**
+  String get optionalMonthlyBudgets;
+
+  /// No description provided for @noBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'No budget'**
+  String get noBudget;
+
+  /// No description provided for @forecast90Days.
+  ///
+  /// In en, this message translates to:
+  /// **'90-day forecast'**
+  String get forecast90Days;
+
+  /// No description provided for @noForecastMovements.
+  ///
+  /// In en, this message translates to:
+  /// **'No recurring transactions forecast.'**
+  String get noForecastMovements;
+
+  /// No description provided for @savingsGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'Savings goals'**
+  String get savingsGoals;
+
+  /// No description provided for @manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get manage;
+
+  /// No description provided for @createGoalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a goal and track your progress.'**
+  String get createGoalHint;
+
+  /// No description provided for @newGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'New goal'**
+  String get newGoal;
+
+  /// No description provided for @noGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'No goals'**
+  String get noGoals;
+
+  /// No description provided for @rememberCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember this category'**
+  String get rememberCategory;
+
+  /// No description provided for @rememberCategoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest it for similar descriptions, only on this device.'**
+  String get rememberCategoryHint;
+
+  /// No description provided for @addReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Add receipt'**
+  String get addReceipt;
+
+  /// No description provided for @receiptAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt attached'**
+  String get receiptAttached;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo'**
+  String get takePhoto;
+
+  /// No description provided for @chooseLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from library'**
+  String get chooseLibrary;
+
+  /// No description provided for @repeatEvery.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat every'**
+  String get repeatEvery;
+
+  /// No description provided for @endDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get endDate;
+
+  /// No description provided for @none.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get none;
+
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @recurrenceDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurrence deleted'**
+  String get recurrenceDeleted;
+
+  /// No description provided for @availableThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Available this month'**
+  String get availableThisMonth;
+
+  /// No description provided for @availableAllTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall available'**
+  String get availableAllTime;
+
+  /// No description provided for @availableForPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Available in period'**
+  String get availableForPeriod;
+
+  /// No description provided for @availableFormula.
+  ///
+  /// In en, this message translates to:
+  /// **'Income − expenses − reserved savings − scheduled recurring payments'**
+  String get availableFormula;
+
+  /// No description provided for @reservedSavings.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserved'**
+  String get reservedSavings;
+
+  /// No description provided for @scheduledUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get scheduledUpcoming;
+
+  /// No description provided for @categoryLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'Category limits'**
+  String get categoryLimits;
+
+  /// No description provided for @activeBudgets.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} active'**
+  String activeBudgets(Object count);
+
+  /// No description provided for @remainingBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} remaining'**
+  String remainingBudget(Object amount);
+
+  /// No description provided for @budgetExceededBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Exceeded by {amount}'**
+  String budgetExceededBy(Object amount);
+
+  /// No description provided for @setOptionalLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Set an optional limit'**
+  String get setOptionalLimit;
+
+  /// No description provided for @budgetForCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly budget · {category}'**
+  String budgetForCategory(Object category);
+
+  /// No description provided for @amountInCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount in {currency}'**
+  String amountInCurrency(Object currency);
+
+  /// No description provided for @enterPositiveAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount greater than zero.'**
+  String get enterPositiveAmount;
+
+  /// No description provided for @budgetDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget deleted'**
+  String get budgetDeleted;
+
+  /// No description provided for @budgetPeriodHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly limits are prorated to the selected interval.'**
+  String get budgetPeriodHint;
+
+  /// No description provided for @forecastRecurring.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring forecast'**
+  String get forecastRecurring;
+
+  /// No description provided for @forecastExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimate from the current balance using scheduled recurring transactions only.'**
+  String get forecastExplanation;
+
+  /// No description provided for @currentBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Current balance'**
+  String get currentBalance;
+
+  /// No description provided for @forecastAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'In {duration}'**
+  String forecastAfter(Object duration);
+
+  /// No description provided for @recurringIncluded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} recurring transactions included in the calculation.'**
+  String recurringIncluded(Object count);
+
+  /// No description provided for @oneMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'1 month'**
+  String get oneMonth;
+
+  /// No description provided for @monthsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} months'**
+  String monthsCount(Object count);
+
+  /// No description provided for @oneYear.
+  ///
+  /// In en, this message translates to:
+  /// **'1 year'**
+  String get oneYear;
+
+  /// No description provided for @yearsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} years'**
+  String yearsCount(Object count);
+
+  /// No description provided for @savingsReservedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserved amounts reduce what is available to spend, while remaining part of your balance.'**
+  String get savingsReservedHint;
+
+  /// No description provided for @allocatedInSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserved in this period: {amount}'**
+  String allocatedInSelection(Object amount);
+
+  /// No description provided for @reserveFunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserve'**
+  String get reserveFunds;
+
+  /// No description provided for @releaseFunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Release funds'**
+  String get releaseFunds;
+
+  /// No description provided for @addSavings.
+  ///
+  /// In en, this message translates to:
+  /// **'Add savings'**
+  String get addSavings;
+
+  /// No description provided for @releaseSavings.
+  ///
+  /// In en, this message translates to:
+  /// **'Release savings'**
+  String get releaseSavings;
+
+  /// No description provided for @goalName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get goalName;
+
+  /// No description provided for @goalTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal · {name}'**
+  String goalTarget(Object name);
+
+  /// No description provided for @deleteGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this goal?'**
+  String get deleteGoal;
+
+  /// No description provided for @deleteGoalReleasesFunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserved funds will become available again. History is preserved and transactions are not changed.'**
+  String get deleteGoalReleasesFunds;
+
+  /// No description provided for @goalDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal deleted'**
+  String get goalDeleted;
+
+  /// No description provided for @maximumAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum {amount}'**
+  String maximumAmount(Object amount);
+
+  /// No description provided for @receiptOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional receipt'**
+  String get receiptOptional;
+
+  /// No description provided for @receiptPurpose.
+  ///
+  /// In en, this message translates to:
+  /// **'Reads amount, date, merchant and category directly on your device.'**
+  String get receiptPurpose;
+
+  /// No description provided for @receiptStoredLocally.
+  ///
+  /// In en, this message translates to:
+  /// **'Private on-device scan, with review before saving.'**
+  String get receiptStoredLocally;
+
+  /// No description provided for @receiptLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Attached to this transaction'**
+  String get receiptLinked;
+
+  /// No description provided for @receiptPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied. Enable photos and camera in Settings.'**
+  String get receiptPermissionDenied;
+
+  /// No description provided for @cameraUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera unavailable on this device.'**
+  String get cameraUnavailable;
+
+  /// No description provided for @libraryUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo library unavailable on this device.'**
+  String get libraryUnavailable;
+
+  /// No description provided for @receiptAttachFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to attach the receipt.'**
+  String get receiptAttachFailed;
+
+  /// No description provided for @convertedToMainCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {amount} in the main currency'**
+  String convertedToMainCurrency(Object amount);
+
+  /// No description provided for @conversionOnSave.
+  ///
+  /// In en, this message translates to:
+  /// **'The exchange rate will be calculated when saving.'**
+  String get conversionOnSave;
+
+  /// No description provided for @ecbRefreshNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'ECB conversion · update required'**
+  String get ecbRefreshNeeded;
+
+  /// No description provided for @ecbRatesDate.
+  ///
+  /// In en, this message translates to:
+  /// **'ECB rates from {date}'**
+  String ecbRatesDate(Object date);
+
+  /// No description provided for @rateApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate app'**
+  String get rateApp;
+
+  /// No description provided for @shareApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Share app'**
+  String get shareApp;
+
+  /// No description provided for @protectBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect backup'**
+  String get protectBackup;
+
+  /// No description provided for @unlockBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock backup'**
+  String get unlockBackup;
+
+  /// No description provided for @continueAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueAction;
+
+  /// No description provided for @exportCanceled.
+  ///
+  /// In en, this message translates to:
+  /// **'Export canceled.'**
+  String get exportCanceled;
+
+  /// No description provided for @backupReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup ready to save or share.'**
+  String get backupReady;
+
+  /// No description provided for @csvReady.
+  ///
+  /// In en, this message translates to:
+  /// **'CSV ready to save or share.'**
+  String get csvReady;
+
+  /// No description provided for @importMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Import mode'**
+  String get importMode;
+
+  /// No description provided for @importModeExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge keeps current data and updates items with the same identifier. Replace first deletes all local financial data.'**
+  String get importModeExplanation;
+
+  /// No description provided for @merge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get merge;
+
+  /// No description provided for @replace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get replace;
+
+  /// No description provided for @backupRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup restored successfully.'**
+  String get backupRestored;
+
+  /// No description provided for @minimumPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least 8 characters.'**
+  String get minimumPassword;
+
+  /// No description provided for @passwordsDoNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match.'**
+  String get passwordsDoNotMatch;
+
+  /// No description provided for @minimumEightCharacters.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters'**
+  String get minimumEightCharacters;
+
+  /// No description provided for @confirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get confirmPassword;
+
+  /// No description provided for @changeCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Change currency'**
+  String get changeCurrency;
+
+  /// No description provided for @recursEvery.
+  ///
+  /// In en, this message translates to:
+  /// **'Every {interval} {frequency}'**
+  String recursEvery(Object frequency, Object interval);
+
+  /// No description provided for @savingsUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to update the savings goal.'**
+  String get savingsUpdateFailed;
+
+  /// No description provided for @hideAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide amounts'**
+  String get hideAmounts;
+
+  /// No description provided for @showAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Show amounts'**
+  String get showAmounts;
+
+  /// No description provided for @scanReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan receipt'**
+  String get scanReceipt;
+
+  /// No description provided for @receiptScanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Take or choose a receipt photo to fill the expense automatically.'**
+  String get receiptScanHint;
+
+  /// No description provided for @scanWithCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan with camera'**
+  String get scanWithCamera;
+
+  /// No description provided for @scanFromLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a photo'**
+  String get scanFromLibrary;
+
+  /// No description provided for @cameraFlash.
+  ///
+  /// In en, this message translates to:
+  /// **'Flash'**
+  String get cameraFlash;
+
+  /// No description provided for @receiptScanReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review scan'**
+  String get receiptScanReview;
+
+  /// No description provided for @receiptScanCheckData.
+  ///
+  /// In en, this message translates to:
+  /// **'We found these details. Review and edit them before continuing.'**
+  String get receiptScanCheckData;
+
+  /// No description provided for @receiptScanNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not read reliable details. Enter them manually or attach the photo only.'**
+  String get receiptScanNoData;
+
+  /// No description provided for @receiptMerchant.
+  ///
+  /// In en, this message translates to:
+  /// **'Merchant'**
+  String get receiptMerchant;
+
+  /// No description provided for @receiptScanPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR and analysis happen entirely on this device.'**
+  String get receiptScanPrivate;
+
+  /// No description provided for @attachOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach only'**
+  String get attachOnly;
+
+  /// No description provided for @useDetectedData.
+  ///
+  /// In en, this message translates to:
+  /// **'Use details'**
+  String get useDetectedData;
+
+  /// No description provided for @receiptScanApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt details applied. Review and save the transaction.'**
+  String get receiptScanApplied;
+
+  /// No description provided for @receiptScanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing receipt…'**
+  String get receiptScanning;
+
+  /// No description provided for @dataTemporarilyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Data temporarily unavailable.'**
+  String get dataTemporarilyUnavailable;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get retry;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -7,8 +7,8 @@ import '../domain/category.dart';
 
 final categoryProvider =
     AsyncNotifierProvider<CategoryNotifier, List<Category>>(
-  CategoryNotifier.new,
-);
+      CategoryNotifier.new,
+    );
 
 class CategoryNotifier extends AsyncNotifier<List<Category>> {
   final _uuid = const Uuid();
@@ -74,9 +74,19 @@ class CategoryNotifier extends AsyncNotifier<List<Category>> {
   }
 
   /// DELETE CATEGORY
-  Future<void> deleteCategory(String id) async {
-    await db.deleteCategory(id);
+  Future<bool> canDeleteCategory(String id) async {
+    return !await db.isCategoryInUse(id);
+  }
 
+  Future<bool> deleteCategory(String id) async {
+    if (!await db.deleteCategoryIfUnused(id)) return false;
+
+    state = AsyncData(await db.getAllCategories());
+    return true;
+  }
+
+  Future<void> markUsed(String id) async {
+    await db.markCategoryUsed(id);
     state = AsyncData(await db.getAllCategories());
   }
 

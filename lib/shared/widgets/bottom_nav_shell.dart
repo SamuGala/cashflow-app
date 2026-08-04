@@ -3,10 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../l10n/app_localizations.dart';
 
 class BottomNavShell extends StatelessWidget {
-  const BottomNavShell({
-    super.key,
-    required this.navigationShell,
-  });
+  const BottomNavShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
@@ -26,10 +23,7 @@ class BottomNavShell extends StatelessWidget {
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: _onTap,
         destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
+          NavigationDestination(icon: Icon(Icons.home_rounded), label: t.home),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_rounded),
             label: t.transactions,

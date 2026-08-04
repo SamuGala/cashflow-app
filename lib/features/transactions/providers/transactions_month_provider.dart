@@ -2,7 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final transactionsMonthProvider =
     NotifierProvider<TransactionsMonthNotifier, DateTime>(
-        TransactionsMonthNotifier.new);
+      TransactionsMonthNotifier.new,
+    );
 
 class TransactionsMonthNotifier extends Notifier<DateTime> {
   @override

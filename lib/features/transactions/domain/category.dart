@@ -5,6 +5,7 @@ class Category {
   final int icon;
   final int color;
   final bool isDefault;
+  final DateTime? lastUsedAt;
 
   const Category({
     required this.id,
@@ -13,6 +14,7 @@ class Category {
     required this.icon,
     required this.color,
     required this.isDefault,
+    this.lastUsedAt,
   });
 
   Category copyWith({
@@ -22,6 +24,7 @@ class Category {
     int? icon,
     int? color,
     bool? isDefault,
+    DateTime? lastUsedAt,
   }) {
     return Category(
       id: id ?? this.id,
@@ -30,6 +33,7 @@ class Category {
       icon: icon ?? this.icon,
       color: color ?? this.color,
       isDefault: isDefault ?? this.isDefault,
+      lastUsedAt: lastUsedAt ?? this.lastUsedAt,
     );
   }
 }

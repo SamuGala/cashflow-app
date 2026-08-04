@@ -21,5 +21,5 @@ class BalanceVisibilityNotifier extends Notifier<bool> {
 
 final balanceVisibilityProvider =
     NotifierProvider<BalanceVisibilityNotifier, bool>(
-  BalanceVisibilityNotifier.new,
-);
+      BalanceVisibilityNotifier.new,
+    );

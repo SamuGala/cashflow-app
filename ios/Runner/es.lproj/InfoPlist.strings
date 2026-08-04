@@ -1,0 +1,3 @@
+"NSCameraUsageDescription" = "La cámara se usa para escanear recibos y completar el gasto en el dispositivo.";
+"NSPhotoLibraryUsageDescription" = "El acceso a las fotos se usa para escanear un recibo elegido de la biblioteca.";
+"NSFaceIDUsageDescription" = "Usa Face ID para desbloquear Pockets Vault.";

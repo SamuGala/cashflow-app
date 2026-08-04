@@ -13,15 +13,22 @@ class MonthlySummary {
 
 final monthlySummaryProvider = Provider<MonthlySummary>((ref) {
   final transactionsAsync = ref.watch(transactionProvider);
-  final month = ref.watch(timeFilterProvider);
+  final month = ref.watch(timeFilterProvider).month;
 
   final transactions = transactionsAsync.value ?? const <TransactionModel>[];
 
+  return calculateMonthlySummary(transactions, month);
+});
+
+MonthlySummary calculateMonthlySummary(
+  Iterable<TransactionModel> transactions,
+  DateTime month,
+) {
   int income = 0;
   int expense = 0;
 
   for (final t in transactions) {
-    if (t.date.month == month.month && t.date.year == month.month.year) {
+    if (t.date.month == month.month && t.date.year == month.year) {
       if (t.isIncome) {
         income += t.amountCents;
       } else {
@@ -31,4 +38,4 @@ final monthlySummaryProvider = Provider<MonthlySummary>((ref) {
   }
 
   return MonthlySummary(income, expense);
-});
+}

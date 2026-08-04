@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appName => 'Pocket Vault';
+  String get appName => 'Pockets Vault';
 
   @override
   String get addTransaction => 'Add transaction';
@@ -174,6 +174,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get education => 'Education';
 
   @override
+  String get otherCategory => 'Other';
+
+  @override
   String get recurrents => 'Recurring';
 
   @override
@@ -299,4 +302,427 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enterPin => 'Enter PIN';
+
+  @override
+  String get enableBiometrics => 'Enable biometric unlock';
+
+  @override
+  String get enableBiometricsMessage => 'Use Face ID or your fingerprint to unlock Pockets Vault?';
+
+  @override
+  String get notNow => 'Not now';
+
+  @override
+  String get enable => 'Enable';
+
+  @override
+  String get biometricUnlock => 'Biometric unlock';
+
+  @override
+  String get deleteDigit => 'Delete digit';
+
+  @override
+  String get clearPin => 'Clear PIN';
+
+  @override
+  String get home => 'Home';
+
+  @override
+  String get systemTheme => 'System';
+
+  @override
+  String get mainCurrency => 'Main currency';
+
+  @override
+  String get updateRates => 'Refresh rates';
+
+  @override
+  String get automaticLock => 'Automatic lock';
+
+  @override
+  String get backupPortability => 'Backup and portability';
+
+  @override
+  String get encryptedBackupCaption => 'AES-256 encryption, CSV export and local restore';
+
+  @override
+  String get exportEncryptedBackup => 'Export encrypted backup';
+
+  @override
+  String get exportTransactionsCsv => 'Export transactions as CSV';
+
+  @override
+  String get importBackup => 'Import backup';
+
+  @override
+  String get safeMergeOrReplace => 'Safe merge or complete replacement';
+
+  @override
+  String get localSmartRules => 'Local smart rules';
+
+  @override
+  String get privateCategorization => 'Private categorization without sending data';
+
+  @override
+  String get noRules => 'No rules';
+
+  @override
+  String get noRulesHint => 'You can remember one while adding a transaction.';
+
+  @override
+  String get availableToSpend => 'Available to spend';
+
+  @override
+  String get budgets => 'Budgets';
+
+  @override
+  String get optionalMonthlyBudgets => 'Optional monthly budgets, editable at any time';
+
+  @override
+  String get noBudget => 'No budget';
+
+  @override
+  String get forecast90Days => '90-day forecast';
+
+  @override
+  String get noForecastMovements => 'No recurring transactions forecast.';
+
+  @override
+  String get savingsGoals => 'Savings goals';
+
+  @override
+  String get manage => 'Manage';
+
+  @override
+  String get createGoalHint => 'Create a goal and track your progress.';
+
+  @override
+  String get newGoal => 'New goal';
+
+  @override
+  String get noGoals => 'No goals';
+
+  @override
+  String get rememberCategory => 'Remember this category';
+
+  @override
+  String get rememberCategoryHint => 'Suggest it for similar descriptions, only on this device.';
+
+  @override
+  String get addReceipt => 'Add receipt';
+
+  @override
+  String get receiptAttached => 'Receipt attached';
+
+  @override
+  String get takePhoto => 'Take a photo';
+
+  @override
+  String get chooseLibrary => 'Choose from library';
+
+  @override
+  String get repeatEvery => 'Repeat every';
+
+  @override
+  String get endDate => 'End date';
+
+  @override
+  String get none => 'None';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get recurrenceDeleted => 'Recurrence deleted';
+
+  @override
+  String get availableThisMonth => 'Available this month';
+
+  @override
+  String get availableAllTime => 'Overall available';
+
+  @override
+  String get availableForPeriod => 'Available in period';
+
+  @override
+  String get availableFormula => 'Income − expenses − reserved savings − scheduled recurring payments';
+
+  @override
+  String get reservedSavings => 'Reserved';
+
+  @override
+  String get scheduledUpcoming => 'Upcoming';
+
+  @override
+  String get categoryLimits => 'Category limits';
+
+  @override
+  String activeBudgets(Object count) {
+    return '$count active';
+  }
+
+  @override
+  String remainingBudget(Object amount) {
+    return '$amount remaining';
+  }
+
+  @override
+  String budgetExceededBy(Object amount) {
+    return 'Exceeded by $amount';
+  }
+
+  @override
+  String get setOptionalLimit => 'Set an optional limit';
+
+  @override
+  String budgetForCategory(Object category) {
+    return 'Monthly budget · $category';
+  }
+
+  @override
+  String amountInCurrency(Object currency) {
+    return 'Amount in $currency';
+  }
+
+  @override
+  String get enterPositiveAmount => 'Enter an amount greater than zero.';
+
+  @override
+  String get budgetDeleted => 'Budget deleted';
+
+  @override
+  String get budgetPeriodHint => 'Monthly limits are prorated to the selected interval.';
+
+  @override
+  String get forecastRecurring => 'Recurring forecast';
+
+  @override
+  String get forecastExplanation => 'Estimate from the current balance using scheduled recurring transactions only.';
+
+  @override
+  String get currentBalance => 'Current balance';
+
+  @override
+  String forecastAfter(Object duration) {
+    return 'In $duration';
+  }
+
+  @override
+  String recurringIncluded(Object count) {
+    return '$count recurring transactions included in the calculation.';
+  }
+
+  @override
+  String get oneMonth => '1 month';
+
+  @override
+  String monthsCount(Object count) {
+    return '$count months';
+  }
+
+  @override
+  String get oneYear => '1 year';
+
+  @override
+  String yearsCount(Object count) {
+    return '$count years';
+  }
+
+  @override
+  String get savingsReservedHint => 'Reserved amounts reduce what is available to spend, while remaining part of your balance.';
+
+  @override
+  String allocatedInSelection(Object amount) {
+    return 'Reserved in this period: $amount';
+  }
+
+  @override
+  String get reserveFunds => 'Reserve';
+
+  @override
+  String get releaseFunds => 'Release funds';
+
+  @override
+  String get addSavings => 'Add savings';
+
+  @override
+  String get releaseSavings => 'Release savings';
+
+  @override
+  String get goalName => 'Name';
+
+  @override
+  String goalTarget(Object name) {
+    return 'Goal · $name';
+  }
+
+  @override
+  String get deleteGoal => 'Delete this goal?';
+
+  @override
+  String get deleteGoalReleasesFunds => 'Reserved funds will become available again. History is preserved and transactions are not changed.';
+
+  @override
+  String get goalDeleted => 'Goal deleted';
+
+  @override
+  String maximumAmount(Object amount) {
+    return 'Maximum $amount';
+  }
+
+  @override
+  String get receiptOptional => 'Optional receipt';
+
+  @override
+  String get receiptPurpose => 'Reads amount, date, merchant and category directly on your device.';
+
+  @override
+  String get receiptStoredLocally => 'Private on-device scan, with review before saving.';
+
+  @override
+  String get receiptLinked => 'Attached to this transaction';
+
+  @override
+  String get receiptPermissionDenied => 'Permission denied. Enable photos and camera in Settings.';
+
+  @override
+  String get cameraUnavailable => 'Camera unavailable on this device.';
+
+  @override
+  String get libraryUnavailable => 'Photo library unavailable on this device.';
+
+  @override
+  String get receiptAttachFailed => 'Unable to attach the receipt.';
+
+  @override
+  String convertedToMainCurrency(Object amount) {
+    return '≈ $amount in the main currency';
+  }
+
+  @override
+  String get conversionOnSave => 'The exchange rate will be calculated when saving.';
+
+  @override
+  String get ecbRefreshNeeded => 'ECB conversion · update required';
+
+  @override
+  String ecbRatesDate(Object date) {
+    return 'ECB rates from $date';
+  }
+
+  @override
+  String get rateApp => 'Rate app';
+
+  @override
+  String get shareApp => 'Share app';
+
+  @override
+  String get protectBackup => 'Protect backup';
+
+  @override
+  String get unlockBackup => 'Unlock backup';
+
+  @override
+  String get continueAction => 'Continue';
+
+  @override
+  String get exportCanceled => 'Export canceled.';
+
+  @override
+  String get backupReady => 'Backup ready to save or share.';
+
+  @override
+  String get csvReady => 'CSV ready to save or share.';
+
+  @override
+  String get importMode => 'Import mode';
+
+  @override
+  String get importModeExplanation => 'Merge keeps current data and updates items with the same identifier. Replace first deletes all local financial data.';
+
+  @override
+  String get merge => 'Merge';
+
+  @override
+  String get replace => 'Replace';
+
+  @override
+  String get backupRestored => 'Backup restored successfully.';
+
+  @override
+  String get minimumPassword => 'Use at least 8 characters.';
+
+  @override
+  String get passwordsDoNotMatch => 'Passwords do not match.';
+
+  @override
+  String get minimumEightCharacters => 'At least 8 characters';
+
+  @override
+  String get confirmPassword => 'Confirm password';
+
+  @override
+  String get changeCurrency => 'Change currency';
+
+  @override
+  String recursEvery(Object frequency, Object interval) {
+    return 'Every $interval $frequency';
+  }
+
+  @override
+  String get savingsUpdateFailed => 'Unable to update the savings goal.';
+
+  @override
+  String get hideAmounts => 'Hide amounts';
+
+  @override
+  String get showAmounts => 'Show amounts';
+
+  @override
+  String get scanReceipt => 'Scan receipt';
+
+  @override
+  String get receiptScanHint => 'Take or choose a receipt photo to fill the expense automatically.';
+
+  @override
+  String get scanWithCamera => 'Scan with camera';
+
+  @override
+  String get scanFromLibrary => 'Scan a photo';
+
+  @override
+  String get cameraFlash => 'Flash';
+
+  @override
+  String get receiptScanReview => 'Review scan';
+
+  @override
+  String get receiptScanCheckData => 'We found these details. Review and edit them before continuing.';
+
+  @override
+  String get receiptScanNoData => 'We could not read reliable details. Enter them manually or attach the photo only.';
+
+  @override
+  String get receiptMerchant => 'Merchant';
+
+  @override
+  String get receiptScanPrivate => 'OCR and analysis happen entirely on this device.';
+
+  @override
+  String get attachOnly => 'Attach only';
+
+  @override
+  String get useDetectedData => 'Use details';
+
+  @override
+  String get receiptScanApplied => 'Receipt details applied. Review and save the transaction.';
+
+  @override
+  String get receiptScanning => 'Analyzing receipt…';
+
+  @override
+  String get dataTemporarilyUnavailable => 'Data temporarily unavailable.';
+
+  @override
+  String get retry => 'Try again';
 }

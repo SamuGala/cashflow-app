@@ -7,6 +7,8 @@ import '../../../core/providers/time_filter_provider.dart';
 
 import '../../dashboard/providers/dashboard_provider.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/currency/currency_metadata.dart';
+import '../../../core/currency/currency_provider.dart';
 
 class PremiumFintechChart extends ConsumerStatefulWidget {
   final DashboardQuery query;
@@ -49,15 +51,15 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final txAsync = ref.watch(transactionProvider);
-    final timeState = ref.watch(timeFilterProvider);
-    final selectedMonth = timeState.month;
+    final currency = ref.watch(currencyProvider).value?.baseCurrency ?? 'EUR';
+    final locale = Localizations.localeOf(context).toString();
 
     return txAsync.when(
       loading: () => const SizedBox(
         height: 260,
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => const SizedBox(),
+      error: (_, _) => const SizedBox(),
       data: (transactions) {
         Iterable filtered = transactions;
 
@@ -87,7 +89,7 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
         for (final tx in filtered) {
           final key = monthly ? tx.date.day : tx.date.month;
 
-          final amount = (tx.amountCents as num).toDouble() / 100;
+          final amount = minorToMajor(tx.amountCents, currency);
 
           if (tx.isIncome) {
             income.update(key, (v) => v + amount, ifAbsent: () => amount);
@@ -123,7 +125,7 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: AnimatedBuilder(
                   animation: controller,
-                  builder: (_, __) {
+                  builder: (_, _) {
                     return LineChart(
                       LineChartData(
                         clipData: const FlClipData.all(),
@@ -137,7 +139,7 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
                             200,
                           )).toDouble(),
                           getDrawingHorizontalLine: (_) => FlLine(
-                            color: Colors.grey.withOpacity(0.08),
+                            color: Colors.grey.withValues(alpha: 0.08),
                             strokeWidth: 1,
                           ),
                         ),
@@ -151,7 +153,11 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
                             getTooltipItems: (spots) {
                               return spots.map((s) {
                                 return LineTooltipItem(
-                                  "€ ${s.y.toStringAsFixed(2)}",
+                                  formatMoney(
+                                    majorToMinor(s.y, currency),
+                                    currency,
+                                    locale,
+                                  ),
                                   const TextStyle(color: Colors.white),
                                 );
                               }).toList();
@@ -183,7 +189,7 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    Colors.green.withOpacity(0.25),
+                                    Colors.green.withValues(alpha: 0.25),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -213,7 +219,7 @@ class _PremiumFintechChartState extends ConsumerState<PremiumFintechChart>
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    Colors.red.withOpacity(0.25),
+                                    Colors.red.withValues(alpha: 0.25),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -277,8 +283,8 @@ class _LegendChip extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           color: active
-              ? color.withOpacity(0.18)
-              : Colors.grey.withOpacity(0.06),
+              ? color.withValues(alpha: 0.18)
+              : Colors.grey.withValues(alpha: 0.06),
         ),
         child: Row(
           children: [

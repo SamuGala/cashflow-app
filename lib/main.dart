@@ -1,13 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart';
 
 import 'core/database/database_provider.dart';
+import 'features/transactions/providers/transaction_provider.dart';
 import 'core/security/auth_provider.dart';
-import 'core/security/pin_page.dart';
-import 'package:pocket_vault/core/providers/locale_provider.dart';
-import 'l10n/app_localizations.dart';
-
+import 'core/security/auto_lock_provider.dart';
 import 'app/app.dart';
 
 Future<void> main() async {
@@ -26,36 +26,71 @@ class RootApp extends StatefulWidget {
 }
 
 class _RootAppState extends State<RootApp> with WidgetsBindingObserver {
-  bool _initialized = false;
+  DateTime? _backgroundedAt;
+  bool _privacyShield = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_generateRecurringTransactions());
+    });
   }
 
-  /// quando l'app torna in foreground
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused) {
+      if (mounted && !_privacyShield) {
+        setState(() => _privacyShield = true);
+      }
+    }
+
+    if ((state == AppLifecycleState.hidden ||
+            state == AppLifecycleState.paused) &&
+        mounted) {
       final container = ProviderScope.containerOf(context);
-      final db = container.read(databaseProvider);
-      db.generateRecurringTransactions();
+      if (container.read(authProvider)) {
+        _backgroundedAt ??= DateTime.now();
+      }
+    }
+
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_handleResume());
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  Future<void> _handleResume() async {
+    if (!mounted) return;
+    final container = ProviderScope.containerOf(context);
+    final timeout = await container.read(autoLockProvider.future);
+    final backgroundedAt = _backgroundedAt;
+    if (shouldAutoLock(
+      backgroundedAt: backgroundedAt,
+      resumedAt: DateTime.now(),
+      timeout: timeout,
+    )) {
+      container.read(authProvider.notifier).lock();
+    }
+    _backgroundedAt = null;
+    if (mounted && _privacyShield) {
+      setState(() => _privacyShield = false);
+    }
+    await _generateRecurringTransactions();
+  }
 
-    if (!_initialized) {
-      _initialized = true;
+  Future<void> _generateRecurringTransactions() async {
+    if (!mounted) return;
 
-      Future.microtask(() async {
-        final container = ProviderScope.containerOf(context);
-        final db = container.read(databaseProvider);
-        await db.generateRecurringTransactions();
-      });
+    final container = ProviderScope.containerOf(context);
+    final generated = await container
+        .read(databaseProvider)
+        .generateRecurringTransactions();
+
+    if (generated > 0) {
+      container.invalidate(transactionProvider);
     }
   }
 
@@ -67,6 +102,22 @@ class _RootAppState extends State<RootApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return const CashflowApp();
+    return Stack(
+      fit: StackFit.expand,
+      alignment: Alignment.topLeft,
+      children: [
+        const CashflowApp(),
+        if (_privacyShield)
+          const Directionality(
+            textDirection: TextDirection.ltr,
+            child: ColoredBox(
+              color: Color(0xFF0B1220),
+              child: Center(
+                child: Icon(Icons.lock_rounded, color: Colors.white, size: 42),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

@@ -30,8 +30,8 @@ android {
         applicationId = "com.samuelegalasso.pocketsvault"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 4
-        versionName = "1.1.3"
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
     }
 
     
@@ -54,4 +54,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Bundled Latin OCR model: receipt recognition stays available offline.
+    implementation("com.google.mlkit:text-recognition:16.0.1")
 }

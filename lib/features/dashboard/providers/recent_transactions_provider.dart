@@ -12,8 +12,7 @@ final recentTransactionsProvider = Provider<List<TransactionModel>>((ref) {
     return [];
   }
 
-  final sorted = [...transactions]
-    ..sort((a, b) => b.date.compareTo(a.date));
+  final sorted = [...transactions]..sort((a, b) => b.date.compareTo(a.date));
 
   return sorted.take(5).toList();
 });

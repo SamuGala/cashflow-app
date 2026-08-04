@@ -29,6 +29,8 @@ String categoryName(String key, AppLocalizations t) {
       return t.travel;
     case 'education':
       return t.education;
+    case 'other':
+      return t.otherCategory;
     default:
       return key;
   }
@@ -62,7 +64,56 @@ IconData categoryIcon(String key) {
       return Icons.flight;
     case 'education':
       return Icons.school;
+    case 'other':
+      return Icons.more_horiz;
     default:
       return Icons.category;
   }
 }
+
+/// Resolves persisted custom-category icon code points without constructing
+/// [IconData] dynamically. This keeps release icon tree-shaking safe while
+/// preserving icons written by both current and legacy app versions.
+IconData customCategoryIcon(int codePoint) {
+  for (final icon in _supportedCustomCategoryIcons) {
+    if (icon.codePoint == codePoint) return icon;
+  }
+
+  return switch (codePoint) {
+    // Legacy Material Icons code points used by earlier releases.
+    0xe8cc => Icons.shopping_cart,
+    0xe88a => Icons.home,
+    0xe57a => Icons.fastfood,
+    0xe531 => Icons.directions_car,
+    0xe02c => Icons.movie,
+    0xea28 => Icons.sports_esports,
+    0xe56c => Icons.restaurant,
+    0xe539 => Icons.flight,
+    0xe80c => Icons.school,
+    0xe87d => Icons.favorite,
+    0xe227 => Icons.attach_money,
+    0xe548 => Icons.local_hospital,
+    0xe91d => Icons.pets,
+    0xe8f6 => Icons.card_giftcard,
+    0xe8f9 => Icons.work,
+    _ => Icons.category,
+  };
+}
+
+const _supportedCustomCategoryIcons = <IconData>[
+  Icons.shopping_cart,
+  Icons.home,
+  Icons.fastfood,
+  Icons.directions_car,
+  Icons.movie,
+  Icons.sports_esports,
+  Icons.restaurant,
+  Icons.flight,
+  Icons.school,
+  Icons.favorite,
+  Icons.attach_money,
+  Icons.local_hospital,
+  Icons.pets,
+  Icons.card_giftcard,
+  Icons.work,
+];

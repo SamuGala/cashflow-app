@@ -1,13 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum DashboardPeriod {
-  total,
-  month
-}
+enum DashboardPeriod { total, month }
 
 final dashboardPeriodProvider =
     NotifierProvider<DashboardPeriodNotifier, DashboardPeriod>(
-        DashboardPeriodNotifier.new);
+      DashboardPeriodNotifier.new,
+    );
 
 class DashboardPeriodNotifier extends Notifier<DashboardPeriod> {
   @override

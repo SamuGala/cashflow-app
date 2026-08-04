@@ -3,17 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../stats/providers/monthly_summary_provider.dart';
+import '../../../core/currency/currency_metadata.dart';
+import '../../../core/currency/currency_provider.dart';
 
 class CashflowChart extends ConsumerWidget {
   const CashflowChart({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     final summary = ref.watch(monthlySummaryProvider);
 
-    final income = summary.income / 100;
-    final expense = summary.expense / 100;
+    final currency = ref.watch(currencyProvider).value?.baseCurrency ?? 'EUR';
+    final income = minorToMajor(summary.income, currency);
+    final expense = minorToMajor(summary.expense, currency);
 
     return SizedBox(
       height: 200,
@@ -24,7 +26,6 @@ class CashflowChart extends ConsumerWidget {
           gridData: const FlGridData(show: false),
 
           barGroups: [
-
             BarChartGroupData(
               x: 0,
               barRods: [
@@ -50,8 +51,7 @@ class CashflowChart extends ConsumerWidget {
             ),
           ],
         ),
-        swapAnimationDuration:
-            const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 400),
       ),
     );
   }

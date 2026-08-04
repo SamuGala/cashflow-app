@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final transactionSearchProvider =
-    NotifierProvider<SearchNotifier, String>(SearchNotifier.new);
+final transactionSearchProvider = NotifierProvider<SearchNotifier, String>(
+  SearchNotifier.new,
+);
 
 class SearchNotifier extends Notifier<String> {
   @override

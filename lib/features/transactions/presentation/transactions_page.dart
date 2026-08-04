@@ -1,11 +1,14 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/input_formatters/capitalize_first_letter_formatter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
-import '../providers/search_provider.dart';
 
 import '../domain/transaction.dart';
 import '../../transactions/domain/category.dart';
@@ -17,6 +20,11 @@ import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/category_localization.dart';
 import '../../dashboard/widgets/revolut_month_selector.dart';
 import '../../../core/providers/time_filter_provider.dart';
+import '../../../core/currency/currency_metadata.dart';
+import '../../../core/currency/currency_provider.dart';
+import '../../../core/receipts/receipt_storage_service.dart';
+import '../../../shared/widgets/premium_segmented_selector.dart';
+import '../../../shared/widgets/inline_load_error.dart';
 
 class TransactionsPage extends ConsumerStatefulWidget {
   const TransactionsPage({super.key});
@@ -30,6 +38,13 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   bool showRecurring = false;
   final TextEditingController searchController = TextEditingController();
   String query = "";
+
+  @override
+  void dispose() {
+    searchFocus.dispose();
+    searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,45 +65,51 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
 
     final locale = Localizations.localeOf(context).toString();
 
-    final currency = NumberFormat.currency(
-      locale: locale,
-      symbol: '€',
-      decimalDigits: 2,
-    );
+    final baseCurrency =
+        ref.watch(currencyProvider).value?.baseCurrency ?? 'EUR';
 
     final dateFormat = DateFormat.yMMMMd(locale);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            t.transactions,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ),
-        body: Column(
-          children: [
-            /// TIME FILTER
-            /// TIME FILTER
-            if (!showRecurring)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                child: PremiumSegmentedSelector(
-                  labels: [t.total, t.month, t.period],
-                  selectedIndex: timeFilter.index,
-                  onChanged: (index) async {
-                    final selected = TimeFilter.values[index];
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              /// TIME FILTER
+              if (!showRecurring)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: PremiumSegmentedSelector(
+                    labels: [t.total, t.month, t.period],
+                    selectedIndex: timeFilter.index,
+                    onChanged: (index) {
+                      final selected = TimeFilter.values[index];
+                      ref.read(timeFilterProvider.notifier).setFilter(selected);
+                    },
+                  ),
+                ),
+              if (!showRecurring && timeFilter == TimeFilter.month) ...[
+                RevolutMonthSelector(
+                  initialDate: selectedMonth,
+                  onChanged: (date) {
+                    ref.read(timeFilterProvider.notifier).setMonth(date);
+                  },
+                ),
+                const SizedBox(height: 10),
+              ],
 
-                    if (selected == TimeFilter.period) {
+              if (!showRecurring && timeFilter == TimeFilter.period)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  child: GestureDetector(
+                    onTap: () async {
                       final range = await showDateRangePicker(
                         context: context,
                         firstDate: DateTime(2020),
                         lastDate: DateTime(2100),
+                        initialDateRange: selectedRange,
                       );
 
                       if (range != null) {
@@ -96,410 +117,434 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                             .read(timeFilterProvider.notifier)
                             .setPeriod(range.start, range.end);
                       }
-
-                      return;
-                    }
-                    ref.read(timeFilterProvider.notifier).setFilter(selected);
-                  },
-                ),
-              ),
-            if (!showRecurring && timeFilter == TimeFilter.month) ...[
-              RevolutMonthSelector(
-                initialDate: selectedMonth,
-                onChanged: (date) {
-                  ref.read(timeFilterProvider.notifier).setMonth(date);
-                },
-              ),
-              const SizedBox(height: 10),
-            ],
-
-            if (!showRecurring && timeFilter == TimeFilter.period)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: GestureDetector(
-                  onTap: () async {
-                    final range = await showDateRangePicker(
-                      context: context,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2100),
-                      initialDateRange: selectedRange,
-                    );
-
-                    if (range != null) {
-                      ref
-                          .read(timeFilterProvider.notifier)
-                          .setPeriod(range.start, range.end);
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_month),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            selectedRange == null
-                                ? t.selectPeriod
-                                : "${DateFormat.yMMM().format(selectedRange.start)} → "
-                                      "${DateFormat.yMMM().format(selectedRange.end)}",
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_month),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              selectedRange == null
+                                  ? t.selectPeriod
+                                  : "${DateFormat.yMMM().format(selectedRange.start)} → "
+                                        "${DateFormat.yMMM().format(selectedRange.end)}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
-                        ),
-                        const Icon(Icons.expand_more),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-            /// SEGMENT SELECTOR
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              width: double.infinity,
-              child: SizedBox(
-                width: double.infinity,
-                child: SegmentedButton<bool>(
-                  style: ButtonStyle(
-                    minimumSize: const WidgetStatePropertyAll(
-                      Size.fromHeight(48),
-                    ),
-                    shape: WidgetStatePropertyAll(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(26),
+                          const Icon(Icons.expand_more),
+                        ],
                       ),
                     ),
                   ),
-                  segments: [
-                    ButtonSegment(value: false, label: Text(t.transactions)),
-                    ButtonSegment(value: true, label: Text(t.recurrents)),
-                  ],
-                  selected: {showRecurring},
-                  onSelectionChanged: (v) {
-                    setState(() {
-                      showRecurring = v.first;
-
-                      if (showRecurring) {
-                        searchController.clear();
-                        query = "";
-                      }
-                    });
-                  },
                 ),
-              ),
-            ),
-            if (!showRecurring) ...[
+
+              /// SEGMENT SELECTOR
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                child: TextField(
-                  controller: searchController,
-                  focusNode: searchFocus,
-                  onChanged: (value) {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      query = value.toLowerCase();
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: t.searchBar,
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    suffixIcon: query.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              searchController.clear();
-                              setState(() {
-                                query = "";
-                              });
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceContainer,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(26),
-                      borderSide: BorderSide(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.12),
+                width: double.infinity,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<bool>(
+                    style: ButtonStyle(
+                      minimumSize: const WidgetStatePropertyAll(
+                        Size.fromHeight(48),
+                      ),
+                      shape: WidgetStatePropertyAll(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(26),
+                        ),
                       ),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(26),
-                      borderSide: BorderSide(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.12),
+                    segments: [
+                      ButtonSegment(value: false, label: Text(t.transactions)),
+                      ButtonSegment(value: true, label: Text(t.recurrents)),
+                    ],
+                    selected: {showRecurring},
+                    onSelectionChanged: (v) {
+                      setState(() {
+                        showRecurring = v.first;
+
+                        if (showRecurring) {
+                          searchController.clear();
+                          query = "";
+                        }
+                      });
+                    },
+                  ),
+                ),
+              ),
+              if (!showRecurring) ...[
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: TextField(
+                    controller: searchController,
+                    focusNode: searchFocus,
+                    textCapitalization: TextCapitalization.sentences,
+                    inputFormatters: const [CapitalizeFirstLetterFormatter()],
+                    onChanged: (value) {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        query = value.toLowerCase();
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: t.searchBar,
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(26),
-                      borderSide: BorderSide(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withOpacity(0.35),
+                      suffixIcon: query.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () {
+                                searchController.clear();
+                                setState(() {
+                                  query = "";
+                                });
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainer,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(26),
+                        borderSide: BorderSide(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.12),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(26),
+                        borderSide: BorderSide(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.12),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(26),
+                        borderSide: BorderSide(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.35),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
 
-            const SizedBox(height: 8),
+              const SizedBox(height: 8),
 
-            Expanded(
-              child: showRecurring
-                  ? const RecurringList()
-                  : transactionsAsync.when(
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
-                      error: (error, stack) =>
-                          Center(child: Text(error.toString())),
-                      data: (transactions) {
-                        final filteredTime = transactions.where((tx) {
-                          if (timeFilter == TimeFilter.total) return true;
+              Expanded(
+                child: showRecurring
+                    ? const RecurringList()
+                    : transactionsAsync.when(
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (_, _) => Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: InlineLoadError(
+                              onRetry: () =>
+                                  ref.invalidate(transactionProvider),
+                            ),
+                          ),
+                        ),
+                        data: (transactions) {
+                          final filteredTime = transactions.where((tx) {
+                            if (timeFilter == TimeFilter.total) return true;
 
-                          if (timeFilter == TimeFilter.month) {
-                            return tx.date.month == selectedMonth.month &&
-                                tx.date.year == selectedMonth.year;
+                            if (timeFilter == TimeFilter.month) {
+                              return tx.date.month == selectedMonth.month &&
+                                  tx.date.year == selectedMonth.year;
+                            }
+
+                            if (timeFilter == TimeFilter.period &&
+                                selectedRange != null) {
+                              return !tx.date.isBefore(selectedRange.start) &&
+                                  !tx.date.isAfter(selectedRange.end);
+                            }
+
+                            return true;
+                          }).toList();
+
+                          final sorted = [...filteredTime]
+                            ..sort((a, b) => b.date.compareTo(a.date));
+
+                          final filteredSearch = sorted.where((tx) {
+                            if (query.isEmpty) return true;
+
+                            final category = categories.firstWhere(
+                              (c) => c.id == tx.categoryId,
+                              orElse: () => categories.first,
+                            );
+
+                            final categoryNameTranslated = categoryName(
+                              category.name,
+                              t,
+                            ).toLowerCase();
+
+                            final note = (tx.note ?? "").toLowerCase();
+
+                            return categoryNameTranslated.contains(query) ||
+                                note.contains(query);
+                          }).toList();
+
+                          if (filteredSearch.isEmpty) {
+                            return Center(child: Text(t.noTransactions));
                           }
 
-                          if (timeFilter == TimeFilter.period &&
-                              selectedRange != null) {
-                            return !tx.date.isBefore(selectedRange.start) &&
-                                !tx.date.isAfter(selectedRange.end);
+                          final Map<DateTime, List<TransactionModel>> grouped =
+                              {};
+
+                          for (final tx in sorted) {
+                            final day = DateTime(
+                              tx.date.year,
+                              tx.date.month,
+                              tx.date.day,
+                            );
+                            grouped.putIfAbsent(day, () => []);
+                            grouped[day]!.add(tx);
                           }
 
-                          return true;
-                        }).toList();
+                          final dates = grouped.keys.toList()
+                            ..sort((a, b) => b.compareTo(a));
 
-                        final sorted = [...filteredTime]
-                          ..sort((a, b) => b.date.compareTo(a.date));
-
-                        final filteredSearch = sorted.where((tx) {
-                          if (query.isEmpty) return true;
-
-                          final category = categories.firstWhere(
-                            (c) => c.id == tx.categoryId,
-                            orElse: () => categories.first,
-                          );
-
-                          final categoryNameTranslated = categoryName(
-                            category.name,
-                            t,
-                          ).toLowerCase();
-
-                          final note = (tx.note ?? "").toLowerCase();
-
-                          return categoryNameTranslated.contains(query) ||
-                              note.contains(query);
-                        }).toList();
-
-                        if (filteredSearch.isEmpty) {
-                          return Center(child: Text(t.noTransactions));
-                        }
-
-                        final Map<DateTime, List<TransactionModel>> grouped =
-                            {};
-
-                        for (final tx in sorted) {
-                          final day = DateTime(
-                            tx.date.year,
-                            tx.date.month,
-                            tx.date.day,
-                          );
-                          grouped.putIfAbsent(day, () => []);
-                          grouped[day]!.add(tx);
-                        }
-
-                        final dates = grouped.keys.toList()
-                          ..sort((a, b) => b.compareTo(a));
-
-                        final visibleDates = dates.where((date) {
-                          final items = grouped[date]!
-                              .where((tx) => filteredSearch.contains(tx))
-                              .toList();
-
-                          return items.isNotEmpty;
-                        }).toList();
-
-                        if (filteredSearch.isEmpty) {
-                          return Center(child: Text(t.noTransactions));
-                        }
-
-                        return ListView(
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
-                          children: visibleDates.map((date) {
+                          final visibleDates = dates.where((date) {
                             final items = grouped[date]!
                                 .where((tx) => filteredSearch.contains(tx))
                                 .toList();
 
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    16,
-                                    16,
-                                    6,
-                                  ),
-                                  child: Text(
-                                    dateFormat.format(date),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
+                            return items.isNotEmpty;
+                          }).toList();
+
+                          if (filteredSearch.isEmpty) {
+                            return Center(child: Text(t.noTransactions));
+                          }
+
+                          return ListView(
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            children: visibleDates.map((date) {
+                              final items = grouped[date]!
+                                  .where((tx) => filteredSearch.contains(tx))
+                                  .toList();
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      16,
+                                      16,
+                                      6,
+                                    ),
+                                    child: Text(
+                                      dateFormat.format(date),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
-                                ),
 
-                                ...items.map((tx) {
-                                  Category category;
+                                  ...items.map((tx) {
+                                    Category category;
 
-                                  if (categories.isEmpty) {
-                                    return const SizedBox();
-                                  }
+                                    if (categories.isEmpty) {
+                                      return const SizedBox();
+                                    }
 
-                                  category = categories.firstWhere(
-                                    (c) => c.id == tx.categoryId,
-                                    orElse: () => categories.first,
-                                  );
+                                    category = categories.firstWhere(
+                                      (c) => c.id == tx.categoryId,
+                                      orElse: () => categories.first,
+                                    );
 
-                                  final amount = currency.format(
-                                    tx.amountCents / 100,
-                                  );
+                                    final amount = formatMoney(
+                                      tx.amountCents,
+                                      baseCurrency,
+                                      locale,
+                                    );
 
-                                  return Dismissible(
-                                    key: ValueKey(tx.id),
-                                    direction: DismissDirection.horizontal,
+                                    return Dismissible(
+                                      key: ValueKey(tx.id),
+                                      direction: DismissDirection.horizontal,
 
-                                    background: Container(
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 6,
+                                      background: Container(
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 6,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue,
+                                          borderRadius: BorderRadius.circular(
+                                            18,
+                                          ),
+                                        ),
+                                        alignment: Alignment.centerLeft,
+                                        child: const Icon(
+                                          Icons.edit,
+                                          color: Colors.white,
+                                        ),
                                       ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
+                                      secondaryBackground: Container(
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 6,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(
+                                            18,
+                                          ),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                        child: const Icon(
+                                          Icons.delete,
+                                          color: Colors.white,
+                                        ),
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue,
-                                        borderRadius: BorderRadius.circular(18),
-                                      ),
-                                      alignment: Alignment.centerLeft,
-                                      child: const Icon(
-                                        Icons.edit,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    secondaryBackground: Container(
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 6,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        borderRadius: BorderRadius.circular(18),
-                                      ),
-                                      alignment: Alignment.centerRight,
-                                      child: const Icon(
-                                        Icons.delete,
-                                        color: Colors.white,
-                                      ),
-                                    ),
 
-                                    confirmDismiss: (direction) async {
-                                      if (direction ==
-                                          DismissDirection.startToEnd) {
-                                        Navigator.of(context).push(
-                                          PageRouteBuilder(
-                                            transitionDuration: const Duration(
-                                              milliseconds: 300,
+                                      confirmDismiss: (direction) async {
+                                        if (direction ==
+                                            DismissDirection.startToEnd) {
+                                          Navigator.of(context).push(
+                                            PageRouteBuilder(
+                                              transitionDuration:
+                                                  const Duration(
+                                                    milliseconds: 300,
+                                                  ),
+                                              pageBuilder: (_, _, _) =>
+                                                  AddTransactionPage(
+                                                    transaction: tx,
+                                                  ),
+                                              transitionsBuilder:
+                                                  (_, animation, _, child) {
+                                                    return SlideTransition(
+                                                      position: Tween(
+                                                        begin: const Offset(
+                                                          0,
+                                                          1,
+                                                        ),
+                                                        end: Offset.zero,
+                                                      ).animate(animation),
+                                                      child: child,
+                                                    );
+                                                  },
                                             ),
-                                            pageBuilder: (_, __, ___) =>
-                                                AddTransactionPage(
-                                                  transaction: tx,
+                                          );
+                                          return false;
+                                        }
+
+                                        return await showDialog<bool>(
+                                          context: context,
+                                          builder: (dialogContext) {
+                                            return AlertDialog(
+                                              title: Text(t.deleteMovement),
+                                              content: Text(
+                                                t.deleteMovementSure,
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(
+                                                        dialogContext,
+                                                        false,
+                                                      ),
+                                                  child: Text(t.cancel),
                                                 ),
-                                            transitionsBuilder:
-                                                (_, animation, __, child) {
-                                                  return SlideTransition(
-                                                    position: Tween(
-                                                      begin: const Offset(0, 1),
-                                                      end: Offset.zero,
-                                                    ).animate(animation),
-                                                    child: child,
-                                                  );
-                                                },
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(
+                                                        dialogContext,
+                                                        true,
+                                                      ),
+                                                  child: Text(t.delete),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+
+                                      onDismissed: (_) async {
+                                        await ref
+                                            .read(transactionProvider.notifier)
+                                            .deleteTransaction(tx.id);
+
+                                        if (!context.mounted) return;
+                                        final messenger = ScaffoldMessenger.of(
+                                          context,
+                                        );
+                                        messenger.hideCurrentSnackBar();
+                                        final snackbar = messenger.showSnackBar(
+                                          SnackBar(
+                                            content: Text(t.transactionDeleted),
+                                            action: SnackBarAction(
+                                              label: t.undo,
+                                              onPressed: () {
+                                                unawaited(
+                                                  ref
+                                                      .read(
+                                                        transactionProvider
+                                                            .notifier,
+                                                      )
+                                                      .restoreTransaction(tx),
+                                                );
+                                              },
+                                            ),
                                           ),
                                         );
-                                        return false;
-                                      }
+                                        final closeReason =
+                                            await snackbar.closed;
+                                        if (closeReason !=
+                                            SnackBarClosedReason.action) {
+                                          await ref
+                                              .read(
+                                                receiptStorageServiceProvider,
+                                              )
+                                              .remove(tx.receiptPath);
+                                        }
+                                      },
 
-                                      return await showDialog<bool>(
-                                        context: context,
-                                        builder: (dialogContext) {
-                                          return AlertDialog(
-                                            title: Text(t.deleteMovement),
-                                            content: Text(t.deleteMovementSure),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(
-                                                  dialogContext,
-                                                  false,
-                                                ),
-                                                child: Text(t.cancel),
-                                              ),
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(
-                                                  dialogContext,
-                                                  true,
-                                                ),
-                                                child: Text(t.delete),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    },
-
-                                    onDismissed: (_) {
-                                      final deleted = tx;
-
-                                      ref
-                                          .read(transactionProvider.notifier)
-                                          .deleteTransaction(tx.id);
-                                    },
-
-                                    child: _TransactionTile(
-                                      tx: tx,
-                                      category: category,
-                                      amount: amount,
-                                      t: t,
-                                    ),
-                                  );
-                                }),
-                              ],
-                            );
-                          }).toList(),
-                        );
-                      },
-                    ),
-            ),
-          ],
+                                      child: _TransactionTile(
+                                        tx: tx,
+                                        category: category,
+                                        amount: amount,
+                                        t: t,
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              );
+                            }).toList(),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -535,6 +580,38 @@ class _TransactionTileState extends State<_TransactionTile> {
       onTapDown: (_) => _press(),
       onTapCancel: _release,
       onTapUp: (_) => _release(),
+      onTap: widget.tx.receiptPath == null
+          ? null
+          : () => showDialog<void>(
+              context: context,
+              builder: (dialogContext) => Dialog(
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  children: [
+                    InteractiveViewer(
+                      child: Image.file(
+                        File(widget.tx.receiptPath!),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const SizedBox(
+                          height: 240,
+                          child: Center(
+                            child: Icon(Icons.broken_image_outlined),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: IconButton.filled(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
       child: AnimatedScale(
         scale: scale,
@@ -555,7 +632,7 @@ class _TransactionTileState extends State<_TransactionTile> {
                 width: 42,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Color(widget.category.color).withOpacity(0.15),
+                  color: Color(widget.category.color).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Stack(
@@ -564,10 +641,7 @@ class _TransactionTileState extends State<_TransactionTile> {
                     Icon(
                       widget.category.isDefault
                           ? categoryIcon(widget.category.name)
-                          : IconData(
-                              widget.category.icon,
-                              fontFamily: 'MaterialIcons',
-                            ),
+                          : customCategoryIcon(widget.category.icon),
                       size: 24,
                       color: Color(widget.category.color),
                     ),
@@ -611,7 +685,7 @@ class _TransactionTileState extends State<_TransactionTile> {
                           ),
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: Colors.grey.withOpacity(0.15),
+                              color: Colors.grey.withValues(alpha: 0.15),
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -638,63 +712,13 @@ class _TransactionTileState extends State<_TransactionTile> {
                   color: widget.tx.isIncome ? Colors.green : Colors.red,
                 ),
               ),
+              if (widget.tx.receiptPath != null) ...[
+                const SizedBox(width: 6),
+                const Icon(Icons.receipt_long_outlined, size: 16),
+              ],
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class PremiumSegmentedSelector extends StatelessWidget {
-  final List<String> labels;
-  final int selectedIndex;
-  final Function(int) onChanged;
-
-  const PremiumSegmentedSelector({
-    super.key,
-    required this.labels,
-    required this.selectedIndex,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 44,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: List.generate(labels.length, (index) {
-          final active = selectedIndex == index;
-
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                onChanged(index);
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: active
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  labels[index],
-                  style: TextStyle(
-                    color: active ? Colors.white : Colors.grey,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
       ),
     );
   }

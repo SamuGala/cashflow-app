@@ -5,6 +5,7 @@ import 'package:pocket_vault/features/transactions/presentation/transactions_pag
 import 'package:pocket_vault/shared/widgets/bottom_nav_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../features/transactions/presentation/add_transaction_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -12,6 +13,11 @@ final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/dashboard',
   routes: [
+    GoRoute(
+      path: '/add',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const AddTransactionPage(),
+    ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return BottomNavShell(navigationShell: navigationShell);

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../providers/dashboard_provider.dart';
 import '../../../core/providers/time_filter_provider.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/currency/currency_metadata.dart';
+import '../../../core/currency/currency_provider.dart';
 
 class MonthSummaryCard extends ConsumerWidget {
   const MonthSummaryCard({super.key});
@@ -12,17 +13,14 @@ class MonthSummaryCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(
-  dashboardProvider(
-    DashboardQuery(
-      filter: TimeFilter.month,
-    ),
-  ),
-);
+      dashboardProvider(DashboardQuery(filter: TimeFilter.month)),
+    );
 
     final t = AppLocalizations.of(context)!;
 
     final locale = Localizations.localeOf(context).toString();
-    final currency = NumberFormat.currency(locale: locale, symbol: '€');
+    final baseCurrency =
+        ref.watch(currencyProvider).value?.baseCurrency ?? 'EUR';
 
     final saved = stats.income - stats.expense;
 
@@ -42,7 +40,7 @@ class MonthSummaryCard extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(t.income),
-              Text(currency.format(stats.income / 100)),
+              Text(formatMoney(stats.income, baseCurrency, locale)),
             ],
           ),
 
@@ -50,7 +48,7 @@ class MonthSummaryCard extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(t.expense),
-              Text(currency.format(stats.expense / 100)),
+              Text(formatMoney(stats.expense, baseCurrency, locale)),
             ],
           ),
 
@@ -58,7 +56,10 @@ class MonthSummaryCard extends ConsumerWidget {
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [Text(t.balance), Text(currency.format(saved / 100))],
+            children: [
+              Text(t.balance),
+              Text(formatMoney(saved, baseCurrency, locale)),
+            ],
           ),
         ],
       ),

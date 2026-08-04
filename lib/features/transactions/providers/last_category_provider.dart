@@ -16,5 +16,6 @@ class LastCategoryNotifier extends Notifier<Category?> {
   }
 }
 
-final lastCategoryProvider =
-    NotifierProvider<LastCategoryNotifier, Category?>(LastCategoryNotifier.new);
+final lastCategoryProvider = NotifierProvider<LastCategoryNotifier, Category?>(
+  LastCategoryNotifier.new,
+);
