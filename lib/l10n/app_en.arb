@@ -146,7 +146,7 @@
 "availableForPeriod": "Available in period",
 "availableFormula": "Income − expenses − reserved savings − scheduled recurring payments",
 "reservedSavings": "Reserved",
-"scheduledUpcoming": "Upcoming",
+"scheduledUpcoming": "Upcoming transactions",
 "categoryLimits": "Category limits",
 "activeBudgets": "{count} active",
 "remainingBudget": "{amount} remaining",
@@ -227,5 +227,98 @@
 "receiptScanApplied": "Receipt details applied. Review and save the transaction.",
 "receiptScanning": "Analyzing receipt…",
 "dataTemporarilyUnavailable": "Data temporarily unavailable.",
-"retry": "Try again"
+"retry": "Try again",
+  "yourMonth": "Your month",
+  "byCategory": "By category",
+  "statsOverview": "Overview",
+  "statsCategories": "Categories",
+  "statsComparisons": "Compare",
+  "statsTrend": "Cumulative trend",
+  "statsBreakdown": "Where your money goes",
+  "statsWhatChanged": "What changed",
+  "statsChangeDrivers": "What explains the change",
+  "statsPreviousMonth": "Previous month",
+  "statsChooseMonth": "Choose a month",
+  "statsYearAverage": "Average of earlier months this year",
+  "statsCompareWith": "Compare with",
+  "statsComparisonPeriod": "Comparison period",
+  "statsPrimaryMonth": "Month to analyse",
+  "statsReferenceMonth": "Reference month",
+  "statsElapsedDays": "Align elapsed days",
+  "statsElapsedHint": "For the current month, compare the same days in each reference month.",
+  "statsThroughDay": "Days 1–{day} in each month",
+  "statsWholeMonths": "Entire selected months",
+  "statsAverageBasis": "Average of {count} months, including months with no transactions.",
+  "statsNoEarlierMonths": "January has no earlier months in the same year. Choose a different comparison.",
+  "statsZeroReference": "Percentage unavailable: the reference amount is zero.",
+  "statsNet": "Income − expenses",
+  "statsShowTransactions": "View transactions",
+  "statsDragHint": "Drag across the chart to explore",
+  "statsForecastToday": "Recurring forecast from today",
+  "statsCompareHint": "Choose the months to compare here.",
+  "statsRecordedOnly": "Recorded transactions",
+  "statsMonthTitle": "Select month",
+  "statsCategoryChange": "Change by category",
+  "statsCurrent": "Selected month",
+  "statsReference": "Reference",
+  "statsHiddenChart": "Chart hidden while amount privacy is enabled.",
+  "statsAllTime": "All recorded dates",
+  "statsComparisonUnavailable": "No reference period",
+  "statsTransactionCount": "{count} transactions",
+  "statsPercentage": "{value}%",
+  "statsVersus": "Compared with {period}",
+  "@statsThroughDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "@statsAverageBasis": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@statsTransactionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@statsPercentage": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsVersus": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "statsAverageLabel": "Average",
+  "statsMonthlyExpenses": "Monthly spending",
+  "statsMonthlyIncome": "Monthly income",
+  "statsPeriodExpenses": "Period spending",
+  "statsPeriodIncome": "Period income",
+  "statsTotalExpenses": "Total spending",
+  "statsTotalIncome": "Total income",
+  "statsPreviousPeriod": "previous period",
+  "statsRangeCaption": "Comparison: {period}",
+  "statsSpentLess": "{amount} less spent",
+  "statsSpentMore": "{amount} more spent",
+  "statsIncomeLess": "{amount} less income",
+  "statsIncomeMore": "{amount} more income",
+  "statsMainVariation": "{category} is the main change",
+  "statsExplainsDrop": "{category} explains the decrease",
+  "statsExplainsRise": "{category} explains the increase",
+  "statsOpenCategoryHint": "Open the category to see transactions",
+  "statsExpenseVersus": "in spending compared with {period}",
+  "statsIncomeVersus": "in income compared with {period}"
 }

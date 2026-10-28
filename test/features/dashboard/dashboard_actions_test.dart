@@ -10,6 +10,7 @@ import 'package:pocket_vault/features/dashboard/presentation/dashboard_page.dart
 import 'package:pocket_vault/features/forecast/presentation/cashflow_forecast_card.dart';
 import 'package:pocket_vault/features/transactions/presentation/quick_add_transaction_sheet.dart';
 import 'package:pocket_vault/l10n/app_localizations.dart';
+import 'package:pocket_vault/shared/widgets/receipt_scan_icon.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -45,6 +46,18 @@ void main() {
     final add = find.byKey(const ValueKey('add-transaction-button'));
     expect(camera, findsOneWidget);
     expect(add, findsOneWidget);
+    expect(
+      find.descendant(of: camera, matching: find.byType(ReceiptScanIcon)),
+      findsOneWidget,
+    );
+    expect(
+      tester.getSize(
+        find.descendant(of: camera, matching: find.byType(Material)).first,
+      ),
+      const Size(40, 40),
+    );
+    expect(tester.getSize(add), const Size(56, 56));
+    expect(tester.getCenter(camera).dx, tester.getCenter(add).dx);
     expect(find.byType(CashflowForecastCard), findsNothing);
     expect(tester.getCenter(camera).dy, lessThan(tester.getCenter(add).dy));
 

@@ -96,6 +96,7 @@ class BudgetProgress {
 class BudgetOverview {
   final int incomeMinor;
   final int expenseMinor;
+  final int upcomingRecurringIncomeMinor;
   final int upcomingRecurringExpensesMinor;
   final int reservedSavingsMinor;
   final List<BudgetProgress> budgets;
@@ -103,6 +104,7 @@ class BudgetOverview {
   const BudgetOverview({
     required this.incomeMinor,
     required this.expenseMinor,
+    required this.upcomingRecurringIncomeMinor,
     required this.upcomingRecurringExpensesMinor,
     required this.reservedSavingsMinor,
     required this.budgets,
@@ -172,15 +174,14 @@ BudgetOverview buildBudgetOverview({
       .where((row) => isInSelectedTimeWindow(row.createdAt, timeState))
       .fold<int>(0, (total, row) => total + row.amountMinor);
 
-  var upcoming = 0;
+  var upcomingIncome = 0;
+  var upcomingExpenses = 0;
   if (window != null && !window.end.isBefore(startOfDay(now))) {
     final today = startOfDay(now);
     final after = window.start.isAfter(today)
         ? window.start.subtract(const Duration(days: 1))
         : today;
-    for (final row in recurringTransactions.where(
-      (row) => row.active && !row.isIncome,
-    )) {
+    for (final row in recurringTransactions.where((row) => row.active)) {
       final schedule = RecurrenceSchedule(
         startDate: row.startDate,
         frequency: RecurrenceFrequency.values.firstWhere(
@@ -193,13 +194,18 @@ BudgetOverview buildBudgetOverview({
         monthOfYear: row.monthOfYear,
         endDate: row.endDate,
       );
-      upcoming +=
+      final amount =
           recurringOccurrences(
             schedule: schedule,
             after: after,
             through: window.end,
           ).length *
           row.amountCents;
+      if (row.isIncome) {
+        upcomingIncome += amount;
+      } else {
+        upcomingExpenses += amount;
+      }
     }
   }
 
@@ -229,7 +235,8 @@ BudgetOverview buildBudgetOverview({
   return BudgetOverview(
     incomeMinor: income,
     expenseMinor: expense,
-    upcomingRecurringExpensesMinor: upcoming,
+    upcomingRecurringIncomeMinor: upcomingIncome,
+    upcomingRecurringExpensesMinor: upcomingExpenses,
     reservedSavingsMinor: reserved,
     budgets: progress,
   );

@@ -33,53 +33,75 @@ class SavingsGoalsCard extends ConsumerWidget {
         .fold<int>(0, (total, row) => total + row.amountMinor);
 
     return DashboardPanel(
+      filled: false,
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.tertiaryContainer.withValues(alpha: .65),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.savings_outlined, size: 22),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    t.savingsGoals,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
+            LayoutBuilder(
+              builder: (context, constraints) => SizedBox(
+                width: constraints.maxWidth,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.savings_outlined,
+                            size: 19,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              t.savingsGoals,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    TextButton(
+                      onPressed: () => showModalBottomSheet<void>(
+                        context: context,
+                        isScrollControlled: true,
+                        showDragHandle: true,
+                        builder: (_) => const SavingsGoalsSheet(),
+                      ),
+                      child: Text(
+                        t.manage,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
                 ),
-                TextButton(
-                  onPressed: () => showModalBottomSheet<void>(
-                    context: context,
-                    isScrollControlled: true,
-                    showDragHandle: true,
-                    builder: (_) => const SavingsGoalsSheet(),
-                  ),
-                  child: Text(t.manage),
-                ),
-              ],
+              ),
             ),
             if (allocatedInSelection != null && allocatedInSelection != 0) ...[
               const SizedBox(height: 10),
-              Text(
-                t.allocatedInSelection(
-                  hide(formatMoney(allocatedInSelection, currency, locale)),
-                ),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w700,
+              Padding(
+                padding: const EdgeInsets.only(right: 76),
+                child: Text(
+                  key: const ValueKey('goal-period-allocation'),
+                  t.allocatedInSelection(
+                    hide(formatMoney(allocatedInSelection, currency, locale)),
+                  ),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ],
@@ -103,7 +125,7 @@ class SavingsGoalsCard extends ConsumerWidget {
                             : (goal.savedAmountMinor / goal.targetAmountMinor)
                                   .clamp(0.0, 1.0);
                         return Padding(
-                          padding: const EdgeInsets.only(top: 12),
+                          padding: const EdgeInsets.only(top: 12, right: 76),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -117,12 +139,21 @@ class SavingsGoalsCard extends ConsumerWidget {
                                       ),
                                     ),
                                   ),
-                                  Text(
-                                    '${hide(formatMoney(goal.savedAmountMinor, currency, locale))} / '
-                                    '${hide(formatMoney(goal.targetAmountMinor, currency, locale))}',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    flex: 2,
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                        '${hide(formatMoney(goal.savedAmountMinor, currency, locale))} / '
+                                        '${hide(formatMoney(goal.targetAmountMinor, currency, locale))}',
+                                        key: ValueKey('goal-total-${goal.id}'),
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -131,7 +162,7 @@ class SavingsGoalsCard extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(5),
                                 child: LinearProgressIndicator(
                                   value: ratio,
-                                  minHeight: 8,
+                                  minHeight: 5,
                                 ),
                               ),
                             ],

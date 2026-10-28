@@ -42,21 +42,17 @@ final dashboardProvider = Provider.family<DashboardStats, DashboardQuery>((
 
   int income = 0;
   int expense = 0;
+  final filterState = TimeFilterState(
+    filter: query.filter,
+    month: query.filter == TimeFilter.month
+        ? query.start ?? timeState.month
+        : timeState.month,
+    start: query.start,
+    end: query.end,
+  );
 
   for (final t in transactions) {
-    bool include = true;
-
-    if (query.filter == TimeFilter.month) {
-      include =
-          t.date.month == timeState.month.month &&
-          t.date.year == timeState.month.year;
-    }
-
-    if (query.filter == TimeFilter.period &&
-        query.start != null &&
-        query.end != null) {
-      include = !t.date.isBefore(query.start!) && !t.date.isAfter(query.end!);
-    }
+    final include = isInSelectedTimeWindow(t.date, filterState);
 
     if (!include) continue;
 

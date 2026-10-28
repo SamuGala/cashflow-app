@@ -20,11 +20,8 @@ class PremiumSegmentedSelector extends StatelessWidget {
 
     return Container(
       height: 52,
-      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colors.outlineVariant.withValues(alpha: .7)),
+        border: Border(bottom: BorderSide(color: colors.outlineVariant)),
       ),
       child: Row(
         children: List.generate(labels.length, (index) {
@@ -36,26 +33,45 @@ class PremiumSegmentedSelector extends StatelessWidget {
               button: true,
               label: labels[index],
               child: Material(
-                color: active ? colors.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: () {
                     HapticFeedback.selectionClick();
                     onChanged(index);
                   },
-                  child: Center(
-                    child: Text(
-                      labels[index],
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: active
-                            ? colors.onPrimary
-                            : colors.onSurfaceVariant,
-                        fontWeight: FontWeight.w700,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: Text(
+                          labels[index],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: active
+                                ? colors.primary
+                                : colors.onSurfaceVariant,
+                            fontWeight: active
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                          ),
+                        ),
                       ),
-                    ),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          width: 22,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: active ? colors.primary : Colors.transparent,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

@@ -8,12 +8,14 @@ class RevolutMonthSelector extends ConsumerStatefulWidget {
   final DateTime? initialDate;
   final ValueChanged<DateTime>? onChanged;
   final String? label;
+  final bool compact;
 
   const RevolutMonthSelector({
     super.key,
     this.initialDate,
     this.onChanged,
     this.label,
+    this.compact = false,
   });
 
   @override
@@ -26,6 +28,28 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
 
   DateTime selected = DateTime.now();
   int currentYear = DateTime.now().year;
+  bool _syncingPage = false;
+  int _pageSyncVersion = 0;
+
+  void _scrollToMonth(int month) {
+    if (!controller.hasClients) return;
+    final version = ++_pageSyncVersion;
+    _syncingPage = true;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      controller.jumpToPage(month - 1);
+      _syncingPage = false;
+      return;
+    }
+    controller
+        .animateToPage(
+          month - 1,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        )
+        .whenComplete(() {
+          if (mounted && version == _pageSyncVersion) _syncingPage = false;
+        });
+  }
 
   @override
   void initState() {
@@ -58,11 +82,7 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
       });
 
       /// aggiorna anche il page controller
-      controller.animateToPage(
-        newDate.month - 1,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
+      _scrollToMonth(newDate.month);
     }
   }
 
@@ -100,6 +120,76 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
 
+    if (widget.compact) {
+      final colors = Theme.of(context).colorScheme;
+      final monthLabel = DateFormat.yMMMM(locale).format(selected);
+      void step(int delta) {
+        final target = DateTime(selected.year, selected.month + delta);
+        setState(() => currentYear = target.year);
+        updateMonth(target.month);
+      }
+
+      return Row(
+        children: [
+          IconButton(
+            key: const ValueKey('dashboard-previous-month'),
+            tooltip: MaterialLocalizations.of(context).previousMonthTooltip,
+            onPressed: () => step(-1),
+            icon: Icon(
+              Icons.chevron_left_rounded,
+              size: 20,
+              color: colors.onSurfaceVariant,
+            ),
+          ),
+          Expanded(
+            child: TextButton(
+              onPressed: () async {
+                final year = await showDialog<int>(
+                  context: context,
+                  builder: (dialogContext) => SimpleDialog(
+                    title: Text(
+                      MaterialLocalizations.of(
+                        context,
+                      ).selectYearSemanticsLabel,
+                    ),
+                    children: List.generate(20, (index) {
+                      final year = DateTime.now().year - index;
+                      return SimpleDialogOption(
+                        onPressed: () => Navigator.pop(dialogContext, year),
+                        child: Text('$year'),
+                      );
+                    }),
+                  ),
+                );
+                if (year == null || !mounted) return;
+                setState(() => currentYear = year);
+                updateMonth(selected.month);
+              },
+              child: Text(
+                '${monthLabel[0].toUpperCase()}${monthLabel.substring(1)}',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: colors.onSurface,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            key: const ValueKey('dashboard-next-month'),
+            tooltip: MaterialLocalizations.of(context).nextMonthTooltip,
+            onPressed: () => step(1),
+            icon: Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: colors.onSurfaceVariant,
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         if (widget.label != null) ...[
@@ -130,10 +220,9 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
               },
             );
 
-            if (year != null) {
+            if (year != null && mounted) {
               setState(() {
                 currentYear = year;
-                selected = DateTime(year, selected.month);
               });
 
               updateMonth(selected.month);
@@ -166,7 +255,7 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
             onPageChanged: (index) {
               final month = index + 1;
 
-              if (selected.month != month) {
+              if (!_syncingPage && selected.month != month) {
                 updateMonth(month);
               }
             },
@@ -183,11 +272,7 @@ class _RevolutMonthSelectorState extends ConsumerState<RevolutMonthSelector> {
                 onTap: () {
                   updateMonth(month);
 
-                  controller.animateToPage(
-                    index,
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOut,
-                  );
+                  _scrollToMonth(month);
                 },
                 child: Center(
                   child: AnimatedContainer(

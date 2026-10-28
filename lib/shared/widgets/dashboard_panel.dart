@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 /// Shared visual surface for the main dashboard sections.
 ///
-/// The explicit border and restrained shadow keep panels readable against the
-/// tinted dashboard background in both light and dark mode.
+/// Neutral surfaces shared by the overview and savings sections.
 class DashboardPanel extends StatelessWidget {
-  const DashboardPanel({super.key, required this.child});
+  const DashboardPanel({super.key, required this.child, this.filled = true});
 
   final Widget child;
+  final bool filled;
 
   @override
   Widget build(BuildContext context) {
@@ -17,16 +17,16 @@ class DashboardPanel extends StatelessWidget {
 
     return Card(
       margin: EdgeInsets.zero,
-      elevation: isDark ? 0 : 3,
-      shadowColor: colors.shadow.withValues(alpha: .12),
+      elevation: filled && !isDark ? 1 : 0,
+      shadowColor: colors.shadow.withValues(alpha: .05),
       surfaceTintColor: Colors.transparent,
-      color: theme.cardTheme.color ?? colors.surface,
+      color: filled
+          ? theme.cardTheme.color ?? colors.surface
+          : theme.scaffoldBackgroundColor,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: BorderSide(
-          color: colors.outlineVariant.withValues(alpha: isDark ? .55 : .8),
-        ),
+        side: BorderSide(color: colors.outlineVariant),
       ),
       child: child,
     );

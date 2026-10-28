@@ -976,7 +976,7 @@ abstract class AppLocalizations {
   /// No description provided for @scheduledUpcoming.
   ///
   /// In en, this message translates to:
-  /// **'Upcoming'**
+  /// **'Upcoming transactions'**
   String get scheduledUpcoming;
 
   /// No description provided for @categoryLimits.
@@ -1464,6 +1464,354 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get retry;
+
+  /// No description provided for @yourMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Your month'**
+  String get yourMonth;
+
+  /// No description provided for @byCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'By category'**
+  String get byCategory;
+
+  /// No description provided for @statsOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get statsOverview;
+
+  /// No description provided for @statsCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get statsCategories;
+
+  /// No description provided for @statsComparisons.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare'**
+  String get statsComparisons;
+
+  /// No description provided for @statsTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Cumulative trend'**
+  String get statsTrend;
+
+  /// No description provided for @statsBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Where your money goes'**
+  String get statsBreakdown;
+
+  /// No description provided for @statsWhatChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'What changed'**
+  String get statsWhatChanged;
+
+  /// No description provided for @statsChangeDrivers.
+  ///
+  /// In en, this message translates to:
+  /// **'What explains the change'**
+  String get statsChangeDrivers;
+
+  /// No description provided for @statsPreviousMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
+  String get statsPreviousMonth;
+
+  /// No description provided for @statsChooseMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a month'**
+  String get statsChooseMonth;
+
+  /// No description provided for @statsYearAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average of earlier months this year'**
+  String get statsYearAverage;
+
+  /// No description provided for @statsCompareWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with'**
+  String get statsCompareWith;
+
+  /// No description provided for @statsComparisonPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparison period'**
+  String get statsComparisonPeriod;
+
+  /// No description provided for @statsPrimaryMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month to analyse'**
+  String get statsPrimaryMonth;
+
+  /// No description provided for @statsReferenceMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference month'**
+  String get statsReferenceMonth;
+
+  /// No description provided for @statsElapsedDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Align elapsed days'**
+  String get statsElapsedDays;
+
+  /// No description provided for @statsElapsedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For the current month, compare the same days in each reference month.'**
+  String get statsElapsedHint;
+
+  /// No description provided for @statsThroughDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Days 1–{day} in each month'**
+  String statsThroughDay(int day);
+
+  /// No description provided for @statsWholeMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'Entire selected months'**
+  String get statsWholeMonths;
+
+  /// No description provided for @statsAverageBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Average of {count} months, including months with no transactions.'**
+  String statsAverageBasis(int count);
+
+  /// No description provided for @statsNoEarlierMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'January has no earlier months in the same year. Choose a different comparison.'**
+  String get statsNoEarlierMonths;
+
+  /// No description provided for @statsZeroReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Percentage unavailable: the reference amount is zero.'**
+  String get statsZeroReference;
+
+  /// No description provided for @statsNet.
+  ///
+  /// In en, this message translates to:
+  /// **'Income − expenses'**
+  String get statsNet;
+
+  /// No description provided for @statsShowTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'View transactions'**
+  String get statsShowTransactions;
+
+  /// No description provided for @statsDragHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag across the chart to explore'**
+  String get statsDragHint;
+
+  /// No description provided for @statsForecastToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring forecast from today'**
+  String get statsForecastToday;
+
+  /// No description provided for @statsCompareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the months to compare here.'**
+  String get statsCompareHint;
+
+  /// No description provided for @statsRecordedOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded transactions'**
+  String get statsRecordedOnly;
+
+  /// No description provided for @statsMonthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select month'**
+  String get statsMonthTitle;
+
+  /// No description provided for @statsCategoryChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change by category'**
+  String get statsCategoryChange;
+
+  /// No description provided for @statsCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected month'**
+  String get statsCurrent;
+
+  /// No description provided for @statsReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference'**
+  String get statsReference;
+
+  /// No description provided for @statsHiddenChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Chart hidden while amount privacy is enabled.'**
+  String get statsHiddenChart;
+
+  /// No description provided for @statsAllTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All recorded dates'**
+  String get statsAllTime;
+
+  /// No description provided for @statsComparisonUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No reference period'**
+  String get statsComparisonUnavailable;
+
+  /// No description provided for @statsTransactionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} transactions'**
+  String statsTransactionCount(int count);
+
+  /// No description provided for @statsPercentage.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}%'**
+  String statsPercentage(String value);
+
+  /// No description provided for @statsVersus.
+  ///
+  /// In en, this message translates to:
+  /// **'Compared with {period}'**
+  String statsVersus(String period);
+
+  /// No description provided for @statsAverageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Average'**
+  String get statsAverageLabel;
+
+  /// No description provided for @statsMonthlyExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly spending'**
+  String get statsMonthlyExpenses;
+
+  /// No description provided for @statsMonthlyIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly income'**
+  String get statsMonthlyIncome;
+
+  /// No description provided for @statsPeriodExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Period spending'**
+  String get statsPeriodExpenses;
+
+  /// No description provided for @statsPeriodIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Period income'**
+  String get statsPeriodIncome;
+
+  /// No description provided for @statsTotalExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Total spending'**
+  String get statsTotalExpenses;
+
+  /// No description provided for @statsTotalIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Total income'**
+  String get statsTotalIncome;
+
+  /// No description provided for @statsPreviousPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'previous period'**
+  String get statsPreviousPeriod;
+
+  /// No description provided for @statsRangeCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparison: {period}'**
+  String statsRangeCaption(Object period);
+
+  /// No description provided for @statsSpentLess.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} less spent'**
+  String statsSpentLess(Object amount);
+
+  /// No description provided for @statsSpentMore.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} more spent'**
+  String statsSpentMore(Object amount);
+
+  /// No description provided for @statsIncomeLess.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} less income'**
+  String statsIncomeLess(Object amount);
+
+  /// No description provided for @statsIncomeMore.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} more income'**
+  String statsIncomeMore(Object amount);
+
+  /// No description provided for @statsMainVariation.
+  ///
+  /// In en, this message translates to:
+  /// **'{category} is the main change'**
+  String statsMainVariation(Object category);
+
+  /// No description provided for @statsExplainsDrop.
+  ///
+  /// In en, this message translates to:
+  /// **'{category} explains the decrease'**
+  String statsExplainsDrop(Object category);
+
+  /// No description provided for @statsExplainsRise.
+  ///
+  /// In en, this message translates to:
+  /// **'{category} explains the increase'**
+  String statsExplainsRise(Object category);
+
+  /// No description provided for @statsOpenCategoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the category to see transactions'**
+  String get statsOpenCategoryHint;
+
+  /// No description provided for @statsExpenseVersus.
+  ///
+  /// In en, this message translates to:
+  /// **'in spending compared with {period}'**
+  String statsExpenseVersus(Object period);
+
+  /// No description provided for @statsIncomeVersus.
+  ///
+  /// In en, this message translates to:
+  /// **'in income compared with {period}'**
+  String statsIncomeVersus(Object period);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -95,6 +95,7 @@ void main() {
     expect(overview.incomeMinor, 200000);
     expect(overview.expenseMinor, 50000);
     expect(overview.reservedSavingsMinor, 25000);
+    expect(overview.upcomingRecurringIncomeMinor, 0);
     expect(overview.upcomingRecurringExpensesMinor, 40000);
     expect(overview.availableToSpendMinor, 85000);
     expect(overview.budgets.single.spentMinor, 50000);
@@ -116,6 +117,7 @@ void main() {
       expect(overview.incomeMinor, 300000);
       expect(overview.expenseMinor, 50000);
       expect(overview.reservedSavingsMinor, 35000);
+      expect(overview.upcomingRecurringIncomeMinor, 0);
       expect(overview.upcomingRecurringExpensesMinor, 0);
       expect(overview.availableToSpendMinor, 215000);
     },
@@ -149,4 +151,142 @@ void main() {
       closeTo(.5, .00001),
     );
   });
+
+  test('upcoming totals aggregate income and expenses separately', () {
+    final overview = buildBudgetOverview(
+      transactions: transactions,
+      recurringTransactions: [
+        ...recurring,
+        _recurring(id: 'salary', amount: 200000, isIncome: true, day: 25),
+        _recurring(
+          id: 'weekly-income',
+          amount: 5000,
+          isIncome: true,
+          day: 2,
+          frequency: 'weekly',
+          dayOfWeek: DateTime.thursday,
+        ),
+        _recurring(id: 'subscription', amount: 5000, day: 20),
+        _recurring(id: 'paused', amount: 999999, isIncome: true, active: false),
+        _recurring(
+          id: 'ended',
+          amount: 999999,
+          isIncome: true,
+          endDate: DateTime(2026, 7, 14),
+        ),
+        _recurring(
+          id: 'starts-next-month',
+          amount: 999999,
+          startDate: DateTime(2026, 8, 1),
+        ),
+      ],
+      budgets: const [],
+      contributions: const [],
+      timeState: TimeFilterState(filter: TimeFilter.month, month: july),
+      now: DateTime(2026, 7, 15, 12),
+    );
+
+    expect(overview.upcomingRecurringIncomeMinor, 215000);
+    expect(overview.upcomingRecurringExpensesMinor, 45000);
+    // Expected income is displayed separately from money already available.
+    expect(overview.incomeMinor, 200000);
+    expect(overview.availableToSpendMinor, 105000);
+  });
+
+  test('future month includes its first and last day for both directions', () {
+    final overview = buildBudgetOverview(
+      transactions: const [],
+      recurringTransactions: [
+        _recurring(id: 'salary', amount: 200000, isIncome: true, day: 1),
+        _recurring(id: 'rent', amount: 40000, day: 31),
+      ],
+      budgets: const [],
+      contributions: const [],
+      timeState: TimeFilterState(filter: TimeFilter.month, month: july),
+      now: DateTime(2026, 6, 15),
+    );
+
+    expect(overview.upcomingRecurringIncomeMinor, 200000);
+    expect(overview.upcomingRecurringExpensesMinor, 40000);
+  });
+
+  test('past month excludes scheduled income and expenses', () {
+    final overview = buildBudgetOverview(
+      transactions: const [],
+      recurringTransactions: [
+        ...recurring,
+        _recurring(id: 'salary', amount: 200000, isIncome: true),
+      ],
+      budgets: const [],
+      contributions: const [],
+      timeState: TimeFilterState(filter: TimeFilter.month, month: july),
+      now: DateTime(2026, 8, 1),
+    );
+
+    expect(overview.upcomingRecurringIncomeMinor, 0);
+    expect(overview.upcomingRecurringExpensesMinor, 0);
+  });
+
+  test('custom period sums both directions within its inclusive bounds', () {
+    final overview = buildBudgetOverview(
+      transactions: const [],
+      recurringTransactions: [
+        ...recurring,
+        _recurring(id: 'salary', amount: 200000, isIncome: true, day: 25),
+      ],
+      budgets: const [],
+      contributions: const [],
+      timeState: TimeFilterState(
+        filter: TimeFilter.period,
+        month: july,
+        start: DateTime(2026, 7, 20),
+        end: DateTime(2026, 8, 25),
+      ),
+      now: DateTime(2026, 7, 15),
+    );
+
+    expect(overview.upcomingRecurringIncomeMinor, 400000);
+    expect(overview.upcomingRecurringExpensesMinor, 80000);
+  });
+
+  test('recurrences due today are already actual, not upcoming', () {
+    final overview = buildBudgetOverview(
+      transactions: const [],
+      recurringTransactions: [
+        _recurring(id: 'salary', amount: 200000, isIncome: true, day: 15),
+        _recurring(id: 'rent', amount: 40000, day: 15),
+      ],
+      budgets: const [],
+      contributions: const [],
+      timeState: TimeFilterState(filter: TimeFilter.month, month: july),
+      now: DateTime(2026, 7, 15),
+    );
+
+    expect(overview.upcomingRecurringIncomeMinor, 0);
+    expect(overview.upcomingRecurringExpensesMinor, 0);
+  });
 }
+
+RecurringTransaction _recurring({
+  required String id,
+  required int amount,
+  bool isIncome = false,
+  int day = 20,
+  bool active = true,
+  String frequency = 'monthly',
+  int? dayOfWeek,
+  DateTime? startDate,
+  DateTime? endDate,
+}) => RecurringTransaction(
+  id: id,
+  amountCents: amount,
+  isIncome: isIncome,
+  categoryId: isIncome ? 'salary' : 'rent',
+  dayOfMonth: day,
+  startDate: startDate ?? DateTime(2026, 7, 1),
+  active: active,
+  frequency: frequency,
+  interval: 1,
+  dayOfWeek: dayOfWeek,
+  endDate: endDate,
+);

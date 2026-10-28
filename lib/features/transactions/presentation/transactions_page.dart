@@ -107,8 +107,16 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                     onTap: () async {
                       final range = await showDateRangePicker(
                         context: context,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100),
+                        firstDate:
+                            selectedRange != null &&
+                                selectedRange.start.isBefore(DateTime(2020))
+                            ? selectedRange.start
+                            : DateTime(2020),
+                        lastDate:
+                            selectedRange != null &&
+                                selectedRange.end.isAfter(DateTime(2100))
+                            ? selectedRange.end
+                            : DateTime(2100),
                         initialDateRange: selectedRange,
                       );
 
@@ -276,8 +284,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
 
                             if (timeFilter == TimeFilter.period &&
                                 selectedRange != null) {
-                              return !tx.date.isBefore(selectedRange.start) &&
-                                  !tx.date.isAfter(selectedRange.end);
+                              return isInSelectedTimeWindow(tx.date, timeState);
                             }
 
                             return true;

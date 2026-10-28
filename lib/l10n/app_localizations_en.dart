@@ -451,7 +451,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reservedSavings => 'Reserved';
 
   @override
-  String get scheduledUpcoming => 'Upcoming';
+  String get scheduledUpcoming => 'Upcoming transactions';
 
   @override
   String get categoryLimits => 'Category limits';
@@ -725,4 +725,208 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get retry => 'Try again';
+
+  @override
+  String get yourMonth => 'Your month';
+
+  @override
+  String get byCategory => 'By category';
+
+  @override
+  String get statsOverview => 'Overview';
+
+  @override
+  String get statsCategories => 'Categories';
+
+  @override
+  String get statsComparisons => 'Compare';
+
+  @override
+  String get statsTrend => 'Cumulative trend';
+
+  @override
+  String get statsBreakdown => 'Where your money goes';
+
+  @override
+  String get statsWhatChanged => 'What changed';
+
+  @override
+  String get statsChangeDrivers => 'What explains the change';
+
+  @override
+  String get statsPreviousMonth => 'Previous month';
+
+  @override
+  String get statsChooseMonth => 'Choose a month';
+
+  @override
+  String get statsYearAverage => 'Average of earlier months this year';
+
+  @override
+  String get statsCompareWith => 'Compare with';
+
+  @override
+  String get statsComparisonPeriod => 'Comparison period';
+
+  @override
+  String get statsPrimaryMonth => 'Month to analyse';
+
+  @override
+  String get statsReferenceMonth => 'Reference month';
+
+  @override
+  String get statsElapsedDays => 'Align elapsed days';
+
+  @override
+  String get statsElapsedHint => 'For the current month, compare the same days in each reference month.';
+
+  @override
+  String statsThroughDay(int day) {
+    return 'Days 1–$day in each month';
+  }
+
+  @override
+  String get statsWholeMonths => 'Entire selected months';
+
+  @override
+  String statsAverageBasis(int count) {
+    return 'Average of $count months, including months with no transactions.';
+  }
+
+  @override
+  String get statsNoEarlierMonths => 'January has no earlier months in the same year. Choose a different comparison.';
+
+  @override
+  String get statsZeroReference => 'Percentage unavailable: the reference amount is zero.';
+
+  @override
+  String get statsNet => 'Income − expenses';
+
+  @override
+  String get statsShowTransactions => 'View transactions';
+
+  @override
+  String get statsDragHint => 'Drag across the chart to explore';
+
+  @override
+  String get statsForecastToday => 'Recurring forecast from today';
+
+  @override
+  String get statsCompareHint => 'Choose the months to compare here.';
+
+  @override
+  String get statsRecordedOnly => 'Recorded transactions';
+
+  @override
+  String get statsMonthTitle => 'Select month';
+
+  @override
+  String get statsCategoryChange => 'Change by category';
+
+  @override
+  String get statsCurrent => 'Selected month';
+
+  @override
+  String get statsReference => 'Reference';
+
+  @override
+  String get statsHiddenChart => 'Chart hidden while amount privacy is enabled.';
+
+  @override
+  String get statsAllTime => 'All recorded dates';
+
+  @override
+  String get statsComparisonUnavailable => 'No reference period';
+
+  @override
+  String statsTransactionCount(int count) {
+    return '$count transactions';
+  }
+
+  @override
+  String statsPercentage(String value) {
+    return '$value%';
+  }
+
+  @override
+  String statsVersus(String period) {
+    return 'Compared with $period';
+  }
+
+  @override
+  String get statsAverageLabel => 'Average';
+
+  @override
+  String get statsMonthlyExpenses => 'Monthly spending';
+
+  @override
+  String get statsMonthlyIncome => 'Monthly income';
+
+  @override
+  String get statsPeriodExpenses => 'Period spending';
+
+  @override
+  String get statsPeriodIncome => 'Period income';
+
+  @override
+  String get statsTotalExpenses => 'Total spending';
+
+  @override
+  String get statsTotalIncome => 'Total income';
+
+  @override
+  String get statsPreviousPeriod => 'previous period';
+
+  @override
+  String statsRangeCaption(Object period) {
+    return 'Comparison: $period';
+  }
+
+  @override
+  String statsSpentLess(Object amount) {
+    return '$amount less spent';
+  }
+
+  @override
+  String statsSpentMore(Object amount) {
+    return '$amount more spent';
+  }
+
+  @override
+  String statsIncomeLess(Object amount) {
+    return '$amount less income';
+  }
+
+  @override
+  String statsIncomeMore(Object amount) {
+    return '$amount more income';
+  }
+
+  @override
+  String statsMainVariation(Object category) {
+    return '$category is the main change';
+  }
+
+  @override
+  String statsExplainsDrop(Object category) {
+    return '$category explains the decrease';
+  }
+
+  @override
+  String statsExplainsRise(Object category) {
+    return '$category explains the increase';
+  }
+
+  @override
+  String get statsOpenCategoryHint => 'Open the category to see transactions';
+
+  @override
+  String statsExpenseVersus(Object period) {
+    return 'in spending compared with $period';
+  }
+
+  @override
+  String statsIncomeVersus(Object period) {
+    return 'in income compared with $period';
+  }
 }

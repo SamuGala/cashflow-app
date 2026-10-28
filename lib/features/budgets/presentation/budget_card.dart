@@ -28,6 +28,10 @@ class BudgetCard extends ConsumerWidget {
     final showBalance = ref.watch(balanceVisibilityProvider);
     final categories = ref.watch(categoryProvider).value ?? const [];
     final categoryById = {for (final item in categories) item.id: item};
+    final colors = Theme.of(context).colorScheme;
+    final incomeColor = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF82DFB4)
+        : const Color(0xFF17734E);
     String hide(String value) => showBalance ? value : '••••';
     final title = switch (timeState.filter) {
       TimeFilter.total => t.availableAllTime,
@@ -36,7 +40,7 @@ class BudgetCard extends ConsumerWidget {
     };
     return DashboardPanel(
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(20),
         child: overview.when(
           loading: () => const LinearProgressIndicator(),
           error: (_, _) => InlineLoadError(
@@ -47,30 +51,19 @@ class BudgetCard extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primaryContainer.withValues(alpha: .6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_wallet_outlined,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: colors.onSurfaceVariant,
                       ),
                     ),
                   ),
                   IconButton.filledTonal(
+                    iconSize: 18,
+                    visualDensity: VisualDensity.compact,
                     tooltip: showBalance ? t.hideAmounts : t.showAmounts,
                     onPressed: () {
                       ref.read(balanceVisibilityProvider.notifier).toggle();
@@ -81,73 +74,139 @@ class BudgetCard extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                hide(
-                  formatMoney(value.availableToSpendMinor, currency, locale),
-                ),
-                style: TextStyle(
-                  fontSize: 29,
-                  fontWeight: FontWeight.w800,
-                  color: value.availableToSpendMinor < 0
-                      ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.primary,
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  hide(
+                    formatMoney(value.availableToSpendMinor, currency, locale),
+                  ),
+                  style: TextStyle(
+                    fontSize: 40,
+                    letterSpacing: -1.8,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    color: value.availableToSpendMinor < 0
+                        ? Theme.of(context).colorScheme.error
+                        : colors.onSurface,
+                  ),
                 ),
               ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: _BudgetMetric(
-                      label: t.incomes,
-                      value: hide(
-                        formatMoney(value.incomeMinor, currency, locale),
-                      ),
-                      color: Colors.green,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _BudgetMetric(
-                      label: t.expenses,
-                      value: hide(
-                        formatMoney(value.expenseMinor, currency, locale),
-                      ),
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _BudgetMetric(
-                      label: t.reservedSavings,
-                      value: hide(
-                        formatMoney(
-                          value.reservedSavingsMinor,
-                          currency,
-                          locale,
-                        ),
-                      ),
-                      color: Colors.indigo,
-                    ),
-                  ),
-                ],
-              ),
-              if (value.upcomingRecurringExpensesMinor > 0) ...[
-                const SizedBox(height: 10),
-                Row(
+              const SizedBox(height: 24),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(Icons.schedule_rounded, size: 17),
-                    const SizedBox(width: 7),
-                    Expanded(child: Text(t.scheduledUpcoming)),
-                    Text(
-                      hide(
-                        formatMoney(
-                          value.upcomingRecurringExpensesMinor,
-                          currency,
-                          locale,
+                    Expanded(
+                      child: _BudgetMetric(
+                        label: t.incomes,
+                        value: hide(
+                          formatMoney(value.incomeMinor, currency, locale),
                         ),
                       ),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const VerticalDivider(width: 20),
+                    Expanded(
+                      child: _BudgetMetric(
+                        label: t.expenses,
+                        value: hide(
+                          formatMoney(value.expenseMinor, currency, locale),
+                        ),
+                      ),
+                    ),
+                    const VerticalDivider(width: 20),
+                    Expanded(
+                      child: _BudgetMetric(
+                        label: t.reservedSavings,
+                        value: hide(
+                          formatMoney(
+                            value.reservedSavingsMinor,
+                            currency,
+                            locale,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (value.upcomingRecurringIncomeMinor > 0 ||
+                  value.upcomingRecurringExpensesMinor > 0) ...[
+                const Divider(height: 36),
+                Row(
+                  key: const ValueKey('upcoming-transactions-summary'),
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 17,
+                      color: colors.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        t.scheduledUpcoming,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (value.upcomingRecurringIncomeMinor > 0)
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                hide(
+                                  '+${formatMoney(value.upcomingRecurringIncomeMinor, currency, locale)}',
+                                ),
+                                key: const ValueKey('upcoming-income-total'),
+                                semanticsLabel: showBalance
+                                    ? '${t.incomes}: ${formatMoney(value.upcomingRecurringIncomeMinor, currency, locale)}'
+                                    : '${t.incomes}: ••••',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                  fontWeight: FontWeight.w600,
+                                  color: incomeColor,
+                                ),
+                              ),
+                            ),
+                          if (value.upcomingRecurringIncomeMinor > 0 &&
+                              value.upcomingRecurringExpensesMinor > 0)
+                            const SizedBox(height: 5),
+                          if (value.upcomingRecurringExpensesMinor > 0)
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                hide(
+                                  '-${formatMoney(value.upcomingRecurringExpensesMinor, currency, locale)}',
+                                ),
+                                key: const ValueKey('upcoming-expense-total'),
+                                semanticsLabel: showBalance
+                                    ? '${t.expenses}: ${formatMoney(value.upcomingRecurringExpensesMinor, currency, locale)}'
+                                    : '${t.expenses}: ••••',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                  fontWeight: FontWeight.w600,
+                                  color: colors.error,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -254,15 +313,39 @@ class BudgetCard extends ConsumerWidget {
                     ),
               ] else ...[
                 const SizedBox(height: 14),
-                OutlinedButton.icon(
+                TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: colors.primaryContainer.withValues(
+                      alpha: .28,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   onPressed: () => showModalBottomSheet<void>(
                     context: context,
                     isScrollControlled: true,
                     showDragHandle: true,
                     builder: (_) => const BudgetManagerSheet(),
                   ),
-                  icon: const Icon(Icons.add_chart_rounded),
-                  label: Text(t.setOptionalLimit),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.add_chart_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          t.setOptionalLimit,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.north_east_rounded, size: 15),
+                    ],
+                  ),
                 ),
               ],
             ],
@@ -276,44 +359,38 @@ class BudgetCard extends ConsumerWidget {
 class _BudgetMetric extends StatelessWidget {
   final String label;
   final String value;
-  final Color color;
 
-  const _BudgetMetric({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  const _BudgetMetric({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 11,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(height: 3),
-          Text(
+        ),
+        const SizedBox(height: 5),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
             value,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
+            style: const TextStyle(
+              fontFeatures: [FontFeature.tabularFigures()],
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

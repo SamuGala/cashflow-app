@@ -451,7 +451,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get reservedSavings => 'Accantonati';
 
   @override
-  String get scheduledUpcoming => 'In arrivo';
+  String get scheduledUpcoming => 'Transazioni in arrivo';
 
   @override
   String get categoryLimits => 'Limiti per categoria';
@@ -725,4 +725,208 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get retry => 'Riprova';
+
+  @override
+  String get yourMonth => 'Il tuo mese';
+
+  @override
+  String get byCategory => 'Per categoria';
+
+  @override
+  String get statsOverview => 'Panoramica';
+
+  @override
+  String get statsCategories => 'Categorie';
+
+  @override
+  String get statsComparisons => 'Confronti';
+
+  @override
+  String get statsTrend => 'Andamento cumulato';
+
+  @override
+  String get statsBreakdown => 'Dove spendi';
+
+  @override
+  String get statsWhatChanged => 'Cosa è cambiato';
+
+  @override
+  String get statsChangeDrivers => 'Da cosa dipende';
+
+  @override
+  String get statsPreviousMonth => 'Mese precedente';
+
+  @override
+  String get statsChooseMonth => 'Scegli un mese';
+
+  @override
+  String get statsYearAverage => 'Media dei mesi precedenti dell’anno';
+
+  @override
+  String get statsCompareWith => 'Confronta con';
+
+  @override
+  String get statsComparisonPeriod => 'Periodo del confronto';
+
+  @override
+  String get statsPrimaryMonth => 'Mese da analizzare';
+
+  @override
+  String get statsReferenceMonth => 'Mese di riferimento';
+
+  @override
+  String get statsElapsedDays => 'Allinea i giorni trascorsi';
+
+  @override
+  String get statsElapsedHint => 'Per il mese corrente confronta gli stessi giorni di ciascun mese di riferimento.';
+
+  @override
+  String statsThroughDay(int day) {
+    return 'Giorni 1–$day di ogni mese';
+  }
+
+  @override
+  String get statsWholeMonths => 'Interi mesi selezionati';
+
+  @override
+  String statsAverageBasis(int count) {
+    return 'Media di $count mesi, inclusi quelli senza movimenti.';
+  }
+
+  @override
+  String get statsNoEarlierMonths => 'Gennaio non ha mesi precedenti nello stesso anno. Scegli un altro confronto.';
+
+  @override
+  String get statsZeroReference => 'Percentuale non disponibile: il valore di riferimento è zero.';
+
+  @override
+  String get statsNet => 'Entrate − uscite';
+
+  @override
+  String get statsShowTransactions => 'Vedi i movimenti';
+
+  @override
+  String get statsDragHint => 'Trascina sul grafico per esplorare';
+
+  @override
+  String get statsForecastToday => 'Previsione ricorrenze da oggi';
+
+  @override
+  String get statsCompareHint => 'Scegli qui i mesi da confrontare.';
+
+  @override
+  String get statsRecordedOnly => 'Movimenti registrati';
+
+  @override
+  String get statsMonthTitle => 'Seleziona mese';
+
+  @override
+  String get statsCategoryChange => 'Variazione per categoria';
+
+  @override
+  String get statsCurrent => 'Mese selezionato';
+
+  @override
+  String get statsReference => 'Riferimento';
+
+  @override
+  String get statsHiddenChart => 'Grafico nascosto quando la privacy degli importi è attiva.';
+
+  @override
+  String get statsAllTime => 'Tutte le date registrate';
+
+  @override
+  String get statsComparisonUnavailable => 'Nessun periodo di riferimento';
+
+  @override
+  String statsTransactionCount(int count) {
+    return '$count movimenti';
+  }
+
+  @override
+  String statsPercentage(String value) {
+    return '$value%';
+  }
+
+  @override
+  String statsVersus(String period) {
+    return 'Rispetto a $period';
+  }
+
+  @override
+  String get statsAverageLabel => 'Media';
+
+  @override
+  String get statsMonthlyExpenses => 'Spese del mese';
+
+  @override
+  String get statsMonthlyIncome => 'Entrate del mese';
+
+  @override
+  String get statsPeriodExpenses => 'Spese del periodo';
+
+  @override
+  String get statsPeriodIncome => 'Entrate del periodo';
+
+  @override
+  String get statsTotalExpenses => 'Spese totali';
+
+  @override
+  String get statsTotalIncome => 'Entrate totali';
+
+  @override
+  String get statsPreviousPeriod => 'periodo precedente';
+
+  @override
+  String statsRangeCaption(Object period) {
+    return 'Confronto: $period';
+  }
+
+  @override
+  String statsSpentLess(Object amount) {
+    return '$amount spesi in meno';
+  }
+
+  @override
+  String statsSpentMore(Object amount) {
+    return '$amount spesi in più';
+  }
+
+  @override
+  String statsIncomeLess(Object amount) {
+    return '$amount di entrate in meno';
+  }
+
+  @override
+  String statsIncomeMore(Object amount) {
+    return '$amount di entrate in più';
+  }
+
+  @override
+  String statsMainVariation(Object category) {
+    return '$category è la variazione principale';
+  }
+
+  @override
+  String statsExplainsDrop(Object category) {
+    return '$category spiega il calo';
+  }
+
+  @override
+  String statsExplainsRise(Object category) {
+    return '$category spiega l’aumento';
+  }
+
+  @override
+  String get statsOpenCategoryHint => 'Apri la categoria per vedere i movimenti';
+
+  @override
+  String statsExpenseVersus(Object period) {
+    return 'di spese rispetto a $period';
+  }
+
+  @override
+  String statsIncomeVersus(Object period) {
+    return 'di entrate rispetto a $period';
+  }
 }
