@@ -59,18 +59,19 @@ List<DateTime> recurringOccurrences({
       var candidate = start;
       while (!candidate.isAfter(scheduleEnd) && occurrences.length < limit) {
         addIfEligible(candidate);
-        candidate = candidate.add(Duration(days: schedule.interval));
+        candidate = _addDays(candidate, schedule.interval);
       }
       break;
 
     case RecurrenceFrequency.weekly:
       final weekday = schedule.dayOfWeek ?? start.weekday;
-      var candidate = start.add(
-        Duration(days: (weekday - start.weekday + DateTime.daysPerWeek) % 7),
+      var candidate = _addDays(
+        start,
+        (weekday - start.weekday + DateTime.daysPerWeek) % 7,
       );
       while (!candidate.isAfter(scheduleEnd) && occurrences.length < limit) {
         addIfEligible(candidate);
-        candidate = candidate.add(Duration(days: 7 * schedule.interval));
+        candidate = _addDays(candidate, 7 * schedule.interval);
       }
       break;
 
@@ -122,6 +123,11 @@ DateTime? nextRecurringOccurrence({
   );
   return occurrences.firstOrNull;
 }
+
+/// Calendar-day arithmetic: adding a [Duration] would drift by an hour
+/// across daylight-saving changes and land on the wrong day.
+DateTime _addDays(DateTime date, int days) =>
+    DateTime(date.year, date.month, date.day + days);
 
 DateTime _dateClamped(int year, int month, int day) {
   final daysInMonth = DateTime(year, month + 1, 0).day;

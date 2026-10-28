@@ -12,6 +12,8 @@ import '../../../core/utils/category_localization.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/database/app_database.dart';
 import 'edit_recurring_sheet.dart';
+import '../domain/recurrence_calculator.dart';
+import 'package:intl/intl.dart';
 import '../../../core/currency/currency_metadata.dart';
 import '../../../core/currency/currency_provider.dart';
 import '../../../shared/widgets/inline_load_error.dart';
@@ -272,7 +274,11 @@ class _RecurringTileState extends State<_RecurringTile> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    "${t.everyMonth} ${widget.recurring.dayOfMonth}",
+                    recurrenceSummary(
+                      widget.recurring,
+                      t,
+                      Localizations.localeOf(context).toString(),
+                    ),
                     style: const TextStyle(fontSize: 12),
                   ),
                   const SizedBox(height: 2),
@@ -365,4 +371,25 @@ class _RecurringActions extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Human-readable schedule, e.g. "Ogni settimana · lunedì".
+String recurrenceSummary(
+  RecurringTransaction recurring,
+  AppLocalizations t,
+  String locale,
+) {
+  final interval = recurring.interval;
+  final start = recurring.startDate;
+  return switch (recurrenceFrequencyFromName(recurring.frequency)) {
+    RecurrenceFrequency.daily => t.recurrenceEveryDays(interval),
+    RecurrenceFrequency.weekly =>
+      '${t.recurrenceEveryWeeks(interval)} · '
+          '${DateFormat.EEEE(locale).format(DateTime(2024, 1, recurring.dayOfWeek ?? start.weekday))}',
+    RecurrenceFrequency.monthly =>
+      '${t.recurrenceEveryMonths(interval)} · ${recurring.dayOfMonth}',
+    RecurrenceFrequency.yearly =>
+      '${t.recurrenceEveryYears(interval)} · '
+          '${DateFormat.MMMd(locale).format(DateTime(2024, recurring.monthOfYear ?? start.month, recurring.dayOfMonth))}',
+  };
 }

@@ -60,8 +60,10 @@ class _PinPageState extends ConsumerState<PinPage>
 
     setState(() => biometricsEnabled = biometrics);
 
-    if (biometricsEnabled) {
-      final ok = await biometric.authenticate();
+    if (biometricsEnabled && mounted) {
+      final ok = await biometric.authenticate(
+        reason: AppLocalizations.of(context)!.biometricReason,
+      );
 
       if (ok && mounted) {
         ref.read(authProvider.notifier).unlock();
@@ -172,7 +174,9 @@ class _PinPageState extends ConsumerState<PinPage>
   }
 
   Future<void> _authenticateBiometrically() async {
-    final ok = await biometric.authenticate();
+    final ok = await biometric.authenticate(
+      reason: AppLocalizations.of(context)!.biometricReason,
+    );
     if (ok && mounted) {
       ref.read(authProvider.notifier).unlock();
     }

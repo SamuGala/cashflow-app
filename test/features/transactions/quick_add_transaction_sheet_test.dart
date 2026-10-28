@@ -91,7 +91,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('32.00'), findsOneWidget);
+    expect(find.text('32,00'), findsOneWidget);
     expect(find.text('La Feltrinelli'), findsOneWidget);
     expect(find.text('Studio'), findsWidgets);
     expect(find.text('Ricevuta allegata'), findsOneWidget);
@@ -127,7 +127,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('0.00'));
+    await tester.tap(find.text('0,00'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('quick-amount-key-00')), findsOneWidget);
 
@@ -141,13 +141,13 @@ void main() {
     await tester.ensureVisible(zero);
     await tester.tap(zero);
     await tester.pump();
-    expect(find.text('10.00'), findsOneWidget);
+    expect(find.text('10,00'), findsOneWidget);
 
     final backspace = find.byKey(const ValueKey('quick-amount-backspace'));
     await tester.ensureVisible(backspace);
     await tester.longPress(backspace);
     await tester.pump();
-    expect(find.text('0.00'), findsOneWidget);
+    expect(find.text('0,00'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

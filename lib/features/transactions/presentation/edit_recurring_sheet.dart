@@ -105,7 +105,11 @@ class _EditRecurringSheetState extends ConsumerState<EditRecurringSheet> {
                 Text(currencyCode, style: const TextStyle(fontSize: 20)),
                 const SizedBox(width: 6),
                 Text(
-                  amountInputText(amountCents, currencyCode),
+                  amountDisplayText(
+                    amountCents,
+                    currencyCode,
+                    Localizations.localeOf(context).toString(),
+                  ),
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
@@ -425,7 +429,11 @@ class _AmountKeypadState extends State<_AmountKeypad> {
               Text(widget.currencyCode, style: const TextStyle(fontSize: 24)),
               const SizedBox(width: 6),
               Text(
-                amountInputText(cents, widget.currencyCode),
+                amountDisplayText(
+                  cents,
+                  widget.currencyCode,
+                  Localizations.localeOf(context).toString(),
+                ),
                 style: const TextStyle(
                   fontSize: 40,
                   fontWeight: FontWeight.w700,

@@ -459,8 +459,58 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+  /// Versions up to 2.0.0 stepped daily and weekly schedules by 24 hours, so
+  /// after a daylight-saving fall-back the occurrences were stored at 23:00 of
+  /// the previous day. Moves them, and the generation cursor, to the intended
+  /// day. Only exact 23:00 timestamps from those schedules are touched, which
+  /// makes the repair idempotent.
+  Future<void> _repairDstShiftedOccurrences() async {
+    bool shifted(DateTime value) =>
+        value.hour == 23 &&
+        value.minute == 0 &&
+        value.second == 0 &&
+        value.millisecond == 0;
+    DateTime nextDay(DateTime value) =>
+        DateTime(value.year, value.month, value.day + 1);
+
+    final schedules = await (select(
+      recurringTransactions,
+    )..where((r) => r.frequency.isIn(const ['daily', 'weekly']))).get();
+    for (final schedule in schedules) {
+      final cursor = schedule.lastGenerated;
+      if (cursor != null && shifted(cursor)) {
+        await (update(
+          recurringTransactions,
+        )..where((r) => r.id.equals(schedule.id))).write(
+          RecurringTransactionsCompanion(lastGenerated: Value(nextDay(cursor))),
+        );
+      }
+      final generated = await (select(
+        transactions,
+      )..where((t) => t.recurringSourceId.equals(schedule.id))).get();
+      final keys = generated.map((t) => t.recurringOccurrenceKey).toSet();
+      for (final row in generated.where((t) => shifted(t.date))) {
+        final date = nextDay(row.date);
+        final key = '${schedule.id}:${date.toIso8601String()}';
+        if (keys.contains(key)) {
+          await (delete(transactions)..where((t) => t.id.equals(row.id))).go();
+          continue;
+        }
+        await (update(transactions)..where((t) => t.id.equals(row.id))).write(
+          TransactionsCompanion(
+            date: Value(date),
+            createdAt: Value(date),
+            recurringOccurrenceKey: Value(key),
+          ),
+        );
+        keys.add(key);
+      }
+    }
+  }
+
   Future<int> _generateRecurringTransactions(DateTime now) {
     return transaction(() async {
+      await _repairDstShiftedOccurrences();
       var generatedCount = 0;
       final recurring = await (select(
         recurringTransactions,

@@ -60,4 +60,38 @@ void main() {
       DateTime(2028, 2, 29),
     ]);
   });
+
+  test('daily and weekly steps stay on calendar days across DST changes', () {
+    for (final start in [DateTime(2026, 10, 19), DateTime(2027, 3, 22)]) {
+      final daily = recurringOccurrences(
+        schedule: RecurrenceSchedule(
+          startDate: start,
+          frequency: RecurrenceFrequency.daily,
+          interval: 1,
+          dayOfMonth: start.day,
+        ),
+        through: DateTime(start.year, start.month, start.day + 20),
+      );
+      expect(daily, [
+        for (var day = 0; day <= 20; day++)
+          DateTime(start.year, start.month, start.day + day),
+      ]);
+
+      final weekly = recurringOccurrences(
+        schedule: RecurrenceSchedule(
+          startDate: start,
+          frequency: RecurrenceFrequency.weekly,
+          interval: 1,
+          dayOfMonth: start.day,
+          dayOfWeek: DateTime.monday,
+        ),
+        through: DateTime(start.year, start.month, start.day + 28),
+      );
+      expect(weekly, hasLength(5));
+      for (final date in weekly) {
+        expect(date.weekday, DateTime.monday);
+        expect(date, dateOnly(date));
+      }
+    }
+  });
 }

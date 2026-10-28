@@ -19,7 +19,7 @@ class BiometricService {
     }
   }
 
-  Future<bool> authenticate() async {
+  Future<bool> authenticate({required String reason}) async {
     try {
       final canUse = await canUseBiometrics();
 
@@ -28,7 +28,7 @@ class BiometricService {
       }
 
       final authenticated = await _auth.authenticate(
-        localizedReason: 'Authenticate to access Cashflow',
+        localizedReason: reason,
         biometricOnly: true,
       );
 

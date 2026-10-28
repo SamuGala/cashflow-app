@@ -408,9 +408,10 @@ class _QuickAddTransactionSheetState
                                       ),
                                     ),
                                 child: Text(
-                                  amountInputText(
+                                  amountDisplayText(
                                     amountMinor,
                                     selectedCurrency!,
+                                    Localizations.localeOf(context).toString(),
                                   ),
                                   key: ValueKey(
                                     '$amountMinor:$selectedCurrency',

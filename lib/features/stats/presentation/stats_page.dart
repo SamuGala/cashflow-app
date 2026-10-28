@@ -499,15 +499,21 @@ class _StatsPageState extends ConsumerState<StatsPage>
                       ),
                     if (_tab == 1) ...[
                       if (visible && entries.any((e) => e.value > 0))
-                        _donut(
-                          context,
-                          entries,
-                          summary.amount(_income),
-                          money,
-                          title,
+                        Padding(
+                          padding: const EdgeInsets.only(top: 14, bottom: 26),
+                          child: _donut(
+                            context,
+                            entries,
+                            summary.amount(_income),
+                            money,
+                            title,
+                          ),
                         )
                       else if (!visible)
-                        const StatsHiddenChart(height: 190)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 14, bottom: 26),
+                          child: StatsHiddenChart(height: 171),
+                        )
                       else
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 32),
@@ -958,9 +964,11 @@ class _StatsPageState extends ConsumerState<StatsPage>
                       ),
                       const SizedBox(width: 11),
                       Expanded(
-                        flex: 4,
+                        flex: 5,
                         child: Text(
                           name(entry.key),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 14,
                             height: 1.2,
@@ -978,9 +986,9 @@ class _StatsPageState extends ConsumerState<StatsPage>
                           child: StatsAmount(money(entry.value), size: 14),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
-                        flex: 3,
+                        flex: 2,
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Text(

@@ -174,9 +174,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         savingPercent = (diff.abs() / lastMonthExpense) * 100;
         expenseIncreased = diff > 0;
 
-        insightMessage = expenseIncreased
-            ? t.spentMore(savingPercent.toStringAsFixed(0))
-            : t.savedMore(savingPercent.toStringAsFixed(0));
+        final percent = hide(savingPercent.toStringAsFixed(0));
+        insightMessage = savingPercent.round() == 0
+            ? t.spentSameAsLastMonth
+            : expenseIncreased
+            ? t.spentMore(percent)
+            : t.savedMore(percent);
       }
     }
 
@@ -296,7 +299,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             if (filter == TimeFilter.month && insightMessage != null)
               Container(
                 margin: const EdgeInsets.only(top: 14),
-                padding: const EdgeInsets.all(12),
+                // Keeps the message clear of the floating action buttons.
+                padding: const EdgeInsets.fromLTRB(12, 12, 76, 12),
                 decoration: BoxDecoration(
                   color: expenseIncreased
                       ? Colors.orange.withValues(alpha: .08)
@@ -310,7 +314,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 child: Row(
                   children: [
                     Icon(
-                      expenseIncreased
+                      savingPercent!.round() == 0
+                          ? Icons.trending_flat
+                          : expenseIncreased
                           ? Icons.trending_up
                           : Icons.trending_down,
                     ),

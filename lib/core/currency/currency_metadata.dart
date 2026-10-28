@@ -83,3 +83,11 @@ String amountInputText(int amountMinor, String currencyCode) {
   final digits = currencyDecimalDigits(currencyCode);
   return minorToMajor(amountMinor, currencyCode).toStringAsFixed(digits);
 }
+
+/// Locale-aware amount for keypad displays; not meant to be parsed back.
+String amountDisplayText(int amountMinor, String currencyCode, String locale) {
+  return NumberFormat.decimalPatternDigits(
+    locale: locale,
+    decimalDigits: currencyDecimalDigits(currencyCode),
+  ).format(minorToMajor(amountMinor, currencyCode));
+}

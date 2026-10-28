@@ -147,9 +147,17 @@ void main() {
           'goal-total-trip',
           'category-flow-toggle',
         ]) {
+          // Shorter screens build these rows only once scrolled into view.
+          await tester.scrollUntilVisible(
+            find.byKey(ValueKey(key)),
+            120,
+            scrollable: find.byType(Scrollable).first,
+          );
           final bounds = tester.getRect(find.byKey(ValueKey(key)));
           expect(floatingBounds.any(bounds.overlaps), isFalse);
         }
+        await tester.drag(find.byType(ListView).first, const Offset(0, 2000));
+        await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         if (capture) {
           await binding.takeScreenshot('vault-essenziale-${mode.name}');

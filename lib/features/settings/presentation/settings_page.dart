@@ -623,26 +623,39 @@ class DataSection extends ConsumerWidget {
   }
 }
 
-class FaceIdToggle extends StatelessWidget {
+class FaceIdToggle extends StatefulWidget {
   const FaceIdToggle({super.key});
 
   @override
+  State<FaceIdToggle> createState() => _FaceIdToggleState();
+}
+
+class _FaceIdToggleState extends State<FaceIdToggle> {
+  final storage = PinStorage();
+  late Future<bool> enabled = storage.biometricsEnabled();
+
+  @override
   Widget build(BuildContext context) {
-    final storage = PinStorage();
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return FutureBuilder<bool>(
-      future: storage.biometricsEnabled(),
+      future: enabled,
       builder: (context, snapshot) {
-        final enabled = snapshot.data ?? false;
-
         return SwitchListTile(
-          title: const Text("Face ID"),
-          value: enabled,
+          title: Text(
+            isIOS ? "Face ID" : AppLocalizations.of(context)!.biometricUnlock,
+          ),
+          value: snapshot.data ?? false,
           onChanged: (value) async {
             if (value) {
               await storage.enableBiometrics();
             } else {
               await storage.disableBiometrics();
+            }
+            if (mounted) {
+              setState(() {
+                enabled = storage.biometricsEnabled();
+              });
             }
           },
         );

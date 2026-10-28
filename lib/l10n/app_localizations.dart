@@ -451,6 +451,30 @@ abstract class AppLocalizations {
   /// **'Every month'**
   String get everyMonth;
 
+  /// No description provided for @recurrenceEveryDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Every day} other{Every {count} days}}'**
+  String recurrenceEveryDays(int count);
+
+  /// No description provided for @recurrenceEveryWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Every week} other{Every {count} weeks}}'**
+  String recurrenceEveryWeeks(int count);
+
+  /// No description provided for @recurrenceEveryMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Every month} other{Every {count} months}}'**
+  String recurrenceEveryMonths(int count);
+
+  /// No description provided for @recurrenceEveryYears.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Every year} other{Every {count} years}}'**
+  String recurrenceEveryYears(int count);
+
   /// No description provided for @active.
   ///
   /// In en, this message translates to:
@@ -478,7 +502,7 @@ abstract class AppLocalizations {
   /// No description provided for @recurrentMsg.
   ///
   /// In en, this message translates to:
-  /// **'Enable to repeat every month'**
+  /// **'Turn on to repeat it automatically'**
   String get recurrentMsg;
 
   /// No description provided for @color.
@@ -619,6 +643,12 @@ abstract class AppLocalizations {
   /// **'You spent {value}% more than last month'**
   String spentMore(Object value);
 
+  /// No description provided for @spentSameAsLastMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month you are spending about the same as last month'**
+  String get spentSameAsLastMonth;
+
   /// No description provided for @period.
   ///
   /// In en, this message translates to:
@@ -708,6 +738,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Biometric unlock'**
   String get biometricUnlock;
+
+  /// No description provided for @biometricReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Pockets Vault'**
+  String get biometricReason;
 
   /// No description provided for @deleteDigit.
   ///

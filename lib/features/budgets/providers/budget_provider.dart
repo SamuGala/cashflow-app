@@ -179,7 +179,7 @@ BudgetOverview buildBudgetOverview({
   if (window != null && !window.end.isBefore(startOfDay(now))) {
     final today = startOfDay(now);
     final after = window.start.isAfter(today)
-        ? window.start.subtract(const Duration(days: 1))
+        ? DateTime(window.start.year, window.start.month, window.start.day - 1)
         : today;
     for (final row in recurringTransactions.where((row) => row.active)) {
       final schedule = RecurrenceSchedule(

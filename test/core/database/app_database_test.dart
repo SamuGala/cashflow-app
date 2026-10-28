@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pocket_vault/core/database/app_database.dart';
@@ -67,6 +68,105 @@ void main() {
 
     expect(await database.getAllTransactions(), isEmpty);
   });
+
+  test(
+    'repairs daily and weekly occurrences shifted by 2.0.0 DST math',
+    () async {
+      // Rows exactly as 2.0.0 stored them after the 25 October 2026 fall-back:
+      // the intended day minus one hour, i.e. 23:00 of the previous day.
+      for (final (id, frequency) in [('walk', 'daily'), ('gym', 'weekly')]) {
+        await database
+            .into(database.recurringTransactions)
+            .insert(
+              RecurringTransactionsCompanion.insert(
+                id: id,
+                amountCents: 500,
+                isIncome: false,
+                categoryId: 'health',
+                dayOfMonth: 19,
+                startDate: DateTime(2026, 10, 19),
+                frequency: Value(frequency),
+                dayOfWeek: Value(
+                  frequency == 'weekly' ? DateTime.monday : null,
+                ),
+                lastGenerated: Value(
+                  frequency == 'daily'
+                      ? DateTime(2026, 10, 27, 23)
+                      : DateTime(2026, 10, 25, 23),
+                ),
+              ),
+            );
+      }
+      Future<void> legacy(String source, DateTime date) => database
+          .into(database.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              id: '$source:${date.toIso8601String()}',
+              amountCents: 500,
+              isIncome: false,
+              categoryId: 'health',
+              date: date,
+              isRecurring: const Value(true),
+              createdAt: Value(date),
+              recurringSourceId: Value(source),
+              recurringOccurrenceKey: Value(
+                '$source:${date.toIso8601String()}',
+              ),
+            ),
+          );
+      for (var day = 19; day <= 25; day++) {
+        await legacy('walk', DateTime(2026, 10, day));
+      }
+      for (var day = 25; day <= 27; day++) {
+        await legacy('walk', DateTime(2026, 10, day, 23));
+      }
+      await legacy('gym', DateTime(2026, 10, 19));
+      await legacy('gym', DateTime(2026, 10, 25, 23));
+      // A manual expense at 23:00 is the user's own data and stays untouched.
+      await database.insertTransaction(
+        TransactionsCompanion.insert(
+          id: 'late-dinner',
+          amountCents: 3000,
+          isIncome: false,
+          categoryId: 'food',
+          date: DateTime(2026, 10, 25, 23),
+        ),
+      );
+
+      for (var run = 0; run < 2; run++) {
+        await database.generateRecurringTransactions(
+          asOf: DateTime(2026, 11, 3, 15),
+        );
+      }
+
+      final rows = await database.getAllTransactions();
+      List<DateTime> datesOf(String source) =>
+          rows
+              .where((t) => t.recurringSourceId == source)
+              .map((t) => t.date)
+              .toList()
+            ..sort();
+      expect(datesOf('walk'), [
+        for (var day = 19; day <= 34; day++) DateTime(2026, 10, day),
+      ]);
+      expect(datesOf('gym'), [
+        DateTime(2026, 10, 19),
+        DateTime(2026, 10, 26),
+        DateTime(2026, 11, 2),
+      ]);
+      expect(
+        rows.singleWhere((t) => t.id == 'late-dinner').date,
+        DateTime(2026, 10, 25, 23),
+      );
+      final cursors = await database
+          .select(database.recurringTransactions)
+          .get();
+      expect(cursors.map((r) => r.lastGenerated), [
+        DateTime(2026, 11, 3),
+        DateTime(2026, 11, 2),
+      ]);
+    },
+  );
 
   test('categories are ordered by their most recent use', () async {
     await database.markCategoryUsed('food', usedAt: DateTime(2026, 7, 30));

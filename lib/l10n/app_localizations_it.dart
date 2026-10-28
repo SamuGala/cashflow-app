@@ -186,6 +186,50 @@ class AppLocalizationsIt extends AppLocalizations {
   String get everyMonth => 'Ogni mese';
 
   @override
+  String recurrenceEveryDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ogni $count giorni',
+      one: 'Ogni giorno',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recurrenceEveryWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ogni $count settimane',
+      one: 'Ogni settimana',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recurrenceEveryMonths(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ogni $count mesi',
+      one: 'Ogni mese',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recurrenceEveryYears(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ogni $count anni',
+      one: 'Ogni anno',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get active => 'Attivo';
 
   @override
@@ -198,7 +242,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get recurrent => 'Ricorrente';
 
   @override
-  String get recurrentMsg => 'Attiva per ripetere ogni mese';
+  String get recurrentMsg => 'Attiva per ripeterlo automaticamente';
 
   @override
   String get color => 'Colore';
@@ -274,6 +318,9 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get spentSameAsLastMonth => 'Questo mese stai spendendo come il mese scorso';
+
+  @override
   String get period => 'Periodo';
 
   @override
@@ -317,6 +364,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get biometricUnlock => 'Sblocco biometrico';
+
+  @override
+  String get biometricReason => 'Sblocca Pockets Vault';
 
   @override
   String get deleteDigit => 'Elimina cifra';
