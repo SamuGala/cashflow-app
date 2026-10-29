@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_add_transaction">Añadir movimiento</string>
+    <string name="shortcut_new_expense">Nuevo gasto</string>
+    <string name="shortcut_new_income">Nuevo ingreso</string>
+    <string name="shortcut_scan_receipt">Escanear recibo</string>
+    <string name="widget_description">Saldo del mes y registro rápido</string>
+    <string name="widget_default_expense">Gasto</string>
+    <string name="widget_default_income">Ingreso</string>
+    <string name="widget_default_receipt">Recibo</string>
+    <string name="widget_default_balance">Saldo del mes</string>
+    <string name="widget_default_incomes">Ingresos</string>
+    <string name="widget_default_expenses">Gastos</string>
+</resources>

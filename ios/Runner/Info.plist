@@ -39,9 +39,25 @@
 			<key>UIApplicationShortcutItemIconType</key>
 			<string>UIApplicationShortcutIconTypeAdd</string>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>Aggiungi movimento</string>
+			<string>shortcut.expense</string>
 			<key>UIApplicationShortcutItemType</key>
 			<string>com.samugalasso.cashflowApp.add</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypeAdd</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>shortcut.income</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.samugalasso.cashflowApp.income</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypeCapturePhoto</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>shortcut.scan</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.samugalasso.cashflowApp.scan</string>
 		</dict>
 	</array>
 	<key>CFBundlePackageType</key>

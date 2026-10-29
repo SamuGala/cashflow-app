@@ -1046,4 +1046,438 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get addNote => 'Añadir nota';
+
+  @override
+  String get settingsAppearance => 'Apariencia';
+
+  @override
+  String get settingsSupport => 'Apoya Pockets Vault';
+
+  @override
+  String get suggested => 'Sugeridos';
+
+  @override
+  String get filters => 'Filtros';
+
+  @override
+  String get filterType => 'Tipo';
+
+  @override
+  String get filterAll => 'Todos';
+
+  @override
+  String get filterCategories => 'Categorías';
+
+  @override
+  String get filterCurrency => 'Moneda';
+
+  @override
+  String get filterReceipt => 'Recibo';
+
+  @override
+  String get filterWithReceipt => 'Con recibo';
+
+  @override
+  String get filterWithoutReceipt => 'Sin recibo';
+
+  @override
+  String get filterReset => 'Restablecer';
+
+  @override
+  String filterShowMovements(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mostrar $count movimientos',
+      one: 'Mostrar 1 movimiento',
+      zero: 'Ningún movimiento',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get filterNoResults => 'Ningún movimiento coincide con estos filtros.';
+
+  @override
+  String get filterClear => 'Borrar filtros';
+
+  @override
+  String filterCategoriesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count categorías',
+      one: '1 categoría',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifications => 'Notificaciones';
+
+  @override
+  String get notifyRecurring => 'Recurrencias próximas';
+
+  @override
+  String get notifyBudget => 'Aviso de presupuesto';
+
+  @override
+  String get notifyReminder => 'Recordatorio nocturno';
+
+  @override
+  String get notifyReminderCaption => 'Solo si hoy no has registrado nada';
+
+  @override
+  String get notifyHideAmounts => 'Ocultar importes en las notificaciones';
+
+  @override
+  String get notifySameDay => 'El mismo día';
+
+  @override
+  String notifyDaysBefore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count días antes',
+      one: '1 día antes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifyAtPercent(int percent) {
+    return 'Al $percent%';
+  }
+
+  @override
+  String get notifyPermissionDenied =>
+      'Notificaciones desactivadas. Actívalas en los ajustes del teléfono.';
+
+  @override
+  String notifyRecurringTitleToday(String name) {
+    return '$name hoy';
+  }
+
+  @override
+  String notifyRecurringTitleTomorrow(String name) {
+    return '$name mañana';
+  }
+
+  @override
+  String notifyRecurringTitleIn(String name, int days) {
+    return '$name en $days días';
+  }
+
+  @override
+  String notifyRecurringExpenseBody(String amount) {
+    return 'Gasto recurrente de $amount.';
+  }
+
+  @override
+  String notifyRecurringIncomeBody(String amount) {
+    return 'Ingreso recurrente de $amount.';
+  }
+
+  @override
+  String get notifyRecurringHiddenBody => 'Se acerca un movimiento recurrente.';
+
+  @override
+  String notifyBudgetTitle(String category, int percent) {
+    return '$category al $percent% del presupuesto';
+  }
+
+  @override
+  String notifyBudgetOverTitle(String category) {
+    return 'Presupuesto de $category superado';
+  }
+
+  @override
+  String notifyBudgetBody(String spent, String limit) {
+    return 'Gastados $spent de $limit este mes.';
+  }
+
+  @override
+  String get notifyBudgetHiddenBody => 'Abre la app para ver los detalles.';
+
+  @override
+  String get notifyReminderTitle => '¿Has gastado algo hoy?';
+
+  @override
+  String get notifyReminderBody => 'Regístralo en unos segundos.';
+
+  @override
+  String get notifyChannelName => 'Recordatorios';
+
+  @override
+  String get notifyWhen => 'Cuándo avisarte';
+
+  @override
+  String get notifyThreshold => 'Umbral';
+
+  @override
+  String get notifyTime => 'Hora';
+
+  @override
+  String get notifyRecurringCaption =>
+      'A las 9:00, antes de cada movimiento recurrente';
+
+  @override
+  String get notifyBudgetCaption =>
+      'Cuando una categoría se acerca a su límite mensual';
+
+  @override
+  String get widgetMonthBalance => 'Saldo del mes';
+
+  @override
+  String get widgetReceipt => 'Recibo';
+
+  @override
+  String get quickActionExpense => 'Nuevo gasto';
+
+  @override
+  String get quickActionIncome => 'Nuevo ingreso';
+
+  @override
+  String get quickActionScan => 'Escanear recibo';
+
+  @override
+  String recapTitle(String year) {
+    return 'Tu $year';
+  }
+
+  @override
+  String recapEarnedIn(String year) {
+    return 'En $year ganaste';
+  }
+
+  @override
+  String recapSpentIn(String year) {
+    return 'En $year gastaste';
+  }
+
+  @override
+  String get recapYouSpent => 'Gastaste';
+
+  @override
+  String get recapYouKept => 'Te quedaron';
+
+  @override
+  String recapKeptPercent(int percent) {
+    return 'El $percent% de lo que ganaste';
+  }
+
+  @override
+  String get recapMonthByMonth => 'Mes a mes';
+
+  @override
+  String recapMonthsHeadline(String high, String low) {
+    return '$high el mes más caro, $low el más ligero';
+  }
+
+  @override
+  String get recapMonthlyAverage => 'Media mensual';
+
+  @override
+  String get recapWhereItWent => 'A dónde fue';
+
+  @override
+  String recapTopCategory(String category, int percent) {
+    return '$category se llevó el $percent%';
+  }
+
+  @override
+  String get recapBiggest => 'El gasto más grande';
+
+  @override
+  String recapBiggestNote(int percent) {
+    return 'Sin contar las recurrencias. Equivale al $percent% de un mes medio de gastos.';
+  }
+
+  @override
+  String get recapRhythm => 'Tu ritmo';
+
+  @override
+  String recapRhythmBody(String weekday, int count) {
+    return 'movimientos registrados. $weekday es tu día más activo, con $count movimientos.';
+  }
+
+  @override
+  String get recapRecurring => 'Tus recurrencias';
+
+  @override
+  String recapRecurringHeadline(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count recurrencias, $amount en el año',
+      one: '1 recurrencia, $amount en el año',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recapRecurringShare(int percent) {
+    return 'El $percent% de los gastos del año.';
+  }
+
+  @override
+  String recapTimes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cargos',
+      one: '1 cargo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recapGoals => 'Tus objetivos';
+
+  @override
+  String recapGoalsHeadline(int reached, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      reached,
+      locale: localeName,
+      other: '$reached de $total alcanzados',
+      one: '1 de $total alcanzado',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recapGoalReached => 'Alcanzado';
+
+  @override
+  String recapGoalOf(String saved, String target) {
+    return '$saved de $target';
+  }
+
+  @override
+  String recapBudgetKept(int kept, int months) {
+    return 'Presupuesto respetado en $kept de $months meses';
+  }
+
+  @override
+  String get recapBudgetsOnly => 'Tus presupuestos';
+
+  @override
+  String recapComparedTo(String year) {
+    return 'Comparado con $year';
+  }
+
+  @override
+  String recapSpentLess(int percent) {
+    return 'Gastaste un $percent% menos';
+  }
+
+  @override
+  String recapSpentMore(int percent) {
+    return 'Gastaste un $percent% más';
+  }
+
+  @override
+  String recapSavingFromTo(int from, int to) {
+    return 'Ahorro del $from% al $to%';
+  }
+
+  @override
+  String get recapFirstYear => 'Tu primer año';
+
+  @override
+  String recapStartedIn(String month) {
+    return 'Empezaste en $month y no paraste';
+  }
+
+  @override
+  String get recapWholeYear => 'Un año entero de movimientos';
+
+  @override
+  String get recapCategoriesUsed => 'Categorías usadas';
+
+  @override
+  String get recapSaved => 'Ahorrado';
+
+  @override
+  String recapNextYear(String year) {
+    return 'El año que viene verás aquí la comparación con $year.';
+  }
+
+  @override
+  String get recapShare => 'Compartir';
+
+  @override
+  String get recapShareTitle => 'Comparte tu año';
+
+  @override
+  String get recapShareImage => 'Compartir imagen';
+
+  @override
+  String get recapCopyText => 'Copiar texto';
+
+  @override
+  String get recapTextCopied => 'Texto copiado';
+
+  @override
+  String get recapHideAmounts => 'Ocultar importes';
+
+  @override
+  String get recapHideAmountsCaption => 'Solo porcentajes, sin cifras';
+
+  @override
+  String get recapMyYear => 'MI AÑO';
+
+  @override
+  String get recapSpentShort => 'Gastado';
+
+  @override
+  String get recapTopCategoryShort => 'Categoría principal';
+
+  @override
+  String recapVsYear(String percent, String year) {
+    return '$percent% vs $year';
+  }
+
+  @override
+  String recapOfIncome(int percent) {
+    return '$percent% de los ingresos';
+  }
+
+  @override
+  String recapShareText(String year, String spent, String saved) {
+    return 'Mi $year con Pockets Vault: $spent gastados, $saved ahorrados.';
+  }
+
+  @override
+  String recapShareTextHidden(String year, int percent) {
+    return 'Mi $year con Pockets Vault: ahorré el $percent% de mis ingresos.';
+  }
+
+  @override
+  String recapShareTextPlain(String year, int count) {
+    return 'Mi $year con Pockets Vault: $count movimientos registrados.';
+  }
+
+  @override
+  String recapBannerTitle(String year) {
+    return 'Tu $year en Pockets Vault';
+  }
+
+  @override
+  String recapBannerBody(int count) {
+    return 'Revive el año en $count tarjetas';
+  }
+
+  @override
+  String recapOpen(String year) {
+    return 'Resumen $year';
+  }
+
+  @override
+  String recapCardOf(int index, int total) {
+    return 'Tarjeta $index de $total';
+  }
+
+  @override
+  String get recapNoData => 'Ningún movimiento este año.';
 }

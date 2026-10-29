@@ -11,8 +11,8 @@ import '../../../core/utils/category_localization.dart';
 import '../../transactions/providers/category_provider.dart';
 import '../providers/cashflow_forecast_provider.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../shared/widgets/dashboard_panel.dart';
 import '../../../shared/widgets/inline_load_error.dart';
+import '../../../shared/widgets/vault_style.dart';
 
 class CashflowForecastCard extends ConsumerStatefulWidget {
   const CashflowForecastCard({super.key});
@@ -40,39 +40,54 @@ class _CashflowForecastCardState extends ConsumerState<CashflowForecastCard> {
     final locale = Localizations.localeOf(context).toString();
     final categories = ref.watch(categoryProvider).value ?? const [];
     final t = AppLocalizations.of(context)!;
-    final categoryNames = {
-      for (final category in categories)
-        category.id: categoryName(category.name, t),
-    };
+    final byId = {for (final category in categories) category.id: category};
     String hide(String value) => showBalance ? value : '••••';
     final horizonLabel = _horizonLabel(horizon, t);
-    return DashboardPanel(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: forecast.when(
-          loading: () => const LinearProgressIndicator(),
-          error: (_, _) => InlineLoadError(
-            onRetry: () => ref.invalidate(cashflowForecastProvider),
-          ),
-          data: (value) => Column(
+    final colors = Theme.of(context).colorScheme;
+    return VaultSurface(
+      child: forecast.when(
+        loading: () => const LinearProgressIndicator(),
+        error: (_, _) => InlineLoadError(
+          onRetry: () => ref.invalidate(cashflowForecastProvider),
+        ),
+        data: (value) {
+          final delta = value.projectedBalanceMinor - value.currentBalanceMinor;
+          final deltaColor = VaultColors.flow(context, delta >= 0);
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.auto_graph_rounded),
-                  const SizedBox(width: 8),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: .1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.auto_graph_rounded,
+                      size: 18,
+                      color: colors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       t.forecastRecurring,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
+                        letterSpacing: -.2,
                       ),
                     ),
                   ),
                   PopupMenuButton<ForecastHorizon>(
                     initialValue: horizon,
                     tooltip: t.forecastRecurring,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     onSelected: (value) {
                       if (_occurrenceController.hasClients) {
                         _occurrenceController.jumpTo(0);
@@ -92,9 +107,7 @@ class _CashflowForecastCardState extends ConsumerState<CashflowForecastCard> {
                                   Icon(
                                     Icons.check_rounded,
                                     size: 19,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
+                                    color: colors.primary,
                                   ),
                               ],
                             ),
@@ -102,36 +115,37 @@ class _CashflowForecastCardState extends ConsumerState<CashflowForecastCard> {
                         )
                         .toList(),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 7,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
                       decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primaryContainer.withValues(alpha: .6),
-                        borderRadius: BorderRadius.circular(11),
+                        color: colors.primary.withValues(alpha: .1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             horizonLabel,
-                            style: const TextStyle(
-                              fontSize: 12,
+                            style: TextStyle(
+                              fontSize: 12.5,
                               fontWeight: FontWeight.w700,
+                              color: colors.primary,
                             ),
                           ),
-                          const SizedBox(width: 3),
-                          const Icon(Icons.expand_more_rounded, size: 17),
+                          const SizedBox(width: 2),
+                          Icon(
+                            Icons.expand_more_rounded,
+                            size: 18,
+                            color: colors.primary,
+                          ),
                         ],
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
                     child: _ForecastValue(
@@ -145,22 +159,21 @@ class _CashflowForecastCardState extends ConsumerState<CashflowForecastCard> {
                       ),
                     ),
                   ),
-                  SizedBox(
-                    width: 42,
-                    child: Center(
-                      child: Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primaryContainer.withValues(alpha: .55),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 18,
-                        ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: deltaColor.withValues(alpha: .12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        delta >= 0
+                            ? Icons.trending_up_rounded
+                            : Icons.trending_down_rounded,
+                        size: 16,
+                        color: deltaColor,
                       ),
                     ),
                   ),
@@ -174,18 +187,30 @@ class _CashflowForecastCardState extends ConsumerState<CashflowForecastCard> {
                           locale,
                         ),
                       ),
-                      highlighted: true,
+                      color: value.projectedBalanceMinor < 0
+                          ? VaultColors.expense(context)
+                          : colors.primary,
                       alignEnd: true,
                     ),
                   ),
                 ],
               ),
               if (value.occurrences.isEmpty) ...[
-                const SizedBox(height: 10),
-                Text(t.noForecastMovements),
+                const SizedBox(height: 12),
+                Text(
+                  t.noForecastMovements,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
               ],
               if (value.occurrences.isNotEmpty) ...[
-                const Divider(height: 24),
+                Divider(
+                  height: 28,
+                  thickness: .7,
+                  color: colors.outlineVariant.withValues(alpha: .6),
+                ),
                 SizedBox(
                   height: math.min(value.occurrences.length, 4) * 44,
                   child: Scrollbar(
@@ -204,32 +229,53 @@ class _CashflowForecastCardState extends ConsumerState<CashflowForecastCard> {
                       separatorBuilder: (_, _) => const SizedBox(height: 4),
                       itemBuilder: (context, index) {
                         final item = value.occurrences[index];
+                        final category = byId[item.categoryId];
                         return SizedBox(
                           height: 40,
                           child: Row(
                             children: [
-                              SizedBox(
-                                width: 64,
-                                child: Text(
-                                  DateFormat.MMMd(locale).format(item.date),
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ),
+                              CategoryAvatar(category: category, size: 34),
+                              const SizedBox(width: 10),
                               Expanded(
-                                child: Text(
-                                  item.note ??
-                                      categoryNames[item.categoryId] ??
-                                      item.categoryId,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.note ??
+                                          (category == null
+                                              ? item.categoryId
+                                              : categoryName(category.name, t)),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                    Text(
+                                      DateFormat.MMMd(locale).format(item.date),
+                                      maxLines: 1,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        height: 1.2,
+                                        color: colors.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 '${item.isIncome ? '+' : '−'}${hide(formatMoney(item.amountMinor, currency, locale))}',
                                 style: TextStyle(
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w700,
-                                  color: item.isIncome ? Colors.green : null,
+                                  color: VaultColors.flow(
+                                    context,
+                                    item.isIncome,
+                                  ),
                                 ),
                               ),
                             ],
@@ -241,8 +287,8 @@ class _CashflowForecastCardState extends ConsumerState<CashflowForecastCard> {
                 ),
               ],
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -266,18 +312,19 @@ class _CashflowForecastCardState extends ConsumerState<CashflowForecastCard> {
 class _ForecastValue extends StatelessWidget {
   final String label;
   final String value;
-  final bool highlighted;
+  final Color? color;
   final bool alignEnd;
 
   const _ForecastValue({
     required this.label,
     required this.value,
-    this.highlighted = false,
+    this.color,
     this.alignEnd = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: alignEnd
           ? CrossAxisAlignment.end
@@ -288,18 +335,21 @@ class _ForecastValue extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: alignEnd ? TextAlign.end : TextAlign.start,
-          style: Theme.of(context).textTheme.labelSmall,
+          style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
         ),
         const SizedBox(height: 2),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: alignEnd ? TextAlign.end : TextAlign.start,
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-            color: highlighted ? Theme.of(context).colorScheme.primary : null,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -.4,
+              color: color ?? colors.onSurface,
+            ),
           ),
         ),
       ],

@@ -64,7 +64,7 @@ class _SafePromptDialogState extends State<SafePromptDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.title),
+      title: Text(widget.title, style: _titleStyle),
       content: TextField(
         controller: _controller,
         autofocus: true,
@@ -79,12 +79,13 @@ class _SafePromptDialogState extends State<SafePromptDialog> {
         },
         decoration: InputDecoration(labelText: widget.label, errorText: _error),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(widget.cancelLabel),
+        _DialogActions(
+          cancelLabel: widget.cancelLabel,
+          confirmLabel: widget.confirmLabel,
+          onConfirm: _submit,
         ),
-        FilledButton(onPressed: _submit, child: Text(widget.confirmLabel)),
       ],
     );
   }
@@ -141,7 +142,7 @@ class _SafePasswordDialogState extends State<SafePasswordDialog> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(widget.title),
+      title: Text(widget.title, style: _titleStyle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -181,12 +182,54 @@ class _SafePasswordDialogState extends State<SafePasswordDialog> {
           ],
         ],
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(widget.cancelLabel),
+        _DialogActions(
+          cancelLabel: widget.cancelLabel,
+          confirmLabel: widget.confirmLabel,
+          onConfirm: _submit,
         ),
-        FilledButton(onPressed: _submit, child: Text(widget.confirmLabel)),
+      ],
+    );
+  }
+}
+
+const _titleStyle = TextStyle(fontSize: 19, fontWeight: FontWeight.w700);
+
+/// Equal-width Cancel / Confirm buttons shared by the prompt dialogs.
+class _DialogActions extends StatelessWidget {
+  const _DialogActions({
+    required this.cancelLabel,
+    required this.confirmLabel,
+    required this.onConfirm,
+  });
+
+  final String cancelLabel;
+  final String confirmLabel;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(0, 48),
+              side: BorderSide(color: colors.outlineVariant),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(cancelLabel),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: FilledButton(onPressed: onConfirm, child: Text(confirmLabel)),
+        ),
       ],
     );
   }

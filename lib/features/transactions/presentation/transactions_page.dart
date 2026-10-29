@@ -7,13 +7,17 @@ import '../../../core/input_formatters/capitalize_first_letter_formatter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../app/launch_actions.dart';
+import '../../../core/security/auth_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
 
+import '../domain/movement_filters.dart';
 import '../domain/transaction.dart';
 import '../../transactions/domain/category.dart';
 
 import 'add_transaction_page.dart';
+import 'movement_filters_sheet.dart';
 import 'recurring_list.dart';
 
 import '../../../l10n/app_localizations.dart';
@@ -39,9 +43,82 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   bool showRecurring = false;
   final TextEditingController searchController = TextEditingController();
   String query = "";
+  MovementFilters filters = MovementFilters.none;
+
+  /// Movements of the shared period that match the search, newest first:
+  /// the pool the filters apply to.
+  List<TransactionModel> _pool(
+    List<TransactionModel> transactions,
+    List<Category> categories,
+    TimeFilterState timeState,
+    AppLocalizations t,
+  ) {
+    final filteredTime = transactions.where((tx) {
+      switch (timeState.filter) {
+        case TimeFilter.total:
+          return true;
+        case TimeFilter.month:
+          return tx.date.month == timeState.month.month &&
+              tx.date.year == timeState.month.year;
+        case TimeFilter.period:
+          if (timeState.start == null || timeState.end == null) return true;
+          return isInSelectedTimeWindow(tx.date, timeState);
+      }
+    }).toList()..sort((a, b) => b.date.compareTo(a.date));
+    if (query.isEmpty || categories.isEmpty) return filteredTime;
+    return filteredTime.where((tx) {
+      final category = categories.firstWhere(
+        (c) => c.id == tx.categoryId,
+        orElse: () => categories.first,
+      );
+      final categoryNameTranslated = categoryName(
+        category.name,
+        t,
+      ).toLowerCase();
+      final note = (tx.note ?? "").toLowerCase();
+      return categoryNameTranslated.contains(query) || note.contains(query);
+    }).toList();
+  }
+
+  Future<void> _openFilters(
+    List<TransactionModel> pool,
+    List<Category> categories,
+    String baseCurrency,
+  ) async {
+    FocusScope.of(context).unfocus();
+    final next = await showMovementFiltersSheet(
+      context,
+      initial: filters,
+      pool: pool,
+      categories: categories,
+      baseCurrency: baseCurrency,
+    );
+    if (next != null && mounted) setState(() => filters = next);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    launchActionChanges.addListener(_handleLaunchAction);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleLaunchAction());
+  }
+
+  /// A tapped recurrence reminder opens the Recurring tab.
+  void _handleLaunchAction() {
+    // A page still on its way out after a lock must not take the action:
+    // it belongs to the page shown after the PIN.
+    if (!mounted || !ref.read(authProvider)) return;
+    if (takeLaunchAction(const {LaunchAction.openRecurring}) == null) return;
+    setState(() {
+      showRecurring = true;
+      searchController.clear();
+      query = "";
+    });
+  }
 
   @override
   void dispose() {
+    launchActionChanges.removeListener(_handleLaunchAction);
     searchFocus.dispose();
     searchController.dispose();
     super.dispose();
@@ -104,16 +181,59 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     }
   }
 
+  Widget _searchField(ColorScheme colors, AppLocalizations t) {
+    return TextField(
+      controller: searchController,
+      focusNode: searchFocus,
+      textCapitalization: TextCapitalization.sentences,
+      inputFormatters: const [CapitalizeFirstLetterFormatter()],
+      onChanged: (value) {
+        HapticFeedback.selectionClick();
+        setState(() {
+          query = value.toLowerCase();
+        });
+      },
+      style: const TextStyle(fontSize: 15),
+      decoration: InputDecoration(
+        hintText: t.searchBar,
+        isDense: true,
+        prefixIcon: Icon(
+          Icons.search_rounded,
+          size: 21,
+          color: colors.onSurfaceVariant,
+        ),
+        suffixIcon: query.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.close_rounded, size: 19),
+                onPressed: () {
+                  searchController.clear();
+                  setState(() {
+                    query = "";
+                  });
+                },
+              )
+            : null,
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: colors.outlineVariant, width: .7),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: colors.outlineVariant, width: .7),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: colors.primary.withValues(alpha: .45)),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final timeState = ref.watch(timeFilterProvider);
 
-    final timeFilter = timeState.filter;
-    final selectedMonth = timeState.month;
-
-    final selectedRange = timeState.start != null && timeState.end != null
-        ? DateTimeRange(start: timeState.start!, end: timeState.end!)
-        : null;
     final t = AppLocalizations.of(context)!;
 
     final transactionsAsync = ref.watch(transactionProvider);
@@ -131,6 +251,12 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     final colors = Theme.of(context).colorScheme;
 
     String money(int minor) => formatMoney(minor, baseCurrency, locale);
+    final pool = _pool(
+      transactionsAsync.value ?? const [],
+      categories,
+      timeState,
+      t,
+    );
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -172,64 +298,30 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                   ],
                 ),
               ),
-              if (!showRecurring)
+              if (!showRecurring) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: TextField(
-                    controller: searchController,
-                    focusNode: searchFocus,
-                    textCapitalization: TextCapitalization.sentences,
-                    inputFormatters: const [CapitalizeFirstLetterFormatter()],
-                    onChanged: (value) {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        query = value.toLowerCase();
-                      });
-                    },
-                    style: const TextStyle(fontSize: 15),
-                    decoration: InputDecoration(
-                      hintText: t.searchBar,
-                      isDense: true,
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        size: 21,
-                        color: colors.onSurfaceVariant,
+                  child: Row(
+                    children: [
+                      Expanded(child: _searchField(colors, t)),
+                      const SizedBox(width: 8),
+                      _FilterButton(
+                        count: filters.activeCount,
+                        tooltip: t.filters,
+                        onPressed: () =>
+                            _openFilters(pool, categories, baseCurrency),
                       ),
-                      suffixIcon: query.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.close_rounded, size: 19),
-                              onPressed: () {
-                                searchController.clear();
-                                setState(() {
-                                  query = "";
-                                });
-                              },
-                            )
-                          : null,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: colors.outlineVariant,
-                          width: .7,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: colors.outlineVariant,
-                          width: .7,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: colors.primary.withValues(alpha: .45),
-                        ),
-                      ),
-                    ),
+                    ],
                   ),
                 ),
+                if (!filters.isEmpty)
+                  _ActiveFilters(
+                    filters: filters,
+                    categories: categories,
+                    money: money,
+                    onChanged: (next) => setState(() => filters = next),
+                  ),
+              ],
 
               Expanded(
                 child: showRecurring
@@ -246,44 +338,23 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                             ),
                           ),
                         ),
-                        data: (transactions) {
-                          final filteredTime = transactions.where((tx) {
-                            if (timeFilter == TimeFilter.total) return true;
+                        data: (_) {
+                          final filteredSearch = pool
+                              .where(filters.matches)
+                              .toList();
 
-                            if (timeFilter == TimeFilter.month) {
-                              return tx.date.month == selectedMonth.month &&
-                                  tx.date.year == selectedMonth.year;
-                            }
-
-                            if (timeFilter == TimeFilter.period &&
-                                selectedRange != null) {
-                              return isInSelectedTimeWindow(tx.date, timeState);
-                            }
-
-                            return true;
-                          }).toList();
-
-                          final sorted = [...filteredTime]
-                            ..sort((a, b) => b.date.compareTo(a.date));
-
-                          final filteredSearch = sorted.where((tx) {
-                            if (query.isEmpty) return true;
-
-                            final category = categories.firstWhere(
-                              (c) => c.id == tx.categoryId,
-                              orElse: () => categories.first,
+                          if (filteredSearch.isEmpty &&
+                              !filters.isEmpty &&
+                              pool.isNotEmpty &&
+                              categories.isNotEmpty) {
+                            return _EmptyMovements(
+                              message: t.filterNoResults,
+                              actionLabel: t.filterClear,
+                              onAction: () => setState(
+                                () => filters = MovementFilters.none,
+                              ),
                             );
-
-                            final categoryNameTranslated = categoryName(
-                              category.name,
-                              t,
-                            ).toLowerCase();
-
-                            final note = (tx.note ?? "").toLowerCase();
-
-                            return categoryNameTranslated.contains(query) ||
-                                note.contains(query);
-                          }).toList();
+                          }
 
                           if (filteredSearch.isEmpty || categories.isEmpty) {
                             return _EmptyMovements(message: t.noTransactions);
@@ -449,9 +520,15 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
 }
 
 class _EmptyMovements extends StatelessWidget {
-  const _EmptyMovements({required this.message});
+  const _EmptyMovements({
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
 
   final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -481,8 +558,219 @@ class _EmptyMovements extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(color: colors.onSurfaceVariant),
             ),
+            if (actionLabel != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton(
+                key: const ValueKey('movement-filters-clear'),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: colors.outlineVariant),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: onAction,
+                child: Text(actionLabel!),
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FilterButton extends StatelessWidget {
+  const _FilterButton({
+    required this.count,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final int count;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final active = count > 0;
+    return Tooltip(
+      message: tooltip,
+      child: Semantics(
+        button: true,
+        label: tooltip,
+        value: active ? '$count' : null,
+        child: Material(
+          color: active ? colors.primary.withValues(alpha: .1) : colors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+              color: active
+                  ? colors.primary.withValues(alpha: .45)
+                  : colors.outlineVariant,
+              width: .7,
+            ),
+          ),
+          child: InkWell(
+            key: const ValueKey('movements-filter-button'),
+            borderRadius: BorderRadius.circular(14),
+            onTap: onPressed,
+            child: SizedBox(
+              width: 46,
+              height: 46,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.tune_rounded,
+                    size: 21,
+                    color: active ? colors.primary : colors.onSurfaceVariant,
+                  ),
+                  if (active)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        key: const ValueKey('movements-filter-count'),
+                        width: 16,
+                        height: 16,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: colors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '$count',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: colors.onPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Removable chips for the filters in use, under the search field.
+class _ActiveFilters extends StatelessWidget {
+  const _ActiveFilters({
+    required this.filters,
+    required this.categories,
+    required this.money,
+    required this.onChanged,
+  });
+
+  final MovementFilters filters;
+  final List<Category> categories;
+  final String Function(int minor) money;
+  final ValueChanged<MovementFilters> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    final chips = <(String, String, MovementFilters)>[
+      if (filters.flow != FlowFilter.all)
+        (
+          'flow',
+          filters.flow == FlowFilter.income ? t.incomes : t.expenses,
+          filters.copyWith(flow: FlowFilter.all),
+        ),
+      if (filters.categoryIds.isNotEmpty)
+        (
+          'categories',
+          filters.categoryIds.length == 1
+              ? categoryName(
+                  categories
+                          .where((c) => c.id == filters.categoryIds.first)
+                          .firstOrNull
+                          ?.name ??
+                      filters.categoryIds.first,
+                  t,
+                )
+              : t.filterCategoriesCount(filters.categoryIds.length),
+          filters.copyWith(categoryIds: const {}),
+        ),
+      if (filters.hasAmount)
+        (
+          'amount',
+          filters.minAmount == null
+              ? '≤ ${money(filters.maxAmount!)}'
+              : filters.maxAmount == null
+              ? '≥ ${money(filters.minAmount!)}'
+              : '${money(filters.minAmount!)} – ${money(filters.maxAmount!)}',
+          filters.withoutAmount(),
+        ),
+      if (filters.currencies.isNotEmpty)
+        (
+          'currency',
+          (filters.currencies.toList()..sort()).join(', '),
+          filters.copyWith(currencies: const {}),
+        ),
+      if (filters.receipt != ReceiptFilter.any)
+        (
+          'receipt',
+          filters.receipt == ReceiptFilter.withReceipt
+              ? t.filterWithReceipt
+              : t.filterWithoutReceipt,
+          filters.copyWith(receipt: ReceiptFilter.any),
+        ),
+    ];
+    final colors = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        itemCount: chips.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final (kind, label, without) = chips[index];
+          return Material(
+            key: ValueKey('movement-filter-chip-$kind'),
+            color: colors.primary.withValues(alpha: .1),
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onChanged(without);
+              },
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 8, 0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: colors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: colors.primary,
+                      semanticLabel: MaterialLocalizations.of(
+                        context,
+                      ).deleteButtonTooltip,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

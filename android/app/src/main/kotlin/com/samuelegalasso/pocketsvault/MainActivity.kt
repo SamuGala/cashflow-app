@@ -4,6 +4,8 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
+import android.util.Log
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -13,21 +15,75 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
 class MainActivity : FlutterActivity() {
+  private var launchChannel: MethodChannel? = null
+
+  /** A tapped reminder that arrived before Flutter asked for it. */
+  private var pendingRoute: String? = null
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    // Before super: Flutter starts there and may ask for the pending route.
+    rememberNotificationTap(intent)
+    super.onCreate(savedInstanceState)
+  }
+
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    rememberNotificationTap(intent)?.let { route ->
+      launchChannel?.invokeMethod("open", route, object : MethodChannel.Result {
+        override fun success(result: Any?) {
+          pendingRoute = null
+        }
+        override fun error(code: String, message: String?, details: Any?) {}
+        override fun notImplemented() {}
+      })
+    }
+  }
+
+  /**
+   * Local notifications open the app with SELECT_NOTIFICATION and their
+   * payload. Turned into the app's own routes, so a tap works the same
+   * whether the activity is new, recreated or already running.
+   */
+  private fun rememberNotificationTap(intent: Intent?): String? {
+    if (intent?.action != "SELECT_NOTIFICATION") return null
+    val route = when (intent.getStringExtra("payload")) {
+      "quickAdd" -> "/add"
+      "recurring" -> "/recurring"
+      "budget" -> "/home"
+      else -> return null
+    }
+    Log.d("PocketsVault", "notification tap -> $route")
+    pendingRoute = route
+    return route
+  }
+
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
+    launchChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "pocket_vault/launch")
+      .also { channel ->
+        channel.setMethodCallHandler { call, result ->
+          if (call.method != "takePending") {
+            result.notImplemented()
+            return@setMethodCallHandler
+          }
+          result.success(pendingRoute)
+          pendingRoute = null
+        }
+      }
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "pocket_vault/widget")
       .setMethodCallHandler { call, result ->
         if (call.method != "sync") {
           result.notImplemented()
           return@setMethodCallHandler
         }
-        val balance = call.argument<String>("balance") ?: "EUR 0,00"
-        val expenses = call.argument<String>("monthlyExpenses") ?: "EUR 0,00"
-        getSharedPreferences("PocketVaultWidget", MODE_PRIVATE)
-          .edit()
-          .putString("balance", balance)
-          .putString("monthlyExpenses", expenses)
-          .apply()
+        val editor = getSharedPreferences(PocketVaultWidgetProvider.PREFS, MODE_PRIVATE).edit()
+        (call.arguments as? Map<*, *>)?.forEach { (key, value) ->
+          when (value) {
+            is String -> editor.putString(key as String, value)
+            is Boolean -> editor.putBoolean(key as String, value)
+          }
+        }
+        editor.apply()
 
         val manager = AppWidgetManager.getInstance(this)
         val component = ComponentName(this, PocketVaultWidgetProvider::class.java)

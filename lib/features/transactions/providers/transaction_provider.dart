@@ -10,6 +10,7 @@ import '../providers/category_provider.dart';
 import '../providers/recurring_provider.dart';
 import '../../../core/currency/currency_provider.dart';
 import '../domain/recurrence_calculator.dart';
+import '../../../core/providers/locale_provider.dart';
 import '../../../core/widgets/widget_sync_service.dart';
 import '../../../core/receipts/receipt_storage_service.dart';
 
@@ -26,6 +27,7 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
       WidgetSyncService().sync(
         transactions: transactions,
         currencyCode: ref.read(currencyProvider).value?.baseCurrency ?? 'EUR',
+        locale: ref.read(localeProvider),
       ),
     );
   }

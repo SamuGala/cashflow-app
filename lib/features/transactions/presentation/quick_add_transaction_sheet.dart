@@ -19,6 +19,8 @@ import '../../../core/currency/currency_metadata.dart';
 import '../../../core/currency/currency_provider.dart';
 import '../../../core/currency/currency_selector.dart';
 import '../../../core/utils/category_localization.dart';
+import '../domain/quick_suggestions.dart';
+import '../domain/transaction.dart';
 import '../domain/recurrence_calculator.dart';
 import '../../../core/receipts/receipt_storage_service.dart';
 import '../../../core/receipts/receipt_scan_review_sheet.dart';
@@ -30,9 +32,13 @@ class QuickAddTransactionSheet extends ConsumerStatefulWidget {
     super.key,
     this.initialReceipt,
     this.scrollController,
+    this.initialIncome = false,
   });
 
   final ReceiptScanReviewResult? initialReceipt;
+
+  /// Opens on the income flow, e.g. from the "New income" quick action.
+  final bool initialIncome;
   final ScrollController? scrollController;
 
   @override
@@ -66,6 +72,7 @@ class _QuickAddTransactionSheetState
   bool _isDismissing = false;
   bool _saving = false;
   bool _saved = false;
+  QuickSuggestion? _appliedSuggestion;
 
   final _carousel = ScrollController();
   List<String> _carouselIds = const [];
@@ -82,6 +89,7 @@ class _QuickAddTransactionSheetState
   @override
   void initState() {
     super.initState();
+    isIncome = widget.initialIncome;
     final scanned = widget.initialReceipt;
     if (scanned == null) return;
     receiptPath = scanned.draft.imagePath;
@@ -125,6 +133,7 @@ class _QuickAddTransactionSheetState
 
   void _addDigits(String digits) {
     setState(() {
+      _appliedSuggestion = null;
       var next = amountMinor;
       for (final digit in digits.split('')) {
         if (next.toString().length >= 9 && next != 0) break;
@@ -137,6 +146,7 @@ class _QuickAddTransactionSheetState
 
   void _deleteDigit() {
     setState(() {
+      _appliedSuggestion = null;
       amountMinor ~/= 10;
     });
   }
@@ -208,6 +218,33 @@ class _QuickAddTransactionSheetState
     HapticFeedback.selectionClick();
     setState(() => selectedCategory = category);
     _revealCategory(category.id);
+  }
+
+  List<TransactionModel>? _suggestionSource;
+  bool? _suggestionFlow;
+  List<QuickSuggestion> _suggestionCache = const [];
+
+  /// Recomputed only when the history or the flow changes, not per digit.
+  List<QuickSuggestion> _suggestionsFor(List<TransactionModel> history) {
+    if (!identical(history, _suggestionSource) || _suggestionFlow != isIncome) {
+      _suggestionSource = history;
+      _suggestionFlow = isIncome;
+      _suggestionCache = quickSuggestions(history, isIncome: isIncome);
+    }
+    return _suggestionCache;
+  }
+
+  void _applySuggestion(QuickSuggestion suggestion, Category category) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _appliedSuggestion = suggestion;
+      selectedCurrency = suggestion.currency;
+      amountMinor = suggestion.amountMinor;
+      selectedCategory = category;
+      noteController.text = suggestion.note ?? '';
+    });
+    _revealCategory(category.id);
+    _pulse();
   }
 
   Future<void> _createCategory() async {
@@ -450,6 +487,22 @@ class _QuickAddTransactionSheetState
 
     _carouselIds = [for (final c in filtered) c.id];
 
+    final byId = {for (final c in categories) c.id: c};
+    final suggestions = [
+      for (final suggestion in _suggestionsFor(
+        ref.watch(transactionProvider).value ?? const [],
+      ))
+        if (byId[suggestion.categoryId] != null &&
+            supportedCurrencyCodes.contains(suggestion.currency))
+          (suggestion, byId[suggestion.categoryId]!),
+    ];
+    // Offered on a fresh sheet and kept while a suggestion is applied, so the
+    // user can switch to another one.
+    final showSuggestions =
+        suggestions.isNotEmpty &&
+        widget.initialReceipt == null &&
+        (amountMinor == 0 || _appliedSuggestion != null);
+
     final canSave = amountMinor > 0 && selectedCategory != null;
     final colors = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
@@ -527,6 +580,11 @@ class _QuickAddTransactionSheetState
                               setState(() {
                                 isIncome = value;
                                 selectedCategory = null;
+                                if (_appliedSuggestion != null) {
+                                  _appliedSuggestion = null;
+                                  amountMinor = 0;
+                                  noteController.clear();
+                                }
                               });
                             },
                           ),
@@ -747,7 +805,7 @@ class _QuickAddTransactionSheetState
                         key: const ValueKey('quick-repeat'),
                         icon: Icons.autorenew_rounded,
                         label: recurring
-                            ? _everyLabel(
+                            ? recurrenceEveryLabel(
                                 t,
                                 recurringFrequency,
                                 recurringInterval,
@@ -773,6 +831,79 @@ class _QuickAddTransactionSheetState
                           },
                         ),
                     ],
+                  ),
+
+                  /// SUGGESTIONS
+                  _EdgeToEdge(
+                    child: AnimatedSize(
+                      duration: motion,
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment.topCenter,
+                      child: !showSuggestions
+                          ? const SizedBox(width: double.infinity)
+                          : Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      20,
+                                      0,
+                                      16,
+                                      8,
+                                    ),
+                                    child: Text(
+                                      t.suggested,
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: colors.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 56,
+                                    child: ListView.separated(
+                                      key: const ValueKey('quick-suggestions'),
+                                      scrollDirection: Axis.horizontal,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      itemCount: suggestions.length,
+                                      separatorBuilder: (_, _) =>
+                                          const SizedBox(width: 8),
+                                      itemBuilder: (context, index) {
+                                        final (suggestion, category) =
+                                            suggestions[index];
+                                        return _SuggestionChip(
+                                          key: ValueKey(
+                                            'quick-suggestion-$index',
+                                          ),
+                                          category: category,
+                                          title:
+                                              suggestion.note ??
+                                              categoryName(category.name, t),
+                                          amount: formatMoney(
+                                            suggestion.amountMinor,
+                                            suggestion.currency,
+                                            locale,
+                                          ),
+                                          selected:
+                                              _appliedSuggestion == suggestion,
+                                          duration: motion,
+                                          onTap: () => _applySuggestion(
+                                            suggestion,
+                                            category,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
                   ),
 
                   const SizedBox(height: 24),
@@ -1291,6 +1422,99 @@ class _ActionPill extends StatelessWidget {
   }
 }
 
+/// One-tap fill for a movement entered often: category, label and amount.
+class _SuggestionChip extends StatelessWidget {
+  const _SuggestionChip({
+    super.key,
+    required this.category,
+    required this.title,
+    required this.amount,
+    required this.selected,
+    required this.duration,
+    required this.onTap,
+  });
+
+  final Category category;
+  final String title;
+  final String amount;
+  final bool selected;
+  final Duration duration;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final tint = Color(category.color);
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: AnimatedContainer(
+        duration: duration,
+        curve: Curves.easeOutCubic,
+        constraints: const BoxConstraints(maxWidth: 220),
+        decoration: BoxDecoration(
+          color: selected
+              ? Color.alphaBlend(tint.withValues(alpha: .1), colors.surface)
+              : colors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected
+                ? tint.withValues(alpha: .55)
+                : colors.outlineVariant,
+            width: selected ? 1.2 : .7,
+          ),
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CategoryAvatar(category: category, size: 36),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
+                          ),
+                        ),
+                        Text(
+                          amount,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            height: 1.2,
+                            fontWeight: FontWeight.w700,
+                            color: colors.onSurfaceVariant,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SaveButton extends StatelessWidget {
   const _SaveButton({
     required this.label,
@@ -1383,7 +1607,8 @@ class _SaveButton extends StatelessWidget {
 }
 
 /// "Ogni mese", "Ogni 2 settimane", ...
-String _everyLabel(
+/// "Every month", "Every 2 weeks"… for a recurrence.
+String recurrenceEveryLabel(
   AppLocalizations t,
   RecurrenceFrequency frequency,
   int interval,
@@ -1478,7 +1703,7 @@ class _RecurrenceSheetState extends State<_RecurrenceSheet> {
                             ),
                             Text(
                               enabled
-                                  ? _everyLabel(t, frequency, interval)
+                                  ? recurrenceEveryLabel(t, frequency, interval)
                                   : t.recurrentMsg,
                               style: TextStyle(
                                 fontSize: 12,

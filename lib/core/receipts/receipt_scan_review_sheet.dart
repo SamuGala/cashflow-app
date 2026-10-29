@@ -9,6 +9,7 @@ import '../currency/currency_metadata.dart';
 import '../currency/currency_selector.dart';
 import '../input_formatters/capitalize_first_letter_formatter.dart';
 import '../utils/category_localization.dart';
+import '../../shared/widgets/vault_style.dart';
 import 'receipt_scanner_service.dart';
 
 enum ReceiptScanDecision { useDetectedData, attachOnly }
@@ -140,10 +141,10 @@ class _ReceiptScanReviewSheetState extends State<_ReceiptScanReviewSheet> {
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(
-          18,
+          20,
           0,
-          18,
-          MediaQuery.viewInsetsOf(context).bottom + 18,
+          20,
+          MediaQuery.viewInsetsOf(context).bottom + 16,
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -153,8 +154,9 @@ class _ReceiptScanReviewSheetState extends State<_ReceiptScanReviewSheet> {
               Text(
                 t.receiptScanReview,
                 style: const TextStyle(
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: FontWeight.w800,
+                  letterSpacing: -.6,
                 ),
               ),
               const SizedBox(height: 4),
@@ -162,13 +164,17 @@ class _ReceiptScanReviewSheetState extends State<_ReceiptScanReviewSheet> {
                 widget.draft.extraction != null
                     ? t.receiptScanCheckData
                     : t.receiptScanNoData,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.4,
+                  color: colors.onSurfaceVariant,
+                ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 child: AspectRatio(
-                  aspectRatio: 16 / 6,
+                  aspectRatio: 16 / 7,
                   child: Image.file(
                     File(widget.draft.imagePath),
                     fit: BoxFit.cover,
@@ -181,16 +187,8 @@ class _ReceiptScanReviewSheetState extends State<_ReceiptScanReviewSheet> {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: colors.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colors.outlineVariant.withValues(alpha: .65),
-                  ),
-                ),
+              const SizedBox(height: 16),
+              VaultSurface(
                 child: Column(
                   children: [
                     TextField(
@@ -250,14 +248,8 @@ class _ReceiptScanReviewSheetState extends State<_ReceiptScanReviewSheet> {
                               value: category.id,
                               child: Row(
                                 children: [
-                                  Icon(
-                                    category.isDefault
-                                        ? categoryIcon(category.name)
-                                        : customCategoryIcon(category.icon),
-                                    size: 19,
-                                    color: Color(category.color),
-                                  ),
-                                  const SizedBox(width: 9),
+                                  CategoryAvatar(category: category, size: 28),
+                                  const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(categoryName(category.name, t)),
                                   ),
@@ -296,23 +288,33 @@ class _ReceiptScanReviewSheetState extends State<_ReceiptScanReviewSheet> {
                 children: [
                   Icon(
                     Icons.lock_outline_rounded,
-                    size: 17,
+                    size: 16,
                     color: colors.primary,
                   ),
-                  const SizedBox(width: 7),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       t.receiptScanPrivate,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 52),
+                        side: BorderSide(color: colors.outlineVariant),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                       onPressed: () => _finish(ReceiptScanDecision.attachOnly),
                       child: Text(t.attachOnly),
                     ),
@@ -321,6 +323,9 @@ class _ReceiptScanReviewSheetState extends State<_ReceiptScanReviewSheet> {
                   Expanded(
                     child: FilledButton.icon(
                       key: const ValueKey('receipt-review-apply'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 52),
+                      ),
                       onPressed: canUse
                           ? () => _finish(ReceiptScanDecision.useDetectedData)
                           : null,

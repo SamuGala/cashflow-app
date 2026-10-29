@@ -11,6 +11,7 @@ import 'package:pocket_vault/core/database/database_provider.dart';
 import 'package:pocket_vault/core/providers/balance_visibility_provider.dart';
 import 'package:pocket_vault/core/providers/time_filter_provider.dart';
 import 'package:pocket_vault/features/dashboard/presentation/dashboard_page.dart';
+import 'package:pocket_vault/features/recap/presentation/year_recap_page.dart';
 import 'package:pocket_vault/features/stats/presentation/stats_page.dart';
 import 'package:pocket_vault/features/transactions/domain/category.dart';
 import 'package:pocket_vault/features/transactions/presentation/quick_add_transaction_sheet.dart';
@@ -103,6 +104,7 @@ void main() {
           const DashboardPage(),
           const TransactionsPage(),
           const StatsPage(),
+          YearRecapPage(year: month.year, autoAdvance: false),
           const Scaffold(body: QuickAddTransactionSheet()),
         ]) {
           await tester.pumpWidget(
@@ -119,6 +121,17 @@ void main() {
           );
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull, reason: '${page.runtimeType}');
+          if (page is YearRecapPage) {
+            // Walk every card: legacy icons, a removed category, USD.
+            for (var i = 0; i < 8; i++) {
+              final stories = tester.getRect(
+                find.byKey(const ValueKey('recap-stories')),
+              );
+              await tester.tapAt(Offset(stories.right - 20, stories.center.dy));
+              await tester.pumpAndSettle();
+              expect(tester.takeException(), isNull, reason: 'recap card $i');
+            }
+          }
           if (page is StatsPage) {
             await tester.tap(find.byKey(const ValueKey('stats-tab-1')));
             await tester.pumpAndSettle();

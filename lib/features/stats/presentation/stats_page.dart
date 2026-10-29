@@ -20,6 +20,7 @@ import '../../transactions/providers/transaction_provider.dart';
 import '../domain/stats_analysis.dart';
 import '../widgets/stats_period_controls.dart';
 import '../widgets/stats_visuals.dart';
+import '../../recap/presentation/year_recap_entry.dart';
 
 class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});
@@ -228,6 +229,7 @@ class _StatsPageState extends ConsumerState<StatsPage>
               )
             else ...[
               if (_tab == 0) ...[
+                const YearRecapEntry(),
                 StatsSurface(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -474,10 +476,23 @@ class _StatsPageState extends ConsumerState<StatsPage>
                       children: [
                         Text(
                           t.statsForecastToday,
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -.6,
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(t.forecastExplanation),
+                        const SizedBox(height: 4),
+                        Text(
+                          t.forecastExplanation,
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.4,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         const CashflowForecastCard(),
                       ],

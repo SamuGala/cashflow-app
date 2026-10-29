@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_surface">#182431</color>
+    <color name="widget_border">#2C3848</color>
+    <color name="widget_ink">#F5F7FC</color>
+    <color name="widget_muted">#A2B0C9</color>
+    <color name="widget_primary">#969DFF</color>
+    <color name="widget_on_primary">#0E1722</color>
+    <color name="widget_tonal">#243148</color>
+    <color name="widget_income">#82DFB4</color>
+    <color name="widget_expense">#FF8E9C</color>
+</resources>

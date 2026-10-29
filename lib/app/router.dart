@@ -5,7 +5,7 @@ import 'package:pocket_vault/features/transactions/presentation/transactions_pag
 import 'package:pocket_vault/shared/widgets/bottom_nav_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../features/transactions/presentation/add_transaction_page.dart';
+import 'launch_actions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -13,11 +13,19 @@ final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/dashboard',
   routes: [
-    GoRoute(
-      path: '/add',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const AddTransactionPage(),
-    ),
+    // Deep links from the quick actions, the widget and notifications are
+    // handed to the Home or Movements tab, which open the right sheet.
+    for (final path in ['/add', '/scan', '/recurring'])
+      GoRoute(
+        path: path,
+        redirect: (context, state) {
+          final action = launchActionFromUri(state.uri);
+          pendingLaunchAction.value = action;
+          return action == LaunchAction.openRecurring
+              ? '/transactions'
+              : '/dashboard';
+        },
+      ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return BottomNavShell(navigationShell: navigationShell);

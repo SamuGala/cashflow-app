@@ -19,6 +19,9 @@ import '../../budgets/presentation/budget_card.dart';
 import '../../goals/presentation/savings_goals_card.dart';
 import '../../../shared/widgets/vault_style.dart';
 import '../../stats/widgets/stats_period_controls.dart';
+import '../../../app/launch_actions.dart';
+import '../../../core/security/auth_provider.dart';
+import '../../recap/presentation/year_recap_entry.dart';
 import '../../../shared/widgets/receipt_scan_icon.dart';
 import '../../../core/receipts/receipt_scan_review_sheet.dart';
 import '../../../core/receipts/receipt_capture_page.dart';
@@ -36,7 +39,46 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   bool showIncome = false;
   bool _isScanningReceipt = false;
 
-  Future<void> _openQuickAdd({ReceiptScanReviewResult? receipt}) {
+  @override
+  void initState() {
+    super.initState();
+    launchActionChanges.addListener(_handleLaunchAction);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleLaunchAction());
+  }
+
+  @override
+  void dispose() {
+    launchActionChanges.removeListener(_handleLaunchAction);
+    super.dispose();
+  }
+
+  /// Quick actions, the widget and notifications land here.
+  void _handleLaunchAction() {
+    // A page still on its way out after a lock must not take the action:
+    // it belongs to the page shown after the PIN.
+    if (!mounted || !ref.read(authProvider)) return;
+    final action = takeLaunchAction(const {
+      LaunchAction.addExpense,
+      LaunchAction.addIncome,
+      LaunchAction.scanReceipt,
+      LaunchAction.openHome,
+    });
+    switch (action) {
+      case LaunchAction.addExpense:
+        _openQuickAdd();
+      case LaunchAction.addIncome:
+        _openQuickAdd(income: true);
+      case LaunchAction.scanReceipt:
+        _scanReceipt();
+      case LaunchAction.openHome || LaunchAction.openRecurring || null:
+        break;
+    }
+  }
+
+  Future<void> _openQuickAdd({
+    ReceiptScanReviewResult? receipt,
+    bool income = false,
+  }) {
     return showModalBottomSheet<void>(
       context: context,
       // Above the navigation bar, so the pinned Save button is never covered.
@@ -57,6 +99,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         shouldCloseOnMinExtent: true,
         builder: (_, scrollController) => QuickAddTransactionSheet(
           initialReceipt: receipt,
+          initialIncome: income,
           scrollController: scrollController,
         ),
       ),
@@ -231,6 +274,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
             const SizedBox(height: 14),
 
+            const YearRecapBanner(),
             const BudgetCard(),
 
             const SizedBox(height: 12),

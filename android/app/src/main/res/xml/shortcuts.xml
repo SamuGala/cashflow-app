@@ -4,12 +4,36 @@
         android:shortcutId="add_transaction"
         android:enabled="true"
         android:icon="@mipmap/ic_launcher"
-        android:shortcutShortLabel="@string/shortcut_add_transaction"
-        android:shortcutLongLabel="@string/shortcut_add_transaction">
+        android:shortcutShortLabel="@string/shortcut_new_expense"
+        android:shortcutLongLabel="@string/shortcut_new_expense">
         <intent
             android:action="android.intent.action.VIEW"
             android:targetPackage="com.samuelegalasso.pocketsvault"
             android:targetClass="com.samuelegalasso.pocketsvault.MainActivity"
             android:data="pocketvault:///add" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="add_income"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_new_income"
+        android:shortcutLongLabel="@string/shortcut_new_income">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.samuelegalasso.pocketsvault"
+            android:targetClass="com.samuelegalasso.pocketsvault.MainActivity"
+            android:data="pocketvault:///add?flow=income" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="scan_receipt"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_scan_receipt"
+        android:shortcutLongLabel="@string/shortcut_scan_receipt">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.samuelegalasso.pocketsvault"
+            android:targetClass="com.samuelegalasso.pocketsvault.MainActivity"
+            android:data="pocketvault:///scan" />
     </shortcut>
 </shortcuts>

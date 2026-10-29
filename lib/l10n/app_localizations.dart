@@ -1911,6 +1911,630 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add note'**
   String get addNote;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Pockets Vault'**
+  String get settingsSupport;
+
+  /// No description provided for @suggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested'**
+  String get suggested;
+
+  /// No description provided for @filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get filters;
+
+  /// No description provided for @filterType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get filterType;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get filterCategories;
+
+  /// No description provided for @filterCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get filterCurrency;
+
+  /// No description provided for @filterReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt'**
+  String get filterReceipt;
+
+  /// No description provided for @filterWithReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'With receipt'**
+  String get filterWithReceipt;
+
+  /// No description provided for @filterWithoutReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Without receipt'**
+  String get filterWithoutReceipt;
+
+  /// No description provided for @filterReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get filterReset;
+
+  /// No description provided for @filterShowMovements.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No movements} =1{Show 1 movement} other{Show {count} movements}}'**
+  String filterShowMovements(int count);
+
+  /// No description provided for @filterNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No movements match these filters.'**
+  String get filterNoResults;
+
+  /// No description provided for @filterClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get filterClear;
+
+  /// No description provided for @filterCategoriesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 category} other{{count} categories}}'**
+  String filterCategoriesCount(int count);
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @notifyRecurring.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming recurrences'**
+  String get notifyRecurring;
+
+  /// No description provided for @notifyBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget alert'**
+  String get notifyBudget;
+
+  /// No description provided for @notifyReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Evening reminder'**
+  String get notifyReminder;
+
+  /// No description provided for @notifyReminderCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Only if you haven\'t logged anything today'**
+  String get notifyReminderCaption;
+
+  /// No description provided for @notifyHideAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide amounts in notifications'**
+  String get notifyHideAmounts;
+
+  /// No description provided for @notifySameDay.
+  ///
+  /// In en, this message translates to:
+  /// **'On the day'**
+  String get notifySameDay;
+
+  /// No description provided for @notifyDaysBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day before} other{{count} days before}}'**
+  String notifyDaysBefore(int count);
+
+  /// No description provided for @notifyAtPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'At {percent}%'**
+  String notifyAtPercent(int percent);
+
+  /// No description provided for @notifyPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off. Turn them on in the phone settings.'**
+  String get notifyPermissionDenied;
+
+  /// No description provided for @notifyRecurringTitleToday.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} today'**
+  String notifyRecurringTitleToday(String name);
+
+  /// No description provided for @notifyRecurringTitleTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} tomorrow'**
+  String notifyRecurringTitleTomorrow(String name);
+
+  /// No description provided for @notifyRecurringTitleIn.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} in {days} days'**
+  String notifyRecurringTitleIn(String name, int days);
+
+  /// No description provided for @notifyRecurringExpenseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring expense of {amount}.'**
+  String notifyRecurringExpenseBody(String amount);
+
+  /// No description provided for @notifyRecurringIncomeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring income of {amount}.'**
+  String notifyRecurringIncomeBody(String amount);
+
+  /// No description provided for @notifyRecurringHiddenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A recurring movement is coming up.'**
+  String get notifyRecurringHiddenBody;
+
+  /// No description provided for @notifyBudgetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{category} at {percent}% of budget'**
+  String notifyBudgetTitle(String category, int percent);
+
+  /// No description provided for @notifyBudgetOverTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{category} budget exceeded'**
+  String notifyBudgetOverTitle(String category);
+
+  /// No description provided for @notifyBudgetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{spent} of {limit} spent this month.'**
+  String notifyBudgetBody(String spent, String limit);
+
+  /// No description provided for @notifyBudgetHiddenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the app to see the details.'**
+  String get notifyBudgetHiddenBody;
+
+  /// No description provided for @notifyReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Did you spend anything today?'**
+  String get notifyReminderTitle;
+
+  /// No description provided for @notifyReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Log it in a few seconds.'**
+  String get notifyReminderBody;
+
+  /// No description provided for @notifyChannelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get notifyChannelName;
+
+  /// No description provided for @notifyWhen.
+  ///
+  /// In en, this message translates to:
+  /// **'When to remind you'**
+  String get notifyWhen;
+
+  /// No description provided for @notifyThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get notifyThreshold;
+
+  /// No description provided for @notifyTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get notifyTime;
+
+  /// No description provided for @notifyRecurringCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'At 9:00, before each recurring movement'**
+  String get notifyRecurringCaption;
+
+  /// No description provided for @notifyBudgetCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'When a category nears its monthly limit'**
+  String get notifyBudgetCaption;
+
+  /// No description provided for @widgetMonthBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get widgetMonthBalance;
+
+  /// No description provided for @widgetReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt'**
+  String get widgetReceipt;
+
+  /// No description provided for @quickActionExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'New expense'**
+  String get quickActionExpense;
+
+  /// No description provided for @quickActionIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'New income'**
+  String get quickActionIncome;
+
+  /// No description provided for @quickActionScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan receipt'**
+  String get quickActionScan;
+
+  /// No description provided for @recapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {year}'**
+  String recapTitle(String year);
+
+  /// No description provided for @recapEarnedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'In {year} you earned'**
+  String recapEarnedIn(String year);
+
+  /// No description provided for @recapSpentIn.
+  ///
+  /// In en, this message translates to:
+  /// **'In {year} you spent'**
+  String recapSpentIn(String year);
+
+  /// No description provided for @recapYouSpent.
+  ///
+  /// In en, this message translates to:
+  /// **'You spent'**
+  String get recapYouSpent;
+
+  /// No description provided for @recapYouKept.
+  ///
+  /// In en, this message translates to:
+  /// **'You kept'**
+  String get recapYouKept;
+
+  /// No description provided for @recapKeptPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% of what you earned'**
+  String recapKeptPercent(int percent);
+
+  /// No description provided for @recapMonthByMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month by month'**
+  String get recapMonthByMonth;
+
+  /// No description provided for @recapMonthsHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'{high} the priciest month, {low} the lightest'**
+  String recapMonthsHeadline(String high, String low);
+
+  /// No description provided for @recapMonthlyAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly average'**
+  String get recapMonthlyAverage;
+
+  /// No description provided for @recapWhereItWent.
+  ///
+  /// In en, this message translates to:
+  /// **'Where it went'**
+  String get recapWhereItWent;
+
+  /// No description provided for @recapTopCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'{category} took {percent}%'**
+  String recapTopCategory(String category, int percent);
+
+  /// No description provided for @recapBiggest.
+  ///
+  /// In en, this message translates to:
+  /// **'The biggest expense'**
+  String get recapBiggest;
+
+  /// No description provided for @recapBiggestNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring charges aside. It equals {percent}% of an average month of spending.'**
+  String recapBiggestNote(int percent);
+
+  /// No description provided for @recapRhythm.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rhythm'**
+  String get recapRhythm;
+
+  /// No description provided for @recapRhythmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'movements logged. {weekday} is your busiest day, with {count} movements.'**
+  String recapRhythmBody(String weekday, int count);
+
+  /// No description provided for @recapRecurring.
+  ///
+  /// In en, this message translates to:
+  /// **'Your recurrences'**
+  String get recapRecurring;
+
+  /// No description provided for @recapRecurringHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 recurrence, {amount} this year} other{{count} recurrences, {amount} this year}}'**
+  String recapRecurringHeadline(int count, String amount);
+
+  /// No description provided for @recapRecurringShare.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% of the year\'s expenses.'**
+  String recapRecurringShare(int percent);
+
+  /// No description provided for @recapTimes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 charge} other{{count} charges}}'**
+  String recapTimes(int count);
+
+  /// No description provided for @recapGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goals'**
+  String get recapGoals;
+
+  /// No description provided for @recapGoalsHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'{reached} of {total} reached'**
+  String recapGoalsHeadline(int reached, int total);
+
+  /// No description provided for @recapGoalReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Reached'**
+  String get recapGoalReached;
+
+  /// No description provided for @recapGoalOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{saved} of {target}'**
+  String recapGoalOf(String saved, String target);
+
+  /// No description provided for @recapBudgetKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget kept in {kept} of {months} months'**
+  String recapBudgetKept(int kept, int months);
+
+  /// No description provided for @recapBudgetsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Your budgets'**
+  String get recapBudgetsOnly;
+
+  /// No description provided for @recapComparedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Compared with {year}'**
+  String recapComparedTo(String year);
+
+  /// No description provided for @recapSpentLess.
+  ///
+  /// In en, this message translates to:
+  /// **'You spent {percent}% less'**
+  String recapSpentLess(int percent);
+
+  /// No description provided for @recapSpentMore.
+  ///
+  /// In en, this message translates to:
+  /// **'You spent {percent}% more'**
+  String recapSpentMore(int percent);
+
+  /// No description provided for @recapSavingFromTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Savings from {from}% to {to}%'**
+  String recapSavingFromTo(int from, int to);
+
+  /// No description provided for @recapFirstYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Your first year'**
+  String get recapFirstYear;
+
+  /// No description provided for @recapStartedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'You started in {month} and kept going'**
+  String recapStartedIn(String month);
+
+  /// No description provided for @recapWholeYear.
+  ///
+  /// In en, this message translates to:
+  /// **'A whole year of movements'**
+  String get recapWholeYear;
+
+  /// No description provided for @recapCategoriesUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories used'**
+  String get recapCategoriesUsed;
+
+  /// No description provided for @recapSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get recapSaved;
+
+  /// No description provided for @recapNextYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Next year you\'ll see the comparison with {year} here.'**
+  String recapNextYear(String year);
+
+  /// No description provided for @recapShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get recapShare;
+
+  /// No description provided for @recapShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your year'**
+  String get recapShareTitle;
+
+  /// No description provided for @recapShareImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Share image'**
+  String get recapShareImage;
+
+  /// No description provided for @recapCopyText.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy text'**
+  String get recapCopyText;
+
+  /// No description provided for @recapTextCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Text copied'**
+  String get recapTextCopied;
+
+  /// No description provided for @recapHideAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide amounts'**
+  String get recapHideAmounts;
+
+  /// No description provided for @recapHideAmountsCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Percentages only, no figures'**
+  String get recapHideAmountsCaption;
+
+  /// No description provided for @recapMyYear.
+  ///
+  /// In en, this message translates to:
+  /// **'MY YEAR'**
+  String get recapMyYear;
+
+  /// No description provided for @recapSpentShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Spent'**
+  String get recapSpentShort;
+
+  /// No description provided for @recapTopCategoryShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Top category'**
+  String get recapTopCategoryShort;
+
+  /// No description provided for @recapVsYear.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% vs {year}'**
+  String recapVsYear(String percent, String year);
+
+  /// No description provided for @recapOfIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% of income'**
+  String recapOfIncome(int percent);
+
+  /// No description provided for @recapShareText.
+  ///
+  /// In en, this message translates to:
+  /// **'My {year} with Pockets Vault: {spent} spent, {saved} saved.'**
+  String recapShareText(String year, String spent, String saved);
+
+  /// No description provided for @recapShareTextHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'My {year} with Pockets Vault: saved {percent}% of my income.'**
+  String recapShareTextHidden(String year, int percent);
+
+  /// No description provided for @recapShareTextPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'My {year} with Pockets Vault: {count} movements logged.'**
+  String recapShareTextPlain(String year, int count);
+
+  /// No description provided for @recapBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {year} in Pockets Vault'**
+  String recapBannerTitle(String year);
+
+  /// No description provided for @recapBannerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Relive the year in {count} cards'**
+  String recapBannerBody(int count);
+
+  /// No description provided for @recapOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'{year} recap'**
+  String recapOpen(String year);
+
+  /// No description provided for @recapCardOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Card {index} of {total}'**
+  String recapCardOf(int index, int total);
+
+  /// No description provided for @recapNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No movements this year.'**
+  String get recapNoData;
 }
 
 class _AppLocalizationsDelegate

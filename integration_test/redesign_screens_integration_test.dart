@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -9,11 +11,17 @@ import 'package:integration_test/integration_test.dart';
 import 'package:pocket_vault/core/database/app_database.dart';
 import 'package:pocket_vault/core/database/database_provider.dart';
 import 'package:pocket_vault/core/providers/balance_visibility_provider.dart';
+import 'package:pocket_vault/core/receipts/receipt_scan_review_sheet.dart';
+import 'package:pocket_vault/core/receipts/receipt_scanner_service.dart';
 import 'package:pocket_vault/core/security/auth_provider.dart';
+import 'package:pocket_vault/features/goals/presentation/savings_goals_card.dart';
+import 'package:pocket_vault/features/goals/providers/savings_goals_provider.dart';
 import 'package:pocket_vault/features/settings/presentation/providers/theme_provider.dart';
+import 'package:pocket_vault/features/transactions/providers/category_provider.dart';
 import 'package:pocket_vault/features/transactions/presentation/add_transaction_page.dart';
 import 'package:pocket_vault/features/transactions/presentation/edit_recurring_sheet.dart';
 import 'package:pocket_vault/main.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -89,6 +97,19 @@ void main() {
             ),
           );
     }
+    final goals = container.read(savingsGoalsProvider.notifier);
+    await container.read(savingsGoalsProvider.future);
+    await goals.addGoal(name: 'Vacanza in Giappone', targetAmountMinor: 300000);
+    await goals.addGoal(name: 'Fondo emergenze', targetAmountMinor: 500000);
+    final seededGoals = await container.read(savingsGoalsProvider.future);
+    await goals.contribute(
+      seededGoals.firstWhere((g) => g.name.startsWith('Vacanza')).id,
+      126000,
+    );
+    await goals.contribute(
+      seededGoals.firstWhere((g) => g.name.startsWith('Fondo')).id,
+      90000,
+    );
     container.read(authProvider.notifier).unlock();
     container.read(balanceVisibilityProvider.notifier).show();
     await tester.pumpWidget(
@@ -244,8 +265,109 @@ void main() {
     await shot('23-stats-category-detail');
     await tester.drag(find.byType(ListView).first, const Offset(0, 3000));
     await shot('24-stats-donut-selected');
+    await tester.drag(find.byType(ListView).first, const Offset(0, -3000));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('stats-forecast')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('stats-forecast')));
+    await shot('25-stats-forecast');
+    await tester.tapAt(const Offset(20, 40));
+    await tester.pumpAndSettle();
+
+    // Savings goals on Home and their management sheet.
+    await openTab('Home');
+    await tester.drag(find.byType(ListView).first, const Offset(0, -260));
+    await shot('26-home-goals');
+    await tester.tap(find.text('Gestisci'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SavingsGoalsSheet), findsOneWidget);
+    await shot('27-goals-sheet');
+    await tester.tap(find.text('Accantona').first);
+    await shot('28-goals-amount-dialog');
+    await tester.tap(find.text('Annulla').last);
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(20, 40));
+    await tester.pumpAndSettle();
+
+    // Receipt review after a scan.
+    final receipt = await _receiptImage();
+    final categories = await container.read(categoryProvider.future);
+    final review = showReceiptScanReview(
+      context: tester.element(find.byType(Scaffold).first),
+      draft: ReceiptScanDraft(
+        imagePath: receipt,
+        extraction: ReceiptExtraction(
+          amountMinor: 6840,
+          currencyCode: 'EUR',
+          date: now,
+          merchant: 'Esselunga',
+          categoryId: 'groceries',
+          confidence: .92,
+          recognizedText: '',
+        ),
+      ),
+      categories: categories,
+    );
+    await shot('29-receipt-review');
+    await tester.tap(find.text('Solo allegato'));
+    await tester.pumpAndSettle();
+    expect((await review)?.decision, ReceiptScanDecision.attachOnly);
+
+    // Settings in the Vault style, both themes.
+    await openTab('Impostazioni');
+    await shot('30-settings');
+    await tester.drag(find.byType(ListView).first, const Offset(0, -3000));
+    await shot('31-settings-bottom');
+    await tester.tap(find.byKey(const ValueKey('settings-delete-all')));
+    await shot('32-settings-delete-all');
+    await tester.tap(find.text('Annulla').last);
+    await tester.pumpAndSettle();
+    expect((await database.getAllTransactions()), isNotEmpty);
+    await tester.drag(find.byType(ListView).first, const Offset(0, 3000));
+    await container.read(themeProvider.notifier).setTheme(AppThemeMode.dark);
+    await shot('33-settings-dark');
+    await openTab('Home');
+    await tester.drag(find.byType(ListView).first, const Offset(0, -260));
+    await shot('34-home-goals-dark');
+    await container.read(themeProvider.notifier).setTheme(AppThemeMode.light);
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
   });
+}
+
+/// Paints a simple paper receipt so the review sheet shows a real image.
+Future<String> _receiptImage() async {
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+  const size = Size(900, 340);
+  canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xFFE9E4DA));
+  final paper = Paint()..color = Colors.white;
+  canvas.drawRRect(
+    RRect.fromRectAndRadius(
+      const Rect.fromLTWH(250, 20, 400, 360),
+      const Radius.circular(8),
+    ),
+    paper,
+  );
+  final ink = Paint()..color = const Color(0xFFB9BEC8);
+  for (var i = 0; i < 9; i++) {
+    final width = i == 0 ? 180.0 : (i.isEven ? 300.0 : 240.0);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(290, 50.0 + i * 30, width, 10),
+        const Radius.circular(5),
+      ),
+      ink,
+    );
+  }
+  final image = await recorder.endRecording().toImage(
+    size.width.toInt(),
+    size.height.toInt(),
+  );
+  final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+  final file = File('${(await getTemporaryDirectory()).path}/receipt-demo.png');
+  await file.writeAsBytes(bytes!.buffer.asUint8List());
+  return file.path;
 }

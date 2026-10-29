@@ -1,0 +1,3 @@
+// Only the Flutter build name/number, without the CocoaPods settings of the
+// app, so the widget extension stays a plain SwiftUI binary.
+#include? "Generated.xcconfig"

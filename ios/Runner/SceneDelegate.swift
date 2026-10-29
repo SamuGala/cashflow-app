@@ -2,10 +2,21 @@ import Flutter
 import ImageIO
 import UIKit
 import Vision
+import WidgetKit
 
 class SceneDelegate: FlutterSceneDelegate {
-  private let addShortcutType = "com.samugalasso.cashflowApp.add"
+  /// Home-screen quick actions, mapped to the app's deep links.
+  private let shortcutRoutes = [
+    "com.samugalasso.cashflowApp.add": "/add",
+    "com.samugalasso.cashflowApp.income": "/add?flow=income",
+    "com.samugalasso.cashflowApp.scan": "/scan",
+  ]
+  private let widgetSuite = "group.com.samugalasso.cashflowApp"
   private var receiptOcrChannel: FlutterMethodChannel?
+  private var widgetChannel: FlutterMethodChannel?
+  private var launchChannel: FlutterMethodChannel?
+  /// A quick action that arrived before Flutter asked for it.
+  private var pendingRoute: String?
 
   override func scene(
     _ scene: UIScene,
@@ -14,6 +25,8 @@ class SceneDelegate: FlutterSceneDelegate {
   ) {
     super.scene(scene, willConnectTo: session, options: connectionOptions)
     configureReceiptOcrChannel()
+    configureWidgetChannel()
+    configureLaunchChannel()
     if let shortcutItem = connectionOptions.shortcutItem {
       DispatchQueue.main.async { [weak self] in
         _ = self?.handle(shortcutItem)
@@ -30,12 +43,58 @@ class SceneDelegate: FlutterSceneDelegate {
   }
 
   private func handle(_ shortcutItem: UIApplicationShortcutItem) -> Bool {
-    guard shortcutItem.type == addShortcutType,
-          let controller = window?.rootViewController as? FlutterViewController else {
-      return false
+    guard let route = shortcutRoutes[shortcutItem.type] else { return false }
+    // Kept until Flutter takes it at startup; a running app gets it now.
+    pendingRoute = route
+    launchChannel?.invokeMethod("open", arguments: route) { [weak self] response in
+      if response == nil { self?.pendingRoute = nil }
     }
-    controller.pushRoute("/add")
     return true
+  }
+
+  private func configureLaunchChannel() {
+    guard let controller = window?.rootViewController as? FlutterViewController else {
+      return
+    }
+    let channel = FlutterMethodChannel(
+      name: "pocket_vault/launch",
+      binaryMessenger: controller.binaryMessenger
+    )
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard call.method == "takePending" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      result(self?.pendingRoute)
+      self?.pendingRoute = nil
+    }
+    launchChannel = channel
+  }
+
+  /// Stores the month summary sent by Flutter where the widget can read it.
+  private func configureWidgetChannel() {
+    guard let controller = window?.rootViewController as? FlutterViewController else {
+      return
+    }
+    let channel = FlutterMethodChannel(
+      name: "pocket_vault/widget",
+      binaryMessenger: controller.binaryMessenger
+    )
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard call.method == "sync",
+            let values = call.arguments as? [String: Any],
+            let suite = self?.widgetSuite,
+            let defaults = UserDefaults(suiteName: suite) else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      for (key, value) in values {
+        defaults.set(value, forKey: key)
+      }
+      WidgetCenter.shared.reloadAllTimelines()
+      result(nil)
+    }
+    widgetChannel = channel
   }
 
   private func configureReceiptOcrChannel() {

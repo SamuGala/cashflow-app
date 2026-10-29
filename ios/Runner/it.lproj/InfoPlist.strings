@@ -1,3 +1,6 @@
 "NSCameraUsageDescription" = "La fotocamera serve per scansionare le ricevute e compilare la spesa sul dispositivo.";
 "NSPhotoLibraryUsageDescription" = "L’accesso alle foto serve per scansionare una ricevuta scelta dalla libreria.";
 "NSFaceIDUsageDescription" = "Usa Face ID per sbloccare Pockets Vault.";
+"shortcut.expense" = "Nuova uscita";
+"shortcut.income" = "Nuova entrata";
+"shortcut.scan" = "Scansiona ricevuta";

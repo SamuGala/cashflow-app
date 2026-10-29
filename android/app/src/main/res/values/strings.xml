@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="shortcut_add_transaction">Aggiungi movimento</string>
+    <string name="shortcut_add_transaction">Add transaction</string>
+    <string name="shortcut_new_expense">New expense</string>
+    <string name="shortcut_new_income">New income</string>
+    <string name="shortcut_scan_receipt">Scan receipt</string>
+    <string name="widget_description">Month balance and quick entry</string>
+    <string name="widget_default_expense">Expense</string>
+    <string name="widget_default_income">Income</string>
+    <string name="widget_default_receipt">Receipt</string>
+    <string name="widget_default_balance">This month</string>
+    <string name="widget_default_incomes">Income</string>
+    <string name="widget_default_expenses">Expenses</string>
 </resources>
