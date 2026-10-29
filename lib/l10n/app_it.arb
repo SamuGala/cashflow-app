@@ -291,5 +291,15 @@
   "statsExplainsRise": "{category} spiega l’aumento",
   "statsOpenCategoryHint": "Apri la categoria per vedere i movimenti",
   "statsExpenseVersus": "di spese rispetto a {period}",
-  "statsIncomeVersus": "di entrate rispetto a {period}"
+  "statsIncomeVersus": "di entrate rispetto a {period}",
+  "movementsHistory": "Cronologia",
+  "swipeHint": "Scorri a destra per modificare, a sinistra per eliminare",
+  "movementsCount": "{count, plural, =1{1 movimento} other{{count} movimenti}}",
+  "today": "Oggi",
+  "yesterday": "Ieri",
+  "repeat": "Ripeti",
+  "done": "Fatto",
+  "saved": "Salvato",
+  "newCategoryShort": "Nuova",
+  "addNote": "Aggiungi nota"
 }

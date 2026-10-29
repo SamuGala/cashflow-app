@@ -330,5 +330,22 @@
   "statsExplainsRise": "{category} explains the increase",
   "statsOpenCategoryHint": "Open the category to see transactions",
   "statsExpenseVersus": "in spending compared with {period}",
-  "statsIncomeVersus": "in income compared with {period}"
+  "statsIncomeVersus": "in income compared with {period}",
+  "movementsHistory": "History",
+  "swipeHint": "Swipe right to edit, left to delete",
+  "movementsCount": "{count, plural, =1{1 transaction} other{{count} transactions}}",
+  "@movementsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "repeat": "Repeat",
+  "done": "Done",
+  "saved": "Saved",
+  "newCategoryShort": "New",
+  "addNote": "Add note"
 }

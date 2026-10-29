@@ -142,11 +142,7 @@ void main() {
         );
         expect(find.text('Transazioni in arrivo'), findsOneWidget);
         final floatingBounds = [tester.getRect(scan), tester.getRect(add)];
-        for (final key in [
-          'goal-period-allocation',
-          'goal-total-trip',
-          'category-flow-toggle',
-        ]) {
+        for (final key in ['goal-period-allocation', 'goal-total-trip']) {
           // Shorter screens build these rows only once scrolled into view.
           await tester.scrollUntilVisible(
             find.byKey(ValueKey(key)),
@@ -165,12 +161,22 @@ void main() {
       }
       await container.read(themeProvider.notifier).setTheme(AppThemeMode.light);
       await tester.pumpAndSettle();
-      await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+      // Category rows span the full width; the list's bottom inset keeps them
+      // clear of the floating actions once scrolled to the end.
+      await tester.drag(find.byType(ListView).first, const Offset(0, -3000));
       await tester.pumpAndSettle();
       final actions = [
         tester.getRect(find.byKey(const ValueKey('scan-receipt-button'))),
         tester.getRect(find.byKey(const ValueKey('add-transaction-button'))),
       ];
+      expect(
+        actions.any(
+          tester
+              .getRect(find.byKey(const ValueKey('category-flow-toggle')))
+              .overlaps,
+        ),
+        isFalse,
+      );
       for (final id in ['shopping', 'food', 'transport']) {
         final amount = find.byKey(ValueKey('category-total-$id'));
         expect(amount, findsOneWidget);

@@ -73,4 +73,72 @@ void main() {
     expect(find.byType(QuickAddTransactionSheet), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('quick add opens above the navigation and keeps Save visible', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final now = DateTime.now();
+    SharedPreferences.setMockInitialValues({
+      'base_currency_v1': 'EUR',
+      'currency_rates_ecb_v1': jsonEncode({
+        'rates': {'EUR': 1.0},
+        'publishedAt': now.toIso8601String(),
+        'fetchedAt': now.toIso8601String(),
+      }),
+    });
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          locale: const Locale('it'),
+          supportedLocales: const [Locale('en'), Locale('it'), Locale('es')],
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(1.5)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: Navigator(
+              onGenerateRoute: (_) =>
+                  MaterialPageRoute(builder: (_) => const DashboardPage()),
+            ),
+            bottomNavigationBar: const SizedBox(
+              key: ValueKey('fake-navigation'),
+              height: 64,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('add-transaction-button')));
+    await tester.pumpAndSettle();
+    final save = find.byKey(const ValueKey('quick-save'));
+    expect(save, findsOneWidget);
+    final rect = tester.getRect(save);
+    expect(rect.bottom, lessThanOrEqualTo(640));
+    // The sheet belongs to the root navigator, so it covers the navigation.
+    final hit = tester.hitTestOnBinding(rect.center);
+    expect(
+      hit.path.any(
+        (entry) =>
+            entry.target is RenderBox &&
+            (entry.target as RenderBox).hasSize &&
+            find
+                .byKey(const ValueKey('fake-navigation'))
+                .evaluate()
+                .any((e) => e.renderObject == entry.target),
+      ),
+      isFalse,
+    );
+    expect(tester.takeException(), isNull);
+  });
 }

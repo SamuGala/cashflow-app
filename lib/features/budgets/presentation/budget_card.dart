@@ -14,6 +14,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/dashboard_panel.dart';
 import '../../../shared/widgets/inline_load_error.dart';
 import '../../../shared/widgets/safe_prompt_dialog.dart';
+import '../../../shared/widgets/vault_style.dart';
 
 class BudgetCard extends ConsumerWidget {
   const BudgetCard({super.key});
@@ -29,9 +30,8 @@ class BudgetCard extends ConsumerWidget {
     final categories = ref.watch(categoryProvider).value ?? const [];
     final categoryById = {for (final item in categories) item.id: item};
     final colors = Theme.of(context).colorScheme;
-    final incomeColor = Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF82DFB4)
-        : const Color(0xFF17734E);
+    final incomeColor = VaultColors.income(context);
+    final expenseColor = VaultColors.expense(context);
     String hide(String value) => showBalance ? value : '••••';
     final title = switch (timeState.filter) {
       TimeFilter.total => t.availableAllTime,
@@ -100,7 +100,9 @@ class BudgetCard extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: _BudgetMetric(
+                        key: const ValueKey('budget-metric-income'),
                         label: t.incomes,
+                        color: incomeColor,
                         value: hide(
                           formatMoney(value.incomeMinor, currency, locale),
                         ),
@@ -109,7 +111,9 @@ class BudgetCard extends ConsumerWidget {
                     const VerticalDivider(width: 20),
                     Expanded(
                       child: _BudgetMetric(
+                        key: const ValueKey('budget-metric-expense'),
                         label: t.expenses,
+                        color: expenseColor,
                         value: hide(
                           formatMoney(value.expenseMinor, currency, locale),
                         ),
@@ -118,7 +122,9 @@ class BudgetCard extends ConsumerWidget {
                     const VerticalDivider(width: 20),
                     Expanded(
                       child: _BudgetMetric(
+                        key: const ValueKey('budget-metric-savings'),
                         label: t.reservedSavings,
+                        color: VaultColors.savings(context),
                         value: hide(
                           formatMoney(
                             value.reservedSavingsMinor,
@@ -201,7 +207,7 @@ class BudgetCard extends ConsumerWidget {
                                     FontFeature.tabularFigures(),
                                   ],
                                   fontWeight: FontWeight.w600,
-                                  color: colors.error,
+                                  color: expenseColor,
                                 ),
                               ),
                             ),
@@ -359,22 +365,40 @@ class BudgetCard extends ConsumerWidget {
 class _BudgetMetric extends StatelessWidget {
   final String label;
   final String value;
+  final Color color;
 
-  const _BudgetMetric({required this.label, required this.value});
+  const _BudgetMetric({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 11,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+        Row(
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 5),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 5),
         FittedBox(
@@ -383,10 +407,11 @@ class _BudgetMetric extends StatelessWidget {
           child: Text(
             value,
             maxLines: 1,
-            style: const TextStyle(
-              fontFeatures: [FontFeature.tabularFigures()],
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+            style: TextStyle(
+              fontFeatures: const [FontFeature.tabularFigures()],
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: color,
             ),
           ),
         ),
@@ -467,17 +492,7 @@ class BudgetManagerSheet extends ConsumerWidget {
                 children: expenseCategories.map((category) {
                   final budget = byCategory[category.id];
                   return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Color(
-                        category.color,
-                      ).withValues(alpha: .15),
-                      child: Icon(
-                        category.isDefault
-                            ? categoryIcon(category.name)
-                            : customCategoryIcon(category.icon),
-                        color: Color(category.color),
-                      ),
-                    ),
+                    leading: CategoryAvatar(category: category),
                     title: Text(categoryName(category.name, t)),
                     subtitle: Text(
                       budget == null

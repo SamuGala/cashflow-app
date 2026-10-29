@@ -270,15 +270,22 @@ void main() {
       await tester.tap(button);
       await tester.pump();
     }
-    await tester.tap(find.text('Conferma'));
+    final bills = find.byKey(const ValueKey('quick-category-bills'));
+    await tester.ensureVisible(bills);
+    await tester.tap(bills);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ActionChip, 'Bollette'));
+    await tester.tap(find.byKey(const ValueKey('quick-repeat')));
     await tester.pumpAndSettle();
-    final toggle = find.byType(Switch).last;
-    await tester.ensureVisible(toggle);
-    await tester.tap(toggle);
+    await tester.tap(find.byKey(const ValueKey('quick-recurring-switch')));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).last, 'Spotify');
+    await tester.tap(find.byKey(const ValueKey('quick-recurring-done')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('quick-note')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('quick-note-field')),
+      'Spotify',
+    );
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
     if (capture) await binding.takeScreenshot('$prefix-r3-quick-add-recurring');

@@ -6,19 +6,33 @@ import '../providers/category_provider.dart';
 import '../domain/category.dart';
 import 'add_category_dialog.dart';
 import '../../../core/utils/category_localization.dart';
+import '../../../shared/widgets/vault_dialogs.dart';
+import '../../../shared/widgets/vault_form.dart';
+import '../../../shared/widgets/vault_style.dart';
 
-Future<Category?> showCategorySelector(BuildContext context, bool isIncome) {
+Future<Category?> showCategorySelector(
+  BuildContext context,
+  bool isIncome, {
+  String? selectedId,
+}) {
   return showModalBottomSheet<Category>(
     context: context,
     showDragHandle: true,
-    builder: (_) => _CategorySelector(isIncome: isIncome),
+    isScrollControlled: true,
+    useSafeArea: true,
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.sizeOf(context).height * .8,
+    ),
+    builder: (_) =>
+        _CategorySelector(isIncome: isIncome, selectedId: selectedId),
   );
 }
 
 class _CategorySelector extends ConsumerWidget {
   final bool isIncome;
+  final String? selectedId;
 
-  const _CategorySelector({required this.isIncome});
+  const _CategorySelector({required this.isIncome, this.selectedId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,24 +43,50 @@ class _CategorySelector extends ConsumerWidget {
         .where((c) => c.isIncome == isIncome)
         .toList();
 
-    return ListView.builder(
-      itemCount: categories.length + 1,
-      itemBuilder: (_, index) {
-        if (index == categories.length) {
-          return ListTile(
-            leading: const Icon(Icons.add),
-            title: Text(t.newCategory),
-            onTap: () async {
-              final category = await showAddCategoryDialog(context, isIncome);
+    final colors = Theme.of(context).colorScheme;
 
-              if (context.mounted && category != null) {
-                Navigator.pop(context, category);
-              }
-            },
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      itemCount: categories.length + 2,
+      itemBuilder: (_, position) {
+        if (position == 0) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+            child: Text(
+              t.category,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -.3,
+              ),
+            ),
+          );
+        }
+        final index = position - 1;
+        if (index == categories.length) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: VaultFieldTile(
+              icon: Icons.add_rounded,
+              onTap: () async {
+                final category = await showAddCategoryDialog(context, isIncome);
+
+                if (context.mounted && category != null) {
+                  Navigator.pop(context, category);
+                }
+              },
+              child: Text(t.newCategory),
+            ),
           );
         }
 
         final category = categories[index];
+        final first = index == 0;
+        final last = index == categories.length - 1;
+        final radius = BorderRadius.vertical(
+          top: first ? const Radius.circular(18) : Radius.zero,
+          bottom: last ? const Radius.circular(18) : Radius.zero,
+        );
 
         return Dismissible(
           key: ValueKey(category.id),
@@ -57,10 +97,16 @@ class _CategorySelector extends ConsumerWidget {
               : DismissDirection.endToStart,
 
           background: Container(
-            color: Colors.red,
+            decoration: BoxDecoration(
+              color: VaultColors.expense(context),
+              borderRadius: radius,
+            ),
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 20),
-            child: const Icon(Icons.delete, color: Colors.white),
+            child: const Icon(
+              Icons.delete_outline_rounded,
+              color: Colors.white,
+            ),
           ),
 
           confirmDismiss: (_) async {
@@ -80,22 +126,10 @@ class _CategorySelector extends ConsumerWidget {
               return false;
             }
 
-            return await showDialog<bool>(
-                  context: context,
-                  builder: (dialogContext) => AlertDialog(
-                    title: Text(t.deleteCategory),
-                    content: Text(t.deleteCategoryConfirm),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(dialogContext, false),
-                        child: Text(t.cancel),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(dialogContext, true),
-                        child: Text(t.delete),
-                      ),
-                    ],
-                  ),
+            return await showVaultDeleteDialog(
+                  context,
+                  title: t.deleteCategory,
+                  message: t.deleteCategoryConfirm,
                 ) ??
                 false;
           },
@@ -106,30 +140,37 @@ class _CategorySelector extends ConsumerWidget {
             }
           },
 
-          child: ListTile(
-            leading: Icon(
-              category.isDefault
-                  ? categoryIcon(category.name)
-                  : customCategoryIcon(category.icon),
-              color: Color(category.color),
+          child: Material(
+            color: colors.surface,
+            borderRadius: radius,
+            child: ListTile(
+              shape: RoundedRectangleBorder(borderRadius: radius),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+              leading: CategoryAvatar(category: category, size: 36),
+              trailing: selectedId == category.id
+                  ? Icon(Icons.check_circle_rounded, color: colors.primary)
+                  : null,
+
+              /// MOSTRA TRADUZIONE CATEGORIA
+              title: Text(
+                categoryName(category.name, t),
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+
+              /// SELECT CATEGORY
+              onTap: () => Navigator.pop(context, category),
+
+              /// EDIT SOLO SE NON DEFAULT
+              onLongPress: category.isDefault
+                  ? null
+                  : () async {
+                      await showAddCategoryDialog(
+                        context,
+                        isIncome,
+                        existing: category,
+                      );
+                    },
             ),
-
-            /// MOSTRA TRADUZIONE CATEGORIA
-            title: Text(categoryName(category.name, t)),
-
-            /// SELECT CATEGORY
-            onTap: () => Navigator.pop(context, category),
-
-            /// EDIT SOLO SE NON DEFAULT
-            onLongPress: category.isDefault
-                ? null
-                : () async {
-                    await showAddCategoryDialog(
-                      context,
-                      isIncome,
-                      existing: category,
-                    );
-                  },
           ),
         );
       },

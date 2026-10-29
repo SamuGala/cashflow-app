@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'vault_style.dart';
+
 /// Shared visual surface for the main dashboard sections.
 ///
-/// Neutral surfaces shared by the overview and savings sections.
+/// Filled panels use the Vault card of the Statistics tab; outlined panels
+/// sit on the page background for secondary sections.
 class DashboardPanel extends StatelessWidget {
   const DashboardPanel({super.key, required this.child, this.filled = true});
 
@@ -11,22 +14,17 @@ class DashboardPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: filled && !isDark ? 1 : 0,
-      shadowColor: colors.shadow.withValues(alpha: .05),
-      surfaceTintColor: Colors.transparent,
-      color: filled
-          ? theme.cardTheme.color ?? colors.surface
-          : theme.scaffoldBackgroundColor,
+    if (filled) {
+      return VaultSurface(padding: EdgeInsets.zero, child: child);
+    }
+    return Container(
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: colors.outlineVariant),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          width: .7,
+        ),
       ),
       child: child,
     );

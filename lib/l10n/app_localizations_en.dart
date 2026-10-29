@@ -318,7 +318,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get spentSameAsLastMonth => 'This month you are spending about the same as last month';
+  String get spentSameAsLastMonth =>
+      'This month you are spending about the same as last month';
 
   @override
   String get period => 'Period';
@@ -339,7 +340,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteCategory => 'Delete category';
 
   @override
-  String get deleteCategoryConfirm => 'Are you sure you want to delete this category?';
+  String get deleteCategoryConfirm =>
+      'Are you sure you want to delete this category?';
 
   @override
   String get createPin => 'Create PIN';
@@ -354,7 +356,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enableBiometrics => 'Enable biometric unlock';
 
   @override
-  String get enableBiometricsMessage => 'Use Face ID or your fingerprint to unlock Pockets Vault?';
+  String get enableBiometricsMessage =>
+      'Use Face ID or your fingerprint to unlock Pockets Vault?';
 
   @override
   String get notNow => 'Not now';
@@ -393,7 +396,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupPortability => 'Backup and portability';
 
   @override
-  String get encryptedBackupCaption => 'AES-256 encryption, CSV export and local restore';
+  String get encryptedBackupCaption =>
+      'AES-256 encryption, CSV export and local restore';
 
   @override
   String get exportEncryptedBackup => 'Export encrypted backup';
@@ -411,7 +415,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get localSmartRules => 'Local smart rules';
 
   @override
-  String get privateCategorization => 'Private categorization without sending data';
+  String get privateCategorization =>
+      'Private categorization without sending data';
 
   @override
   String get noRules => 'No rules';
@@ -426,7 +431,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get budgets => 'Budgets';
 
   @override
-  String get optionalMonthlyBudgets => 'Optional monthly budgets, editable at any time';
+  String get optionalMonthlyBudgets =>
+      'Optional monthly budgets, editable at any time';
 
   @override
   String get noBudget => 'No budget';
@@ -456,7 +462,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rememberCategory => 'Remember this category';
 
   @override
-  String get rememberCategoryHint => 'Suggest it for similar descriptions, only on this device.';
+  String get rememberCategoryHint =>
+      'Suggest it for similar descriptions, only on this device.';
 
   @override
   String get addReceipt => 'Add receipt';
@@ -495,7 +502,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get availableForPeriod => 'Available in period';
 
   @override
-  String get availableFormula => 'Income − expenses − reserved savings − scheduled recurring payments';
+  String get availableFormula =>
+      'Income − expenses − reserved savings − scheduled recurring payments';
 
   @override
   String get reservedSavings => 'Reserved';
@@ -541,13 +549,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get budgetDeleted => 'Budget deleted';
 
   @override
-  String get budgetPeriodHint => 'Monthly limits are prorated to the selected interval.';
+  String get budgetPeriodHint =>
+      'Monthly limits are prorated to the selected interval.';
 
   @override
   String get forecastRecurring => 'Recurring forecast';
 
   @override
-  String get forecastExplanation => 'Estimate from the current balance using scheduled recurring transactions only.';
+  String get forecastExplanation =>
+      'Estimate from the current balance using scheduled recurring transactions only.';
 
   @override
   String get currentBalance => 'Current balance';
@@ -579,7 +589,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get savingsReservedHint => 'Reserved amounts reduce what is available to spend, while remaining part of your balance.';
+  String get savingsReservedHint =>
+      'Reserved amounts reduce what is available to spend, while remaining part of your balance.';
 
   @override
   String allocatedInSelection(Object amount) {
@@ -610,7 +621,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteGoal => 'Delete this goal?';
 
   @override
-  String get deleteGoalReleasesFunds => 'Reserved funds will become available again. History is preserved and transactions are not changed.';
+  String get deleteGoalReleasesFunds =>
+      'Reserved funds will become available again. History is preserved and transactions are not changed.';
 
   @override
   String get goalDeleted => 'Goal deleted';
@@ -624,16 +636,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get receiptOptional => 'Optional receipt';
 
   @override
-  String get receiptPurpose => 'Reads amount, date, merchant and category directly on your device.';
+  String get receiptPurpose =>
+      'Reads amount, date, merchant and category directly on your device.';
 
   @override
-  String get receiptStoredLocally => 'Private on-device scan, with review before saving.';
+  String get receiptStoredLocally =>
+      'Private on-device scan, with review before saving.';
 
   @override
   String get receiptLinked => 'Attached to this transaction';
 
   @override
-  String get receiptPermissionDenied => 'Permission denied. Enable photos and camera in Settings.';
+  String get receiptPermissionDenied =>
+      'Permission denied. Enable photos and camera in Settings.';
 
   @override
   String get cameraUnavailable => 'Camera unavailable on this device.';
@@ -650,7 +665,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get conversionOnSave => 'The exchange rate will be calculated when saving.';
+  String get conversionOnSave =>
+      'The exchange rate will be calculated when saving.';
 
   @override
   String get ecbRefreshNeeded => 'ECB conversion · update required';
@@ -688,7 +704,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importMode => 'Import mode';
 
   @override
-  String get importModeExplanation => 'Merge keeps current data and updates items with the same identifier. Replace first deletes all local financial data.';
+  String get importModeExplanation =>
+      'Merge keeps current data and updates items with the same identifier. Replace first deletes all local financial data.';
 
   @override
   String get merge => 'Merge';
@@ -732,7 +749,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanReceipt => 'Scan receipt';
 
   @override
-  String get receiptScanHint => 'Take or choose a receipt photo to fill the expense automatically.';
+  String get receiptScanHint =>
+      'Take or choose a receipt photo to fill the expense automatically.';
 
   @override
   String get scanWithCamera => 'Scan with camera';
@@ -747,16 +765,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get receiptScanReview => 'Review scan';
 
   @override
-  String get receiptScanCheckData => 'We found these details. Review and edit them before continuing.';
+  String get receiptScanCheckData =>
+      'We found these details. Review and edit them before continuing.';
 
   @override
-  String get receiptScanNoData => 'We could not read reliable details. Enter them manually or attach the photo only.';
+  String get receiptScanNoData =>
+      'We could not read reliable details. Enter them manually or attach the photo only.';
 
   @override
   String get receiptMerchant => 'Merchant';
 
   @override
-  String get receiptScanPrivate => 'OCR and analysis happen entirely on this device.';
+  String get receiptScanPrivate =>
+      'OCR and analysis happen entirely on this device.';
 
   @override
   String get attachOnly => 'Attach only';
@@ -765,7 +786,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get useDetectedData => 'Use details';
 
   @override
-  String get receiptScanApplied => 'Receipt details applied. Review and save the transaction.';
+  String get receiptScanApplied =>
+      'Receipt details applied. Review and save the transaction.';
 
   @override
   String get receiptScanning => 'Analyzing receipt…';
@@ -828,7 +850,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsElapsedDays => 'Align elapsed days';
 
   @override
-  String get statsElapsedHint => 'For the current month, compare the same days in each reference month.';
+  String get statsElapsedHint =>
+      'For the current month, compare the same days in each reference month.';
 
   @override
   String statsThroughDay(int day) {
@@ -844,10 +867,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get statsNoEarlierMonths => 'January has no earlier months in the same year. Choose a different comparison.';
+  String get statsNoEarlierMonths =>
+      'January has no earlier months in the same year. Choose a different comparison.';
 
   @override
-  String get statsZeroReference => 'Percentage unavailable: the reference amount is zero.';
+  String get statsZeroReference =>
+      'Percentage unavailable: the reference amount is zero.';
 
   @override
   String get statsNet => 'Income − expenses';
@@ -880,7 +905,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsReference => 'Reference';
 
   @override
-  String get statsHiddenChart => 'Chart hidden while amount privacy is enabled.';
+  String get statsHiddenChart =>
+      'Chart hidden while amount privacy is enabled.';
 
   @override
   String get statsAllTime => 'All recorded dates';
@@ -979,4 +1005,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String statsIncomeVersus(Object period) {
     return 'in income compared with $period';
   }
+
+  @override
+  String get movementsHistory => 'History';
+
+  @override
+  String get swipeHint => 'Swipe right to edit, left to delete';
+
+  @override
+  String movementsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions',
+      one: '1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get repeat => 'Repeat';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get saved => 'Saved';
+
+  @override
+  String get newCategoryShort => 'New';
+
+  @override
+  String get addNote => 'Add note';
 }

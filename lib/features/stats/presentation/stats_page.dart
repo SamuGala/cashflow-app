@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +11,7 @@ import '../../../core/providers/time_filter_provider.dart';
 import '../../../core/utils/category_localization.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/inline_load_error.dart';
+import '../../../shared/widgets/vault_style.dart';
 import '../../forecast/presentation/cashflow_forecast_card.dart';
 import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
@@ -66,20 +66,9 @@ class _StatsPageState extends ConsumerState<StatsPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
-    final colors = theme.colorScheme.copyWith(
-      primary: dark ? const Color(0xFF969DFF) : const Color(0xFF4654EE),
-      onSurface: dark ? const Color(0xFFF5F7FC) : const Color(0xFF0A132C),
-      onSurfaceVariant: dark
-          ? const Color(0xFFA2B0C9)
-          : const Color(0xFF74809A),
-      surfaceContainerHighest: dark
-          ? const Color(0xFF2C3848)
-          : const Color(0xFFEAEFF5),
-    );
+    final colors = theme.colorScheme;
     return Theme(
       data: theme.copyWith(
-        colorScheme: colors,
         textTheme: theme.textTheme
             .apply(bodyColor: colors.onSurface, displayColor: colors.onSurface)
             .copyWith(
@@ -88,9 +77,6 @@ class _StatsPageState extends ConsumerState<StatsPage>
                 color: colors.onSurface,
               ),
             ),
-        scaffoldBackgroundColor: dark
-            ? const Color(0xFF0E1722)
-            : const Color(0xFFF5F7FC),
       ),
       child: Builder(builder: _buildContent),
     );
@@ -191,148 +177,23 @@ class _StatsPageState extends ConsumerState<StatsPage>
           controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(16, 2, 16, 24),
           children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Tooltip(
-                message: visible ? t.hideAmounts : t.showAmounts,
-                child: InkWell(
-                  key: const ValueKey('stats-privacy'),
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () =>
-                      ref.read(balanceVisibilityProvider.notifier).toggle(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (visible)
-                          StatsWalletMark(color: colors.onSurface)
-                        else
-                          Icon(
-                            Icons.visibility_off_outlined,
-                            size: 25,
-                            color: colors.onSurface,
-                          ),
-                        const SizedBox(width: 11),
-                        Flexible(
-                          child: Text(
-                            'Pockets Vault',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: -.4,
-                              color: colors.onSurface,
-                              height: 1.2,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 2),
-            LayoutBuilder(
-              builder: (_, constraints) {
-                final large =
-                    constraints.maxWidth < 340 ||
-                    MediaQuery.textScalerOf(context).scale(1) > 1.15;
-                final heading = Text(
-                  t.stats,
-                  style: TextStyle(
-                    fontSize: 34,
-                    height: 1.1,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1.4,
-                    color: colors.onSurface,
-                  ),
-                );
-                final selector = ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: large ? constraints.maxWidth : 156,
-                  ),
-                  child: StatsGlobalPeriodButton(transactions: items),
-                );
-                if (_tab == 2) return heading;
-                if (large) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      heading,
-                      Align(alignment: Alignment.centerRight, child: selector),
-                    ],
-                  );
-                }
-                return Row(
-                  children: [
-                    Expanded(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: heading,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    selector,
-                  ],
-                );
-              },
+            VaultPageHeader(
+              title: t.stats,
+              brandKey: const ValueKey('stats-privacy'),
+              brandTooltip: visible ? t.hideAmounts : t.showAmounts,
+              brandHidden: !visible,
+              onBrandTap: () =>
+                  ref.read(balanceVisibilityProvider.notifier).toggle(),
+              trailing: _tab == 2
+                  ? null
+                  : StatsGlobalPeriodButton(transactions: items),
             ),
             const SizedBox(height: 5),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: colors.outlineVariant, width: .7),
-                ),
-              ),
-              child: Row(
-                children: [
-                  for (var i = 0; i < tabs.length; i++)
-                    Expanded(
-                      child: Semantics(
-                        selected: _tab == i,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: _tab == i
-                                    ? colors.primary
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                          child: TextButton(
-                            key: ValueKey('stats-tab-$i'),
-                            onPressed: () => _selectTab(i),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 11,
-                                horizontal: 2,
-                              ),
-                              minimumSize: const Size(0, 40),
-                              foregroundColor: _tab == i
-                                  ? colors.primary
-                                  : colors.onSurfaceVariant,
-                              shape: const RoundedRectangleBorder(),
-                            ),
-                            child: Text(
-                              tabs[i],
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: _tab == i
-                                    ? FontWeight.w600
-                                    : FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+            VaultTabs(
+              labels: tabs,
+              selectedIndex: _tab,
+              keyPrefix: 'stats-tab',
+              onChanged: _selectTab,
             ),
             const SizedBox(height: 14),
             if (loading)
@@ -487,10 +348,22 @@ class _StatsPageState extends ConsumerState<StatsPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (_tab == 1)
-                      _flowMenu(
-                        context,
-                        _income ? t.statsCategories : t.statsBreakdown,
-                        style: _sectionStyle(context),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _flowMenu(
+                              context,
+                              _income ? t.statsCategories : t.statsBreakdown,
+                              style: _sectionStyle(context),
+                            ),
+                          ),
+                          if (visible && entries.isNotEmpty)
+                            StatsAmount(
+                              money(summary.amount(_income)),
+                              key: const ValueKey('stats-category-total'),
+                              size: 15,
+                            ),
+                        ],
                       )
                     else
                       Text(
@@ -500,13 +373,15 @@ class _StatsPageState extends ConsumerState<StatsPage>
                     if (_tab == 1) ...[
                       if (visible && entries.any((e) => e.value > 0))
                         Padding(
-                          padding: const EdgeInsets.only(top: 14, bottom: 26),
+                          padding: const EdgeInsets.only(top: 12, bottom: 12),
                           child: _donut(
                             context,
                             entries,
                             summary.amount(_income),
                             money,
                             title,
+                            categories,
+                            name,
                           ),
                         )
                       else if (!visible)
@@ -542,20 +417,45 @@ class _StatsPageState extends ConsumerState<StatsPage>
               ),
               if (_tab == 1 && entries.isNotEmpty) ...[
                 const SizedBox(height: 10),
-                _categoryDetail(
-                  context,
-                  entries,
-                  summary,
-                  reference,
-                  chartWindow,
-                  referenceWindow,
-                  referenceShort,
-                  currentShort,
-                  money,
-                  compact,
-                  signed,
-                  name,
-                  visible,
+                AnimatedSwitcher(
+                  key: _detailKey,
+                  duration: statsAnimationDuration(context),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  layoutBuilder: (current, previous) => Stack(
+                    alignment: Alignment.topCenter,
+                    children: [...previous, ?current],
+                  ),
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween(
+                        begin: const Offset(0, .04),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  ),
+                  child: KeyedSubtree(
+                    key: ValueKey(
+                      'stats-detail-${_categoryId ?? entries.first.key}',
+                    ),
+                    child: _categoryDetail(
+                      context,
+                      entries,
+                      summary,
+                      reference,
+                      chartWindow,
+                      referenceWindow,
+                      referenceShort,
+                      currentShort,
+                      money,
+                      compact,
+                      signed,
+                      name,
+                      visible,
+                    ),
+                  ),
                 ),
               ],
               const SizedBox(height: 10),
@@ -629,12 +529,6 @@ class _StatsPageState extends ConsumerState<StatsPage>
       ],
     ),
   );
-  Color _seriesColor(int index) => [
-    const Color(0xFF858CFA),
-    const Color(0xFF529FFC),
-    const Color(0xFF61748B),
-    const Color(0xFFB1A8FF),
-  ][index % 4];
   String _rangeLabel(TimeWindow window, String locale) =>
       window.start.year == window.end.year &&
           window.start.month == window.end.month
@@ -817,61 +711,95 @@ class _StatsPageState extends ConsumerState<StatsPage>
     int total,
     String Function(int) money,
     String title,
+    List<Category> categories,
+    String Function(String) name,
   ) {
     final positive = entries.where((e) => e.value > 0).toList();
-    return SizedBox(
-      height: 171,
-      child: LayoutBuilder(
-        builder: (_, constraints) {
-          final radius = math.min(65.0, constraints.maxWidth * .23);
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              PieChart(
-                key: const ValueKey('stats-category-donut'),
-                PieChartData(
-                  centerSpaceRadius: radius,
-                  startDegreeOffset: 270,
-                  sectionsSpace: 3,
-                  pieTouchData: PieTouchData(
-                    touchCallback: (event, response) {
-                      if (event is! FlTapUpEvent) return;
-                      final index =
-                          response?.touchedSection?.touchedSectionIndex ?? -1;
-                      if (index >= 0 && index < positive.length) {
-                        setState(() => _categoryId = positive[index].key);
-                      }
-                    },
+    final selected =
+        positive.where((e) => e.key == _categoryId).firstOrNull ??
+        positive.first;
+    final locale = Localizations.localeOf(context).toString();
+    final colors = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        LayoutBuilder(
+          builder: (_, constraints) => Center(
+            child: StatsCategoryDonut(
+              key: const ValueKey('stats-category-donut'),
+              size: math.min(200.0, constraints.maxWidth * .66),
+              selectedId: selected.key,
+              onSelected: (id) => _selectCategory(id),
+              segments: [
+                for (final entry in positive)
+                  StatsDonutSegment(
+                    id: entry.key,
+                    value: entry.value,
+                    color: _categoryColor(entry.key, categories),
                   ),
-                  sections: [
-                    for (var i = 0; i < positive.length; i++)
-                      PieChartSectionData(
-                        value: positive[i].value.toDouble(),
-                        title: '',
-                        color: _seriesColor(entries.indexOf(positive[i])),
-                        radius: 19,
-                      ),
-                  ],
-                ),
+              ],
+              center: AnimatedSwitcher(
                 duration: statsAnimationDuration(context),
-                curve: Curves.easeOutCubic,
-              ),
-              SizedBox(
-                width: radius * 1.72,
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween(begin: .86, end: 1.0).animate(animation),
+                    child: child,
+                  ),
+                ),
                 child: Column(
+                  key: ValueKey('stats-donut-center-${selected.key}'),
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    StatsAmount(money(total), size: 23),
+                    _categoryIcon(context, selected.key, categories, size: 34),
+                    const SizedBox(height: 6),
+                    StatsAmount(money(selected.value), size: 21),
                     const SizedBox(height: 2),
-                    _caption(context, title, size: 11),
+                    Text(
+                      '${NumberFormat.decimalPercentPattern(locale: locale, decimalDigits: 0).format(total == 0 ? 0 : selected.value / total)} · ${name(selected.key)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
-          );
-        },
-      ),
+            ),
+          ),
+        ),
+      ],
     );
+  }
+
+  Color _categoryColor(String id, List<Category> categories) {
+    final category = categories.where((c) => c.id == id).firstOrNull;
+    return category == null ? statsReferenceColor : Color(category.color);
+  }
+
+  final _detailKey = GlobalKey();
+
+  void _selectCategory(String id, {bool reveal = false}) {
+    if (_categoryId == id && !reveal) return;
+    setState(() => _categoryId = id);
+    if (!reveal) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final detail = _detailKey.currentContext;
+      if (detail == null || !detail.mounted) return;
+      Scrollable.ensureVisible(
+        detail,
+        alignment: .1,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 450),
+        curve: Curves.easeOutCubic,
+      );
+    });
   }
 
   Widget _categoryIcon(
@@ -881,30 +809,7 @@ class _StatsPageState extends ConsumerState<StatsPage>
     double size = 32,
   }) {
     final category = categories.where((c) => c.id == id).firstOrNull;
-    final colors = Theme.of(context).colorScheme;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: colors.primary.withValues(alpha: .065),
-      ),
-      child: Icon(
-        category == null
-            ? Icons.category_outlined
-            : category.isDefault
-            ? switch (category.name) {
-                'shopping' => Icons.shopping_bag_outlined,
-                'food' => Icons.restaurant_outlined,
-                'groceries' => Icons.shopping_cart_outlined,
-                'transport' => Icons.directions_bus_outlined,
-                _ => categoryIcon(category.name),
-              }
-            : customCategoryIcon(category.icon),
-        size: 20,
-        color: colors.primary,
-      ),
-    );
+    return CategoryAvatar(category: category, size: size);
   }
 
   Widget _categoryRow(
@@ -920,141 +825,147 @@ class _StatsPageState extends ConsumerState<StatsPage>
   }) {
     final colors = Theme.of(context).colorScheme;
     final active = _tab == 1 && selectedId == entry.key;
-    final color = _seriesColor(index);
+    final color = _categoryColor(entry.key, categories);
     final locale = Localizations.localeOf(context).toString();
     final percent = total == 0 ? 0.0 : entry.value / total;
-    return Material(
-      color: active
-          ? colors.primary.withValues(alpha: .08)
-          : Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        key: ValueKey('stats-category-${entry.key}'),
+    // The divider lives outside the animated box: a rounded border must keep
+    // uniform sides for every frame of the selection animation.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: index > 0 && !active
+            ? Border(top: BorderSide(color: colors.outlineVariant, width: .5))
+            : null,
+      ),
+      child: Material(
+        color: active
+            ? colors.primary.withValues(alpha: .08)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-        onTap: () => _selectTab(1, categoryId: entry.key),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            vertical: _tab == 1 ? 9 : 5,
-            horizontal: _tab == 1 ? 7 : 0,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: active ? BorderRadius.circular(8) : null,
-            border: active
-                ? Border.all(
-                    color: colors.primary.withValues(alpha: .23),
-                    width: .7,
-                  )
-                : index > 0
-                ? Border(
-                    top: BorderSide(color: colors.outlineVariant, width: .5),
-                  )
-                : null,
-          ),
-          child: _tab == 1
-              ? LayoutBuilder(
-                  builder: (_, constraints) => Row(
-                    children: [
-                      Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: color,
-                        ),
-                      ),
-                      const SizedBox(width: 11),
-                      Expanded(
-                        flex: 5,
-                        child: Text(
-                          name(entry.key),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 14,
-                            height: 1.2,
-                            fontWeight: active
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+        child: InkWell(
+          key: ValueKey('stats-category-${entry.key}'),
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => _tab == 1
+              ? _selectCategory(entry.key, reveal: true)
+              : _selectTab(1, categoryId: entry.key),
+          child: AnimatedContainer(
+            duration: statsAnimationDuration(context),
+            curve: Curves.easeOutCubic,
+            padding: EdgeInsets.symmetric(
+              vertical: _tab == 1 ? 9 : 5,
+              horizontal: _tab == 1 ? 7 : 0,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: active
+                    ? colors.primary.withValues(alpha: .23)
+                    : colors.primary.withValues(alpha: 0),
+                width: .7,
+              ),
+            ),
+            child: _tab == 1
+                ? LayoutBuilder(
+                    builder: (_, constraints) => Row(
+                      children: [
+                        AnimatedScale(
+                          scale: active ? 1.08 : 1,
+                          duration: statsAnimationDuration(context),
+                          curve: Curves.easeOutBack,
+                          child: _categoryIcon(
+                            context,
+                            entry.key,
+                            categories,
+                            size: 30,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        flex: 4,
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: StatsAmount(money(entry.value), size: 14),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        flex: 2,
-                        child: Align(
-                          alignment: Alignment.centerRight,
+                        const SizedBox(width: 11),
+                        Expanded(
+                          flex: 5,
                           child: Text(
-                            visible
-                                ? NumberFormat.decimalPercentPattern(
-                                    locale: locale,
-                                    decimalDigits: 1,
-                                  ).format(percent)
-                                : '••••',
+                            name(entry.key),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 12,
-                              color: colors.onSurfaceVariant,
+                              fontSize: 14,
+                              height: 1.2,
+                              fontWeight: active
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 17,
-                        color: colors.onSurfaceVariant,
+                        const SizedBox(width: 6),
+                        Expanded(
+                          flex: 4,
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: StatsAmount(money(entry.value), size: 14),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: 2,
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              visible
+                                  ? NumberFormat.decimalPercentPattern(
+                                      locale: locale,
+                                      decimalDigits: 1,
+                                    ).format(percent)
+                                  : '••••',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 17,
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                  )
+                : Row(
+                    children: [
+                      _categoryIcon(context, entry.key, categories),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    name(entry.key),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                StatsAmount(money(entry.value), size: 12),
+                              ],
+                            ),
+                            if (visible && total > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 5),
+                                child: StatsProgress(
+                                  value: entry.value / total,
+                                  color: color,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                )
-              : Row(
-                  children: [
-                    _categoryIcon(context, entry.key, categories),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  name(entry.key),
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              StatsAmount(money(entry.value), size: 12),
-                            ],
-                          ),
-                          if (visible && total > 0)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 5),
-                              child: StatsProgress(
-                                value: entry.value / total,
-                                color: index == 0
-                                    ? colors.primary
-                                    : Color.lerp(
-                                        colors.primary,
-                                        Colors.white,
-                                        .3 + math.min(index, 3) * .15,
-                                      )!,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+          ),
         ),
       ),
     );
@@ -1084,7 +995,10 @@ class _StatsPageState extends ConsumerState<StatsPage>
     final transactions = summary.transactions
         .where((tx) => tx.isIncome == _income && tx.categoryId == selected.key)
         .toList();
-    final color = _seriesColor(entries.indexOf(selected));
+    final color = _categoryColor(
+      selected.key,
+      ref.watch(categoryProvider).value ?? const [],
+    );
     final scale = math.max(1, math.max(previous.abs(), selected.value.abs()));
     return StatsSurface(
       child: Column(
@@ -1092,10 +1006,11 @@ class _StatsPageState extends ConsumerState<StatsPage>
         children: [
           Row(
             children: [
-              Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+              _categoryIcon(
+                context,
+                selected.key,
+                ref.watch(categoryProvider).value ?? const [],
+                size: 36,
               ),
               const SizedBox(width: 12),
               Expanded(

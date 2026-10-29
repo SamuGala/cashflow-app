@@ -164,20 +164,28 @@ void main() {
     }
     expect(find.text('27,50'), findsOneWidget);
     await shot(tester, '03-quick-add-keypad');
-    await tester.tap(find.text('Conferma'));
+    final food = find.byKey(const ValueKey('quick-category-food'));
+    await tester.ensureVisible(food);
+    await tester.tap(food);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ActionChip, 'Cibo'));
+    await tester.tap(find.byKey(const ValueKey('quick-note')));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).last, 'Pizza con amici');
+    await tester.enterText(
+      find.byKey(const ValueKey('quick-note-field')),
+      'Pizza con amici',
+    );
     await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
     await shot(tester, '04-quick-add-filled');
     final save = find.text('Salva movimento');
     await tester.ensureVisible(save);
     await tester.tap(save);
     await tester.pumpAndSettle();
     final added = await database.select(database.transactions).get();
-    expect(added.where((t) => t.amountCents == 2750 && t.categoryId == 'food'),
-        hasLength(1));
+    expect(
+      added.where((t) => t.amountCents == 2750 && t.categoryId == 'food'),
+      hasLength(1),
+    );
 
     appRouter.go('/transactions');
     await tester.pumpAndSettle();

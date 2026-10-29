@@ -18,12 +18,13 @@ import 'recurring_list.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/category_localization.dart';
-import '../../dashboard/widgets/revolut_month_selector.dart';
 import '../../../core/providers/time_filter_provider.dart';
 import '../../../core/currency/currency_metadata.dart';
 import '../../../core/currency/currency_provider.dart';
 import '../../../core/receipts/receipt_storage_service.dart';
-import '../../../shared/widgets/premium_segmented_selector.dart';
+import '../../../shared/widgets/vault_dialogs.dart';
+import '../../../shared/widgets/vault_style.dart';
+import '../../stats/widgets/stats_period_controls.dart';
 import '../../../shared/widgets/inline_load_error.dart';
 
 class TransactionsPage extends ConsumerStatefulWidget {
@@ -44,6 +45,63 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     searchFocus.dispose();
     searchController.dispose();
     super.dispose();
+  }
+
+  Future<bool?> _confirmDismiss(
+    DismissDirection direction,
+    TransactionModel tx,
+  ) async {
+    if (direction == DismissDirection.startToEnd) {
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 300),
+          pageBuilder: (_, _, _) => AddTransactionPage(transaction: tx),
+          transitionsBuilder: (_, animation, _, child) => SlideTransition(
+            position: Tween(begin: const Offset(0, 1), end: Offset.zero)
+                .animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
+            child: child,
+          ),
+        ),
+      );
+      return false;
+    }
+    final t = AppLocalizations.of(context)!;
+    return showVaultDeleteDialog(
+      context,
+      title: t.deleteMovement,
+      message: t.deleteMovementSure,
+    );
+  }
+
+  Future<void> _delete(TransactionModel tx) async {
+    final t = AppLocalizations.of(context)!;
+    await ref.read(transactionProvider.notifier).deleteTransaction(tx.id);
+
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    final snackbar = messenger.showSnackBar(
+      SnackBar(
+        content: Text(t.transactionDeleted),
+        action: SnackBarAction(
+          label: t.undo,
+          onPressed: () {
+            unawaited(
+              ref.read(transactionProvider.notifier).restoreTransaction(tx),
+            );
+          },
+        ),
+      ),
+    );
+    final closeReason = await snackbar.closed;
+    if (closeReason != SnackBarClosedReason.action) {
+      await ref.read(receiptStorageServiceProvider).remove(tx.receiptPath);
+    }
   }
 
   @override
@@ -68,7 +126,11 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     final baseCurrency =
         ref.watch(currencyProvider).value?.baseCurrency ?? 'EUR';
 
-    final dateFormat = DateFormat.yMMMMd(locale);
+    final dateFormat = DateFormat.MMMMEEEEd(locale);
+    final yearDateFormat = DateFormat.yMMMMEEEEd(locale);
+    final colors = Theme.of(context).colorScheme;
+
+    String money(int minor) => formatMoney(minor, baseCurrency, locale);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -77,125 +139,42 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
           bottom: false,
           child: Column(
             children: [
-              /// TIME FILTER
-              if (!showRecurring)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: PremiumSegmentedSelector(
-                    labels: [t.total, t.month, t.period],
-                    selectedIndex: timeFilter.index,
-                    onChanged: (index) {
-                      final selected = TimeFilter.values[index];
-                      ref.read(timeFilterProvider.notifier).setFilter(selected);
-                    },
-                  ),
-                ),
-              if (!showRecurring && timeFilter == TimeFilter.month) ...[
-                RevolutMonthSelector(
-                  initialDate: selectedMonth,
-                  onChanged: (date) {
-                    ref.read(timeFilterProvider.notifier).setMonth(date);
-                  },
-                ),
-                const SizedBox(height: 10),
-              ],
-
-              if (!showRecurring && timeFilter == TimeFilter.period)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                  child: GestureDetector(
-                    onTap: () async {
-                      final range = await showDateRangePicker(
-                        context: context,
-                        firstDate:
-                            selectedRange != null &&
-                                selectedRange.start.isBefore(DateTime(2020))
-                            ? selectedRange.start
-                            : DateTime(2020),
-                        lastDate:
-                            selectedRange != null &&
-                                selectedRange.end.isAfter(DateTime(2100))
-                            ? selectedRange.end
-                            : DateTime(2100),
-                        initialDateRange: selectedRange,
-                      );
-
-                      if (range != null) {
-                        ref
-                            .read(timeFilterProvider.notifier)
-                            .setPeriod(range.start, range.end);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.calendar_month),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              selectedRange == null
-                                  ? t.selectPeriod
-                                  : "${DateFormat.yMMM().format(selectedRange.start)} → "
-                                        "${DateFormat.yMMM().format(selectedRange.end)}",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+                child: Column(
+                  children: [
+                    VaultPageHeader(
+                      title: t.transactions,
+                      trailing: showRecurring
+                          ? null
+                          : StatsGlobalPeriodButton(
+                              transactions:
+                                  transactionsAsync.value ??
+                                  const <TransactionModel>[],
                             ),
-                          ),
-                          const Icon(Icons.expand_more),
-                        ],
-                      ),
                     ),
-                  ),
-                ),
+                    const SizedBox(height: 5),
+                    VaultTabs(
+                      labels: [t.movementsHistory, t.recurrents],
+                      selectedIndex: showRecurring ? 1 : 0,
+                      keyPrefix: 'transactions-tab',
+                      onChanged: (index) {
+                        setState(() {
+                          showRecurring = index == 1;
 
-              /// SEGMENT SELECTOR
-              Container(
-                margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                width: double.infinity,
-                child: SizedBox(
-                  width: double.infinity,
-                  child: SegmentedButton<bool>(
-                    style: ButtonStyle(
-                      minimumSize: const WidgetStatePropertyAll(
-                        Size.fromHeight(48),
-                      ),
-                      shape: WidgetStatePropertyAll(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(26),
-                        ),
-                      ),
+                          if (showRecurring) {
+                            searchController.clear();
+                            query = "";
+                          }
+                        });
+                      },
                     ),
-                    segments: [
-                      ButtonSegment(value: false, label: Text(t.transactions)),
-                      ButtonSegment(value: true, label: Text(t.recurrents)),
-                    ],
-                    selected: {showRecurring},
-                    onSelectionChanged: (v) {
-                      setState(() {
-                        showRecurring = v.first;
-
-                        if (showRecurring) {
-                          searchController.clear();
-                          query = "";
-                        }
-                      });
-                    },
-                  ),
+                  ],
                 ),
               ),
-              if (!showRecurring) ...[
-                Container(
-                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              if (!showRecurring)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: TextField(
                     controller: searchController,
                     focusNode: searchFocus,
@@ -207,15 +186,18 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                         query = value.toLowerCase();
                       });
                     },
+                    style: const TextStyle(fontSize: 15),
                     decoration: InputDecoration(
                       hintText: t.searchBar,
+                      isDense: true,
                       prefixIcon: Icon(
-                        Icons.search,
-                        color: Theme.of(context).colorScheme.primary,
+                        Icons.search_rounded,
+                        size: 21,
+                        color: colors.onSurfaceVariant,
                       ),
                       suffixIcon: query.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.close),
+                              icon: const Icon(Icons.close_rounded, size: 19),
                               onPressed: () {
                                 searchController.clear();
                                 setState(() {
@@ -224,39 +206,30 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                               },
                             )
                           : null,
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainer,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(26),
+                        borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.12),
+                          color: colors.outlineVariant,
+                          width: .7,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(26),
+                        borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.12),
+                          color: colors.outlineVariant,
+                          width: .7,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(26),
+                        borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.35),
+                          color: colors.primary.withValues(alpha: .45),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ],
-
-              const SizedBox(height: 8),
 
               Expanded(
                 child: showRecurring
@@ -312,240 +285,157 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                                 note.contains(query);
                           }).toList();
 
-                          if (filteredSearch.isEmpty) {
-                            return Center(child: Text(t.noTransactions));
+                          if (filteredSearch.isEmpty || categories.isEmpty) {
+                            return _EmptyMovements(message: t.noTransactions);
                           }
 
                           final Map<DateTime, List<TransactionModel>> grouped =
                               {};
 
-                          for (final tx in sorted) {
+                          for (final tx in filteredSearch) {
                             final day = DateTime(
                               tx.date.year,
                               tx.date.month,
                               tx.date.day,
                             );
-                            grouped.putIfAbsent(day, () => []);
-                            grouped[day]!.add(tx);
+                            grouped.putIfAbsent(day, () => []).add(tx);
                           }
 
                           final dates = grouped.keys.toList()
                             ..sort((a, b) => b.compareTo(a));
 
-                          final visibleDates = dates.where((date) {
-                            final items = grouped[date]!
-                                .where((tx) => filteredSearch.contains(tx))
-                                .toList();
-
-                            return items.isNotEmpty;
-                          }).toList();
-
-                          if (filteredSearch.isEmpty) {
-                            return Center(child: Text(t.noTransactions));
-                          }
+                          final income = filteredSearch
+                              .where((tx) => tx.isIncome)
+                              .fold<int>(0, (sum, tx) => sum + tx.amountCents);
+                          final expense = filteredSearch
+                              .where((tx) => !tx.isIncome)
+                              .fold<int>(0, (sum, tx) => sum + tx.amountCents);
+                          final now = DateTime.now();
 
                           return ListView(
                             keyboardDismissBehavior:
                                 ScrollViewKeyboardDismissBehavior.onDrag,
-                            children: visibleDates.map((date) {
-                              final items = grouped[date]!
-                                  .where((tx) => filteredSearch.contains(tx))
-                                  .toList();
-
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      16,
-                                      16,
-                                      16,
-                                      6,
-                                    ),
-                                    child: Text(
-                                      dateFormat.format(date),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                            children: [
+                              _MovementsSummary(
+                                income: money(income),
+                                expense: money(expense),
+                                balance:
+                                    '${income - expense < 0 ? '−' : ''}'
+                                    '${money((income - expense).abs())}',
+                                count: t.movementsCount(filteredSearch.length),
+                              ),
+                              for (final date in dates) ...[
+                                Builder(
+                                  builder: (context) {
+                                    final items = grouped[date]!;
+                                    final net = items.fold<int>(
+                                      0,
+                                      (sum, tx) =>
+                                          sum +
+                                          (tx.isIncome
+                                              ? tx.amountCents
+                                              : -tx.amountCents),
+                                    );
+                                    return Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        4,
+                                        18,
+                                        4,
+                                        8,
                                       ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              toBeginningOfSentenceCase(
+                                                (date.year == now.year
+                                                        ? dateFormat
+                                                        : yearDateFormat)
+                                                    .format(date),
+                                              ),
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: colors.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${net > 0
+                                                ? '+'
+                                                : net < 0
+                                                ? '−'
+                                                : ''}${money(net.abs())}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: colors.onSurfaceVariant,
+                                              fontFeatures: const [
+                                                FontFeature.tabularFigures(),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                                VaultSurface(
+                                  padding: EdgeInsets.zero,
+                                  radius: 18,
+                                  child: Column(
+                                    children: [
+                                      for (final (index, tx)
+                                          in grouped[date]!.indexed)
+                                        Dismissible(
+                                          key: ValueKey(tx.id),
+                                          direction:
+                                              DismissDirection.horizontal,
+                                          background: _SwipeBackground(
+                                            color: colors.primary,
+                                            icon: Icons.edit_outlined,
+                                            label: t.modify,
+                                            alignment: Alignment.centerLeft,
+                                          ),
+                                          secondaryBackground: _SwipeBackground(
+                                            color: VaultColors.expense(context),
+                                            icon: Icons.delete_outline_rounded,
+                                            label: t.delete,
+                                            alignment: Alignment.centerRight,
+                                          ),
+                                          confirmDismiss: (direction) =>
+                                              _confirmDismiss(direction, tx),
+                                          onDismissed: (_) => _delete(tx),
+                                          child: _TransactionTile(
+                                            tx: tx,
+                                            category: categories.firstWhere(
+                                              (c) => c.id == tx.categoryId,
+                                              orElse: () => categories.first,
+                                            ),
+                                            amount: money(tx.amountCents),
+                                            showDivider: index > 0,
+                                            t: t,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              Padding(
+                                padding: const EdgeInsets.only(top: 18),
+                                child: Text(
+                                  t.swipeHint,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: colors.onSurfaceVariant.withValues(
+                                      alpha: .8,
                                     ),
                                   ),
-
-                                  ...items.map((tx) {
-                                    Category category;
-
-                                    if (categories.isEmpty) {
-                                      return const SizedBox();
-                                    }
-
-                                    category = categories.firstWhere(
-                                      (c) => c.id == tx.categoryId,
-                                      orElse: () => categories.first,
-                                    );
-
-                                    final amount = formatMoney(
-                                      tx.amountCents,
-                                      baseCurrency,
-                                      locale,
-                                    );
-
-                                    return Dismissible(
-                                      key: ValueKey(tx.id),
-                                      direction: DismissDirection.horizontal,
-
-                                      background: Container(
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 6,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 20,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue,
-                                          borderRadius: BorderRadius.circular(
-                                            18,
-                                          ),
-                                        ),
-                                        alignment: Alignment.centerLeft,
-                                        child: const Icon(
-                                          Icons.edit,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      secondaryBackground: Container(
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 6,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 20,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          borderRadius: BorderRadius.circular(
-                                            18,
-                                          ),
-                                        ),
-                                        alignment: Alignment.centerRight,
-                                        child: const Icon(
-                                          Icons.delete,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-
-                                      confirmDismiss: (direction) async {
-                                        if (direction ==
-                                            DismissDirection.startToEnd) {
-                                          Navigator.of(context).push(
-                                            PageRouteBuilder(
-                                              transitionDuration:
-                                                  const Duration(
-                                                    milliseconds: 300,
-                                                  ),
-                                              pageBuilder: (_, _, _) =>
-                                                  AddTransactionPage(
-                                                    transaction: tx,
-                                                  ),
-                                              transitionsBuilder:
-                                                  (_, animation, _, child) {
-                                                    return SlideTransition(
-                                                      position: Tween(
-                                                        begin: const Offset(
-                                                          0,
-                                                          1,
-                                                        ),
-                                                        end: Offset.zero,
-                                                      ).animate(animation),
-                                                      child: child,
-                                                    );
-                                                  },
-                                            ),
-                                          );
-                                          return false;
-                                        }
-
-                                        return await showDialog<bool>(
-                                          context: context,
-                                          builder: (dialogContext) {
-                                            return AlertDialog(
-                                              title: Text(t.deleteMovement),
-                                              content: Text(
-                                                t.deleteMovementSure,
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                        dialogContext,
-                                                        false,
-                                                      ),
-                                                  child: Text(t.cancel),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                        dialogContext,
-                                                        true,
-                                                      ),
-                                                  child: Text(t.delete),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-                                      },
-
-                                      onDismissed: (_) async {
-                                        await ref
-                                            .read(transactionProvider.notifier)
-                                            .deleteTransaction(tx.id);
-
-                                        if (!context.mounted) return;
-                                        final messenger = ScaffoldMessenger.of(
-                                          context,
-                                        );
-                                        messenger.hideCurrentSnackBar();
-                                        final snackbar = messenger.showSnackBar(
-                                          SnackBar(
-                                            content: Text(t.transactionDeleted),
-                                            action: SnackBarAction(
-                                              label: t.undo,
-                                              onPressed: () {
-                                                unawaited(
-                                                  ref
-                                                      .read(
-                                                        transactionProvider
-                                                            .notifier,
-                                                      )
-                                                      .restoreTransaction(tx),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        );
-                                        final closeReason =
-                                            await snackbar.closed;
-                                        if (closeReason !=
-                                            SnackBarClosedReason.action) {
-                                          await ref
-                                              .read(
-                                                receiptStorageServiceProvider,
-                                              )
-                                              .remove(tx.receiptPath);
-                                        }
-                                      },
-
-                                      child: _TransactionTile(
-                                        tx: tx,
-                                        category: category,
-                                        amount: amount,
-                                        t: t,
-                                      ),
-                                    );
-                                  }),
-                                ],
-                              );
-                            }).toList(),
+                                ),
+                              ),
+                            ],
                           );
                         },
                       ),
@@ -558,16 +448,183 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   }
 }
 
+class _EmptyMovements extends StatelessWidget {
+  const _EmptyMovements({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: .08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.receipt_long_outlined,
+                color: colors.primary,
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colors.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MovementsSummary extends StatelessWidget {
+  const _MovementsSummary({
+    required this.income,
+    required this.expense,
+    required this.balance,
+    required this.count,
+  });
+
+  final String income;
+  final String expense;
+  final String balance;
+  final String count;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).colorScheme;
+    Widget metric(String label, String value, Color color, Key key) => Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              key: key,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: color,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    return VaultSurface(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            count,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: colors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              metric(
+                t.incomes,
+                income,
+                VaultColors.income(context),
+                const ValueKey('movements-income-total'),
+              ),
+              const SizedBox(width: 10),
+              metric(
+                t.expenses,
+                expense,
+                VaultColors.expense(context),
+                const ValueKey('movements-expense-total'),
+              ),
+              const SizedBox(width: 10),
+              metric(
+                t.balance,
+                balance,
+                colors.onSurface,
+                const ValueKey('movements-balance-total'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SwipeBackground extends StatelessWidget {
+  const _SwipeBackground({
+    required this.color,
+    required this.icon,
+    required this.label,
+    required this.alignment,
+  });
+
+  final Color color;
+  final IconData icon;
+  final String label;
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    // Icon only: the label would duplicate the confirmation buttons.
+    final content = [
+      Semantics(
+        label: label,
+        child: Icon(icon, color: Colors.white, size: 22),
+      ),
+    ];
+    return Container(
+      color: color,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      alignment: alignment,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: alignment == Alignment.centerLeft
+            ? content
+            : content.reversed.toList(),
+      ),
+    );
+  }
+}
+
 class _TransactionTile extends StatefulWidget {
   final TransactionModel tx;
   final Category category;
   final String amount;
+  final bool showDivider;
   final AppLocalizations t;
 
   const _TransactionTile({
     required this.tx,
     required this.category,
     required this.amount,
+    required this.showDivider,
     required this.t,
   });
 
@@ -576,98 +633,66 @@ class _TransactionTile extends StatefulWidget {
 }
 
 class _TransactionTileState extends State<_TransactionTile> {
-  double scale = 1;
-
-  void _press() => setState(() => scale = 0.95);
-  void _release() => setState(() => scale = 1);
+  bool pressed = false;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _press(),
-      onTapCancel: _release,
-      onTapUp: (_) => _release(),
-      onTap: widget.tx.receiptPath == null
-          ? null
-          : () => showDialog<void>(
-              context: context,
-              builder: (dialogContext) => Dialog(
-                clipBehavior: Clip.antiAlias,
-                child: Stack(
-                  children: [
-                    InteractiveViewer(
-                      child: Image.file(
-                        File(widget.tx.receiptPath!),
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) => const SizedBox(
-                          height: 240,
-                          child: Center(
-                            child: Icon(Icons.broken_image_outlined),
+    final colors = Theme.of(context).colorScheme;
+    final note = widget.tx.note;
+    final flowColor = VaultColors.flow(context, widget.tx.isIncome);
+    return Material(
+      color: pressed
+          ? colors.primary.withValues(alpha: .05)
+          : colors.surface.withValues(alpha: 0),
+      child: InkWell(
+        onHighlightChanged: (value) => setState(() => pressed = value),
+        onTap: widget.tx.receiptPath == null
+            ? null
+            : () => showDialog<void>(
+                context: context,
+                builder: (dialogContext) => Dialog(
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    children: [
+                      InteractiveViewer(
+                        child: Image.file(
+                          File(widget.tx.receiptPath!),
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, _, _) => const SizedBox(
+                            height: 240,
+                            child: Center(
+                              child: Icon(Icons.broken_image_outlined),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: IconButton.filled(
-                        onPressed: () => Navigator.pop(dialogContext),
-                        icon: const Icon(Icons.close),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: IconButton.filled(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          icon: const Icon(Icons.close),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-
-      child: AnimatedScale(
-        scale: scale,
-        duration: const Duration(milliseconds: 120),
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Theme.of(context).colorScheme.surfaceContainer
-                : Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(18),
+            border: widget.showDivider
+                ? Border(
+                    top: BorderSide(color: colors.outlineVariant, width: .5),
+                  )
+                : null,
           ),
           child: Row(
             children: [
-              Container(
-                height: 42,
-                width: 42,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Color(widget.category.color).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(
-                      widget.category.isDefault
-                          ? categoryIcon(widget.category.name)
-                          : customCategoryIcon(widget.category.icon),
-                      size: 24,
-                      color: Color(widget.category.color),
-                    ),
-                    if (widget.tx.isRecurring)
-                      Positioned(
-                        right: -13,
-                        bottom: -13,
-                        child: Container(
-                          height: 16,
-                          width: 16,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.autorenew, size: 10),
-                        ),
-                      ),
-                  ],
-                ),
+              CategoryAvatar(
+                category: widget.category,
+                size: 42,
+                badge: widget.tx.isRecurring ? Icons.autorenew_rounded : null,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -676,53 +701,53 @@ class _TransactionTileState extends State<_TransactionTile> {
                   children: [
                     Text(
                       categoryName(widget.category.name, widget.t),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: 15,
                       ),
                     ),
-
-                    if (widget.tx.note != null && widget.tx.note!.isNotEmpty)
+                    if (note != null && note.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: Colors.grey.withValues(alpha: 0.15),
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            widget.tx.note!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          note,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colors.onSurfaceVariant,
                           ),
                         ),
                       ),
                   ],
                 ),
               ),
-
-              Text(
-                '${widget.tx.isIncome ? '+' : '-'} ${widget.amount}',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                  color: widget.tx.isIncome ? Colors.green : Colors.red,
-                ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${widget.tx.isIncome ? '+' : '−'}${widget.amount}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: flowColor,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  if (widget.tx.receiptPath != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Icon(
+                        Icons.receipt_long_outlined,
+                        size: 15,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                ],
               ),
-              if (widget.tx.receiptPath != null) ...[
-                const SizedBox(width: 6),
-                const Icon(Icons.receipt_long_outlined, size: 16),
-              ],
             ],
           ),
         ),

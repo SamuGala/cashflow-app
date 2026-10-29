@@ -116,7 +116,7 @@ class _AddCategoryDialogState extends ConsumerState<_AddCategoryDialog> {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+                color: Theme.of(context).colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(

@@ -1,11 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/currency/currency_metadata.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/vault_style.dart';
 import '../domain/stats_analysis.dart';
 
 Duration statsAnimationDuration(BuildContext context) =>
@@ -24,29 +27,8 @@ class StatsSurface extends StatelessWidget {
     this.padding = const EdgeInsets.all(16),
   });
   @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: dark ? null : colors.surface,
-        gradient: dark
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF182431), Color(0xFF15202C)],
-              )
-            : null,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: dark ? colors.outlineVariant : const Color(0xFFF0F2F8),
-          width: .7,
-        ),
-      ),
-      child: child,
-    );
-  }
+  Widget build(BuildContext context) =>
+      VaultSurface(padding: padding, child: child);
 }
 
 class StatsAmount extends StatelessWidget {
@@ -296,41 +278,7 @@ class StatsWalletMark extends StatelessWidget {
   final Color color;
   const StatsWalletMark({super.key, required this.color});
   @override
-  Widget build(BuildContext context) =>
-      CustomPaint(size: const Size(25, 25), painter: _WalletPainter(color));
-}
-
-class _WalletPainter extends CustomPainter {
-  final Color color;
-  const _WalletPainter(this.color);
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.scale(size.width / 32, size.height / 32);
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.9
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(
-      Path()
-        ..moveTo(4, 9)
-        ..lineTo(23, 3)
-        ..quadraticBezierTo(25, 2.4, 25.5, 5)
-        ..lineTo(27, 9),
-      paint,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        const Rect.fromLTRB(3, 9, 29, 29),
-        const Radius.circular(3),
-      ),
-      paint,
-    );
-    canvas.drawCircle(const Offset(24, 19), 1.4, Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(_WalletPainter oldDelegate) => oldDelegate.color != color;
+  Widget build(BuildContext context) => VaultWalletMark(color: color);
 }
 
 class StatsTrendChart extends StatefulWidget {
@@ -796,4 +744,220 @@ class StatsComparisonBars extends StatelessWidget {
       ),
     );
   }
+}
+
+class StatsDonutSegment {
+  final String id;
+  final int value;
+  final Color color;
+  const StatsDonutSegment({
+    required this.id,
+    required this.value,
+    required this.color,
+  });
+}
+
+/// Category ring with rounded, spaced arcs. The selected arc grows while the
+/// others recede; only taps select, so vertical scrolling passes through.
+class StatsCategoryDonut extends StatefulWidget {
+  final List<StatsDonutSegment> segments;
+  final String? selectedId;
+  final ValueChanged<String> onSelected;
+  final Widget center;
+  final double size;
+  const StatsCategoryDonut({
+    super.key,
+    required this.segments,
+    required this.selectedId,
+    required this.onSelected,
+    required this.center,
+    this.size = 210,
+  });
+  @override
+  State<StatsCategoryDonut> createState() => _StatsCategoryDonutState();
+}
+
+class _StatsCategoryDonutState extends State<StatsCategoryDonut>
+    with TickerProviderStateMixin {
+  late final _intro = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+  late final _selection = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 420),
+    value: 1,
+  );
+  String? _previousId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _intro.value = 1;
+    } else if (_intro.value == 0 && !_intro.isAnimating) {
+      _intro.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(StatsCategoryDonut oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedId != widget.selectedId) {
+      _previousId = oldWidget.selectedId;
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _selection.value = 1;
+      } else {
+        _selection.forward(from: 0);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _intro.dispose();
+    _selection.dispose();
+    super.dispose();
+  }
+
+  void _handleTap(TapUpDetails details, Size size) {
+    final center = size.center(Offset.zero);
+    final offset = details.localPosition - center;
+    final distance = offset.distance;
+    final radius = size.shortestSide / 2 - _DonutPainter.outerPadding;
+    if (distance < radius - 34 || distance > radius + 14) return;
+    final total = widget.segments.fold<int>(0, (sum, s) => sum + s.value);
+    if (total <= 0) return;
+    // Angle from 12 o'clock, clockwise.
+    var angle = math.atan2(offset.dy, offset.dx) + math.pi / 2;
+    if (angle < 0) angle += math.pi * 2;
+    var start = 0.0;
+    for (final segment in widget.segments) {
+      final sweep = segment.value / total * math.pi * 2;
+      if (angle >= start && angle < start + sweep) {
+        if (segment.id != widget.selectedId) {
+          HapticFeedback.selectionClick();
+          widget.onSelected(segment.id);
+        }
+        return;
+      }
+      start += sweep;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final track = Theme.of(context).colorScheme.surfaceContainerHighest;
+    return SizedBox.square(
+      dimension: widget.size,
+      child: LayoutBuilder(
+        builder: (_, constraints) {
+          final size = constraints.biggest;
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapUp: (details) => _handleTap(details, size),
+            child: AnimatedBuilder(
+              animation: Listenable.merge([_intro, _selection]),
+              builder: (_, child) => CustomPaint(
+                painter: _DonutPainter(
+                  segments: widget.segments,
+                  selectedId: widget.selectedId,
+                  previousId: _previousId,
+                  intro: Curves.easeOutCubic.transform(_intro.value),
+                  selection: Curves.easeOutBack.transform(_selection.value),
+                  track: track,
+                ),
+                child: child,
+              ),
+              child: Center(
+                child: SizedBox(
+                  width: size.shortestSide * .58,
+                  child: widget.center,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  static const outerPadding = 12.0;
+  static const stroke = 20.0;
+  final List<StatsDonutSegment> segments;
+  final String? selectedId;
+  final String? previousId;
+  final double intro;
+  final double selection;
+  final Color track;
+  const _DonutPainter({
+    required this.segments,
+    required this.selectedId,
+    required this.previousId,
+    required this.intro,
+    required this.selection,
+    required this.track,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = size.shortestSide / 2 - outerPadding - stroke / 2;
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = track.withValues(alpha: .55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke,
+    );
+    final total = segments.fold<int>(0, (sum, s) => sum + s.value);
+    if (total <= 0) return;
+    final available = math.pi * 2 * intro;
+    final gap = segments.length > 1 ? (stroke + 5) / radius : 0.0;
+    var start = -math.pi / 2;
+    for (final segment in segments) {
+      final fullSweep = segment.value / total * math.pi * 2;
+      final sweep = fullSweep * intro;
+      final emphasis = segment.id == selectedId
+          ? selection
+          : segment.id == previousId
+          ? 1 - selection
+          : 0.0;
+      final width = stroke + 9 * emphasis.clamp(0.0, 1.2);
+      final alpha = selectedId == null
+          ? 1.0
+          : (.42 + .58 * emphasis).clamp(.42, 1.0);
+      final paint = Paint()
+        ..color = segment.color.withValues(alpha: alpha)
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = width;
+      final drawn = math.max(0.0001, sweep - gap);
+      if (start - (-math.pi / 2) < available) {
+        final arcRadius = radius + 3 * emphasis;
+        canvas.drawArc(
+          Rect.fromCircle(center: center, radius: arcRadius),
+          start + gap / 2,
+          drawn,
+          false,
+          paint,
+        );
+      }
+      start += fullSweep;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DonutPainter old) =>
+      old.intro != intro ||
+      old.selection != selection ||
+      old.selectedId != selectedId ||
+      old.track != track ||
+      !listEquals(
+        old.segments.map((s) => '${s.id}:${s.value}:${s.color}').toList(),
+        segments.map((s) => '${s.id}:${s.value}:${s.color}').toList(),
+      );
 }

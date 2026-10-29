@@ -375,11 +375,7 @@ class BackupService {
     throw const BackupException('A transaction contains an invalid date.');
   }
 
-  static String _csvAmount(
-    int amountMinor,
-    String currency,
-    String language,
-  ) {
+  static String _csvAmount(int amountMinor, String currency, String language) {
     final digits = currencyDecimalDigits(currency);
     final formatter = NumberFormat.decimalPattern(language)
       ..minimumFractionDigits = digits
@@ -426,7 +422,9 @@ class BackupService {
         'other': 'Other',
       },
     };
-    return builtInNames[value] ?? value ?? _CsvLabels.forLanguage(language).none;
+    return builtInNames[value] ??
+        value ??
+        _CsvLabels.forLanguage(language).none;
   }
 
   static String _csvCell(Object? value) {

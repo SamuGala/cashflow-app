@@ -132,7 +132,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get confirm => 'Conferma';
 
   @override
-  String get deleteAllQ => 'Sei sicuro di voler eliminare tutti i dati salvati?';
+  String get deleteAllQ =>
+      'Sei sicuro di voler eliminare tutti i dati salvati?';
 
   @override
   String get salary => 'Stipendio';
@@ -287,7 +288,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get deletedMovement => 'Movimento eliminato';
 
   @override
-  String get addExpenseToViewGraph => 'Aggiungi una spesa per vedere il grafico';
+  String get addExpenseToViewGraph =>
+      'Aggiungi una spesa per vedere il grafico';
 
   @override
   String get selectYear => 'Seleziona anno';
@@ -318,7 +320,8 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get spentSameAsLastMonth => 'Questo mese stai spendendo come il mese scorso';
+  String get spentSameAsLastMonth =>
+      'Questo mese stai spendendo come il mese scorso';
 
   @override
   String get period => 'Periodo';
@@ -339,7 +342,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get deleteCategory => 'Elimina categoria';
 
   @override
-  String get deleteCategoryConfirm => 'Sei sicuro di voler eliminare questa categoria?';
+  String get deleteCategoryConfirm =>
+      'Sei sicuro di voler eliminare questa categoria?';
 
   @override
   String get createPin => 'Crea PIN';
@@ -354,7 +358,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get enableBiometrics => 'Attiva lo sblocco biometrico';
 
   @override
-  String get enableBiometricsMessage => 'Usa Face ID o l’impronta per sbloccare Pockets Vault?';
+  String get enableBiometricsMessage =>
+      'Usa Face ID o l’impronta per sbloccare Pockets Vault?';
 
   @override
   String get notNow => 'Non ora';
@@ -393,7 +398,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get backupPortability => 'Backup e portabilità';
 
   @override
-  String get encryptedBackupCaption => 'Cifratura AES-256, export CSV e ripristino locale';
+  String get encryptedBackupCaption =>
+      'Cifratura AES-256, export CSV e ripristino locale';
 
   @override
   String get exportEncryptedBackup => 'Esporta backup cifrato';
@@ -411,13 +417,15 @@ class AppLocalizationsIt extends AppLocalizations {
   String get localSmartRules => 'Regole intelligenti locali';
 
   @override
-  String get privateCategorization => 'Categorizzazione privata, senza inviare dati';
+  String get privateCategorization =>
+      'Categorizzazione privata, senza inviare dati';
 
   @override
   String get noRules => 'Nessuna regola';
 
   @override
-  String get noRulesHint => 'Puoi memorizzarne una mentre aggiungi un movimento.';
+  String get noRulesHint =>
+      'Puoi memorizzarne una mentre aggiungi un movimento.';
 
   @override
   String get availableToSpend => 'Disponibile da spendere';
@@ -426,7 +434,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get budgets => 'Budget';
 
   @override
-  String get optionalMonthlyBudgets => 'Budget mensili facoltativi e modificabili in qualsiasi momento';
+  String get optionalMonthlyBudgets =>
+      'Budget mensili facoltativi e modificabili in qualsiasi momento';
 
   @override
   String get noBudget => 'Nessun budget';
@@ -456,7 +465,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get rememberCategory => 'Ricorda questa categoria';
 
   @override
-  String get rememberCategoryHint => 'Suggeriscila per descrizioni simili, solo sul dispositivo.';
+  String get rememberCategoryHint =>
+      'Suggeriscila per descrizioni simili, solo sul dispositivo.';
 
   @override
   String get addReceipt => 'Aggiungi ricevuta';
@@ -495,7 +505,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get availableForPeriod => 'Disponibile nel periodo';
 
   @override
-  String get availableFormula => 'Entrate − spese − risparmi accantonati − ricorrenze previste';
+  String get availableFormula =>
+      'Entrate − spese − risparmi accantonati − ricorrenze previste';
 
   @override
   String get reservedSavings => 'Accantonati';
@@ -541,13 +552,15 @@ class AppLocalizationsIt extends AppLocalizations {
   String get budgetDeleted => 'Budget eliminato';
 
   @override
-  String get budgetPeriodHint => 'I limiti mensili sono proporzionati all’intervallo selezionato.';
+  String get budgetPeriodHint =>
+      'I limiti mensili sono proporzionati all’intervallo selezionato.';
 
   @override
   String get forecastRecurring => 'Previsione ricorrenze';
 
   @override
-  String get forecastExplanation => 'Stima dal saldo attuale usando solo le ricorrenze programmate.';
+  String get forecastExplanation =>
+      'Stima dal saldo attuale usando solo le ricorrenze programmate.';
 
   @override
   String get currentBalance => 'Saldo attuale';
@@ -579,7 +592,8 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get savingsReservedHint => 'Gli importi accantonati riducono il disponibile, ma restano parte del saldo.';
+  String get savingsReservedHint =>
+      'Gli importi accantonati riducono il disponibile, ma restano parte del saldo.';
 
   @override
   String allocatedInSelection(Object amount) {
@@ -610,7 +624,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get deleteGoal => 'Eliminare l’obiettivo?';
 
   @override
-  String get deleteGoalReleasesFunds => 'I fondi accantonati torneranno disponibili. La cronologia resta conservata e i movimenti non vengono modificati.';
+  String get deleteGoalReleasesFunds =>
+      'I fondi accantonati torneranno disponibili. La cronologia resta conservata e i movimenti non vengono modificati.';
 
   @override
   String get goalDeleted => 'Obiettivo eliminato';
@@ -624,22 +639,27 @@ class AppLocalizationsIt extends AppLocalizations {
   String get receiptOptional => 'Ricevuta opzionale';
 
   @override
-  String get receiptPurpose => 'Legge importo, data, esercente e categoria direttamente sul dispositivo.';
+  String get receiptPurpose =>
+      'Legge importo, data, esercente e categoria direttamente sul dispositivo.';
 
   @override
-  String get receiptStoredLocally => 'Scansione privata sul dispositivo, con revisione prima del salvataggio.';
+  String get receiptStoredLocally =>
+      'Scansione privata sul dispositivo, con revisione prima del salvataggio.';
 
   @override
   String get receiptLinked => 'Allegata a questo movimento';
 
   @override
-  String get receiptPermissionDenied => 'Permesso non concesso. Abilita foto e fotocamera nelle Impostazioni.';
+  String get receiptPermissionDenied =>
+      'Permesso non concesso. Abilita foto e fotocamera nelle Impostazioni.';
 
   @override
-  String get cameraUnavailable => 'Fotocamera non disponibile su questo dispositivo.';
+  String get cameraUnavailable =>
+      'Fotocamera non disponibile su questo dispositivo.';
 
   @override
-  String get libraryUnavailable => 'Libreria foto non disponibile su questo dispositivo.';
+  String get libraryUnavailable =>
+      'Libreria foto non disponibile su questo dispositivo.';
 
   @override
   String get receiptAttachFailed => 'Impossibile allegare la ricevuta.';
@@ -688,7 +708,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get importMode => 'Modalità di importazione';
 
   @override
-  String get importModeExplanation => 'Unisci mantiene i dati attuali e aggiorna gli elementi con lo stesso identificativo. Sostituisci cancella prima tutti i dati finanziari locali.';
+  String get importModeExplanation =>
+      'Unisci mantiene i dati attuali e aggiorna gli elementi con lo stesso identificativo. Sostituisci cancella prima tutti i dati finanziari locali.';
 
   @override
   String get merge => 'Unisci';
@@ -720,7 +741,8 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get savingsUpdateFailed => 'Impossibile aggiornare l’obiettivo di risparmio.';
+  String get savingsUpdateFailed =>
+      'Impossibile aggiornare l’obiettivo di risparmio.';
 
   @override
   String get hideAmounts => 'Nascondi importi';
@@ -732,7 +754,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get scanReceipt => 'Scansiona ricevuta';
 
   @override
-  String get receiptScanHint => 'Fotografa o scegli una ricevuta per compilare automaticamente la spesa.';
+  String get receiptScanHint =>
+      'Fotografa o scegli una ricevuta per compilare automaticamente la spesa.';
 
   @override
   String get scanWithCamera => 'Scansiona con la fotocamera';
@@ -747,16 +770,19 @@ class AppLocalizationsIt extends AppLocalizations {
   String get receiptScanReview => 'Controlla la scansione';
 
   @override
-  String get receiptScanCheckData => 'Abbiamo trovato questi dati. Controllali e correggili prima di continuare.';
+  String get receiptScanCheckData =>
+      'Abbiamo trovato questi dati. Controllali e correggili prima di continuare.';
 
   @override
-  String get receiptScanNoData => 'Non abbiamo trovato dati affidabili. Inseriscili manualmente o allega soltanto la foto.';
+  String get receiptScanNoData =>
+      'Non abbiamo trovato dati affidabili. Inseriscili manualmente o allega soltanto la foto.';
 
   @override
   String get receiptMerchant => 'Esercente';
 
   @override
-  String get receiptScanPrivate => 'OCR e analisi avvengono interamente su questo dispositivo.';
+  String get receiptScanPrivate =>
+      'OCR e analisi avvengono interamente su questo dispositivo.';
 
   @override
   String get attachOnly => 'Solo allegato';
@@ -765,13 +791,15 @@ class AppLocalizationsIt extends AppLocalizations {
   String get useDetectedData => 'Usa i dati';
 
   @override
-  String get receiptScanApplied => 'Dati della ricevuta applicati. Controlla e salva il movimento.';
+  String get receiptScanApplied =>
+      'Dati della ricevuta applicati. Controlla e salva il movimento.';
 
   @override
   String get receiptScanning => 'Analisi della ricevuta…';
 
   @override
-  String get dataTemporarilyUnavailable => 'Dati temporaneamente non disponibili.';
+  String get dataTemporarilyUnavailable =>
+      'Dati temporaneamente non disponibili.';
 
   @override
   String get retry => 'Riprova';
@@ -828,7 +856,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get statsElapsedDays => 'Allinea i giorni trascorsi';
 
   @override
-  String get statsElapsedHint => 'Per il mese corrente confronta gli stessi giorni di ciascun mese di riferimento.';
+  String get statsElapsedHint =>
+      'Per il mese corrente confronta gli stessi giorni di ciascun mese di riferimento.';
 
   @override
   String statsThroughDay(int day) {
@@ -844,10 +873,12 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get statsNoEarlierMonths => 'Gennaio non ha mesi precedenti nello stesso anno. Scegli un altro confronto.';
+  String get statsNoEarlierMonths =>
+      'Gennaio non ha mesi precedenti nello stesso anno. Scegli un altro confronto.';
 
   @override
-  String get statsZeroReference => 'Percentuale non disponibile: il valore di riferimento è zero.';
+  String get statsZeroReference =>
+      'Percentuale non disponibile: il valore di riferimento è zero.';
 
   @override
   String get statsNet => 'Entrate − uscite';
@@ -880,7 +911,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get statsReference => 'Riferimento';
 
   @override
-  String get statsHiddenChart => 'Grafico nascosto quando la privacy degli importi è attiva.';
+  String get statsHiddenChart =>
+      'Grafico nascosto quando la privacy degli importi è attiva.';
 
   @override
   String get statsAllTime => 'Tutte le date registrate';
@@ -968,7 +1000,8 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get statsOpenCategoryHint => 'Apri la categoria per vedere i movimenti';
+  String get statsOpenCategoryHint =>
+      'Apri la categoria per vedere i movimenti';
 
   @override
   String statsExpenseVersus(Object period) {
@@ -979,4 +1012,43 @@ class AppLocalizationsIt extends AppLocalizations {
   String statsIncomeVersus(Object period) {
     return 'di entrate rispetto a $period';
   }
+
+  @override
+  String get movementsHistory => 'Cronologia';
+
+  @override
+  String get swipeHint =>
+      'Scorri a destra per modificare, a sinistra per eliminare';
+
+  @override
+  String movementsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movimenti',
+      one: '1 movimento',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get today => 'Oggi';
+
+  @override
+  String get yesterday => 'Ieri';
+
+  @override
+  String get repeat => 'Ripeti';
+
+  @override
+  String get done => 'Fatto';
+
+  @override
+  String get saved => 'Salvato';
+
+  @override
+  String get newCategoryShort => 'Nuova';
+
+  @override
+  String get addNote => 'Aggiungi nota';
 }

@@ -7,18 +7,21 @@ class AppTheme {
 
   static ThemeData _theme(Brightness brightness) {
     final dark = brightness == Brightness.dark;
-    final background = dark ? const Color(0xFF10151F) : const Color(0xFFF6F7FB);
-    final surface = dark ? const Color(0xFF1A2331) : Colors.white;
-    final ink = dark ? const Color(0xFFEFF4FF) : const Color(0xFF182338);
-    final muted = dark ? const Color(0xFFA4B1C6) : const Color(0xFF68758B);
+    // Vault palette, shared by every tab since the Statistics redesign.
+    final background = dark ? const Color(0xFF0E1722) : const Color(0xFFF5F7FC);
+    final surface = dark ? const Color(0xFF182431) : Colors.white;
+    final ink = dark ? const Color(0xFFF5F7FC) : const Color(0xFF0A132C);
+    final muted = dark ? const Color(0xFFA2B0C9) : const Color(0xFF74809A);
     final line = dark ? const Color(0xFF303D50) : const Color(0xFFE8ECF3);
-    final soft = dark ? const Color(0xFF232F42) : const Color(0xFFF0F2F8);
+    final soft = dark ? const Color(0xFF223041) : const Color(0xFFF0F2F8);
+    final track = dark ? const Color(0xFF2C3848) : const Color(0xFFEAEFF5);
+    final primary = dark ? const Color(0xFF969DFF) : const Color(0xFF4654EE);
     final colors =
         ColorScheme.fromSeed(
-          seedColor: const Color(0xFF5867D9),
+          seedColor: const Color(0xFF4654EE),
           brightness: brightness,
         ).copyWith(
-          primary: dark ? const Color(0xFFAEBAFF) : const Color(0xFF5867D9),
+          primary: primary,
           onPrimary: dark ? const Color(0xFF182338) : Colors.white,
           primaryContainer: dark
               ? const Color(0xFF303C69)
@@ -33,7 +36,7 @@ class AppTheme {
           surfaceContainerLow: surface,
           surfaceContainer: soft,
           surfaceContainerHigh: soft,
-          surfaceContainerHighest: line,
+          surfaceContainerHighest: track,
           outlineVariant: line,
           error: dark ? const Color(0xFFFF9CAB) : const Color(0xFFB44050),
         );
@@ -56,8 +59,8 @@ class AppTheme {
       ),
       dividerTheme: DividerThemeData(color: line, thickness: 1),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: colors.primaryContainer,
-        foregroundColor: colors.onPrimaryContainer,
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
@@ -87,6 +90,32 @@ class AppTheme {
           ),
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: background,
+        surfaceTintColor: Colors.transparent,
+        dragHandleColor: muted.withValues(alpha: .38),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(0, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,
@@ -95,14 +124,22 @@ class AppTheme {
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: line),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: line),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: primary.withValues(alpha: .5)),
         ),
       ),
     );
   }
 
   static const cupertinoOverlay = CupertinoThemeData(
-    primaryColor: Color(0xFF5867D9),
+    primaryColor: Color(0xFF4654EE),
   );
 }
