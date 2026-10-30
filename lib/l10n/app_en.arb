@@ -494,5 +494,8 @@
   "@recapOpen": {"placeholders": {"year": {"type": "String"}}},
   "recapCardOf": "Card {index} of {total}",
   "@recapCardOf": {"placeholders": {"index": {"type": "int"}, "total": {"type": "int"}}},
-  "recapNoData": "No movements this year."
+  "recapNoData": "No movements this year.",
+  "widgetAvailable": "Available",
+  "widgetIncomeSpent": "of income already spent",
+  "widgetNoIncome": "no income this month"
 }

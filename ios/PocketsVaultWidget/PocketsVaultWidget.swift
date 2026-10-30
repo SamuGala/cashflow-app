@@ -22,7 +22,13 @@ enum WidgetStore {
       expense: text("expense", "—"),
       addExpenseLabel: text("addExpenseLabel", "Uscita"),
       addIncomeLabel: text("addIncomeLabel", "Entrata"),
-      receiptLabel: text("receiptLabel", "Ricevuta")
+      receiptLabel: text("receiptLabel", "Ricevuta"),
+      monthName: text("monthName", ""),
+      availableLabel: text("availableLabel", "Disponibile"),
+      available: text("available", "—"),
+      availableNegative: defaults?.bool(forKey: "availableNegative") ?? false,
+      spentPercent: defaults?.object(forKey: "spentPercent") as? Int ?? -1,
+      spentCaption: text("spentCaption", "delle entrate già spese")
     )
   }
 }
@@ -39,6 +45,13 @@ struct MonthSnapshot {
   let addExpenseLabel: String
   let addIncomeLabel: String
   let receiptLabel: String
+  let monthName: String
+  let availableLabel: String
+  let available: String
+  let availableNegative: Bool
+  /// Share of the month's income already spent; -1 without income.
+  let spentPercent: Int
+  let spentCaption: String
 }
 
 struct MonthEntry: TimelineEntry {
@@ -87,6 +100,10 @@ private extension Color {
   static let vaultTonal = vault(light: 0xEEF0FE, dark: 0x243148)
   static let vaultIncome = vault(light: 0x17734E, dark: 0x82DFB4)
   static let vaultExpense = vault(light: 0xC93545, dark: 0xFF8E9C)
+  // Home section tint, as in the app.
+  static let vaultHomeTop = vault(light: 0xFFFFFF, dark: 0x1C2350)
+  static let vaultHomeBottom = vault(light: 0xE9EBFD, dark: 0x10152B)
+  static let vaultRingTrack = vault(light: 0xE3E6FD, dark: 0x262E5C)
 }
 
 private enum Links {
@@ -95,12 +112,81 @@ private enum Links {
   static let scan = URL(string: "pocketvault:///scan")!
 }
 
+/// Small widget: a "+" for a new expense, the month, "Disponibile" as on
+/// Home and a ring with the share of income already spent. Small widgets
+/// have a single tap target, so the whole widget opens a new expense.
+struct SmallMonthView: View {
+  let data: MonthSnapshot
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      HStack(spacing: 6) {
+        Image(systemName: "plus")
+          .font(.system(size: 13, weight: .bold))
+          .foregroundColor(.vaultOnPrimary)
+          .frame(width: 24, height: 24)
+          .background(Color.vaultPrimary)
+          .clipShape(Circle())
+          .accessibilityLabel(Text(data.addExpenseLabel))
+        Text(data.monthName)
+          .font(.system(size: 13, weight: .semibold))
+          .foregroundColor(.vaultMuted)
+          .lineLimit(1)
+      }
+      Spacer(minLength: 6)
+      Text(data.availableLabel)
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundColor(.vaultMuted)
+      Text(data.available)
+        .font(.system(size: 26, weight: .heavy))
+        .foregroundColor(data.availableNegative ? .vaultExpense : .vaultInk)
+        .lineLimit(1)
+        .minimumScaleFactor(0.5)
+      Spacer(minLength: 6)
+      HStack(spacing: 8) {
+        ZStack {
+          Circle()
+            .stroke(Color.vaultRingTrack, lineWidth: 5)
+          if data.spentPercent >= 0 {
+            Circle()
+              .trim(from: 0, to: min(CGFloat(data.spentPercent) / 100, 1))
+              .stroke(
+                data.spentPercent > 100 ? Color.vaultExpense : Color.vaultPrimary,
+                style: StrokeStyle(lineWidth: 5, lineCap: .round)
+              )
+              .rotationEffect(.degrees(-90))
+          }
+          Text(data.spentPercent >= 0 ? "\(data.spentPercent)%" : "—")
+            .font(.system(size: 11, weight: .bold))
+            .foregroundColor(.vaultInk)
+            .minimumScaleFactor(0.6)
+        }
+        .frame(width: 44, height: 44)
+        Text(data.spentCaption)
+          .font(.system(size: 11, weight: .medium))
+          .foregroundColor(.vaultMuted)
+          .lineLimit(3)
+          .minimumScaleFactor(0.8)
+      }
+    }
+    .widgetURL(Links.addExpense)
+  }
+}
+
 struct MonthWidgetView: View {
   @Environment(\.widgetFamily) private var family
   let entry: MonthEntry
 
   var body: some View {
     let data = entry.snapshot
+    if family == .systemSmall {
+      SmallMonthView(data: data)
+    } else {
+      mediumBody(data)
+    }
+  }
+
+  private func mediumBody(_ data: MonthSnapshot) -> some View {
     VStack(alignment: .leading, spacing: 0) {
       HStack {
         Text("Pockets Vault")
@@ -146,7 +232,7 @@ struct MonthWidgetView: View {
         }
       }
     }
-    .widgetURL(family == .systemSmall ? Links.addExpense : nil)
+    // Medium and large widgets route each Link on its own.
   }
 
   private func amount(_ label: String, _ value: String, _ color: Color) -> some View {
@@ -176,6 +262,17 @@ struct MonthWidgetView: View {
   }
 }
 
+/// Card surface with the Home tint fading in from the bottom.
+struct WidgetBackground: View {
+  var body: some View {
+    LinearGradient(
+      colors: [.vaultHomeTop, .vaultHomeBottom],
+      startPoint: .topLeading,
+      endPoint: .bottomTrailing
+    )
+  }
+}
+
 struct PocketsVaultMonthWidget: Widget {
   let kind = "PocketsVaultMonthWidget"
 
@@ -183,11 +280,11 @@ struct PocketsVaultMonthWidget: Widget {
     StaticConfiguration(kind: kind, provider: MonthProvider()) { entry in
       if #available(iOS 17.0, *) {
         MonthWidgetView(entry: entry)
-          .containerBackground(Color.vaultSurface, for: .widget)
+          .containerBackground(for: .widget) { WidgetBackground() }
       } else {
         MonthWidgetView(entry: entry)
           .padding(16)
-          .background(Color.vaultSurface)
+          .background(WidgetBackground())
       }
     }
     .configurationDisplayName("Pockets Vault")

@@ -231,6 +231,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         : VaultColors.income(context);
 
     return Scaffold(
+      // The tab tint and wash are painted by the navigation shell.
+      backgroundColor: Colors.transparent,
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

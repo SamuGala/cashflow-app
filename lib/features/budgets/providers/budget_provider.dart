@@ -170,9 +170,7 @@ BudgetOverview buildBudgetOverview({
     }
   }
 
-  final reserved = contributions
-      .where((row) => isInSelectedTimeWindow(row.createdAt, timeState))
-      .fold<int>(0, (total, row) => total + row.amountMinor);
+  final reserved = reservedInSelection(contributions, timeState);
 
   var upcomingIncome = 0;
   var upcomingExpenses = 0;

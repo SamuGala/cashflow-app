@@ -405,5 +405,8 @@
   "recapBannerBody": "Rivivi l'anno in {count} schede",
   "recapOpen": "Riepilogo {year}",
   "recapCardOf": "Scheda {index} di {total}",
-  "recapNoData": "Nessun movimento in quest'anno."
+  "recapNoData": "Nessun movimento in quest'anno.",
+  "widgetAvailable": "Disponibile",
+  "widgetIncomeSpent": "delle entrate già spese",
+  "widgetNoIncome": "nessuna entrata nel mese"
 }

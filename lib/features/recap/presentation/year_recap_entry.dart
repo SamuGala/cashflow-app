@@ -64,89 +64,90 @@ class _YearRecapBannerState extends ConsumerState<YearRecapBanner> {
           ? const SizedBox(width: double.infinity)
           : Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Material(
-                key: const ValueKey('year-recap-banner'),
-                color: colors.surface,
-                shape: RoundedRectangleBorder(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    color: dark
-                        ? colors.outlineVariant
-                        : const Color(0xFFF0F2F8),
-                    width: .7,
-                  ),
+                  boxShadow: VaultElevation.surface(dark),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () => showYearRecap(context, year),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colors.outlineVariant,
-                              width: .7,
+                child: Material(
+                  key: const ValueKey('year-recap-banner'),
+                  color: colors.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: BorderSide(color: colors.outlineVariant, width: .7),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => showYearRecap(context, year),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: colors.outlineVariant,
+                                width: .7,
+                              ),
+                              gradient: RadialGradient(
+                                center: const Alignment(-.6, -.6),
+                                radius: 1.1,
+                                colors: [
+                                  income.withValues(alpha: .4),
+                                  colors.surface,
+                                ],
+                              ),
                             ),
-                            gradient: RadialGradient(
-                              center: const Alignment(-.6, -.6),
-                              radius: 1.1,
-                              colors: [
-                                income.withValues(alpha: .4),
-                                colors.surface,
+                            child: Text(
+                              '$year',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -.6,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  t.recapBannerTitle('$year'),
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  t.recapBannerBody(recapCardCount(recap)),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: colors.onSurfaceVariant,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                          child: Text(
-                            '$year',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -.6,
+                          IconButton(
+                            key: const ValueKey('year-recap-banner-close'),
+                            tooltip: MaterialLocalizations.of(
+                              context,
+                            ).closeButtonTooltip,
+                            icon: Icon(
+                              Icons.close_rounded,
+                              size: 20,
+                              color: colors.onSurfaceVariant,
                             ),
+                            onPressed: () => _dismiss(year),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                t.recapBannerTitle('$year'),
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                t.recapBannerBody(recapCardCount(recap)),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: colors.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          key: const ValueKey('year-recap-banner-close'),
-                          tooltip: MaterialLocalizations.of(
-                            context,
-                          ).closeButtonTooltip,
-                          icon: Icon(
-                            Icons.close_rounded,
-                            size: 20,
-                            color: colors.onSurfaceVariant,
-                          ),
-                          onPressed: () => _dismiss(year),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

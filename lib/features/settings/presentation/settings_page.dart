@@ -52,6 +52,8 @@ class SettingsPage extends ConsumerWidget {
     final t = AppLocalizations.of(context)!;
 
     return Scaffold(
+      // The tab tint and wash are painted by the navigation shell.
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: ListView(

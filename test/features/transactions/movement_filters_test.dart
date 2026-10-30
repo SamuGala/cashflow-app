@@ -150,12 +150,14 @@ void main() {
     }
 
     Finder byKey(String key) => find.byKey(ValueKey(key));
+    // Movement rows shown in the list (each is a Dismissible).
+    int rows() => find.byType(Dismissible).evaluate().length;
 
     testWidgets('live count, chips, removal and clear on empty results', (
       tester,
     ) async {
       await pump(tester);
-      expect(find.text('4 movimenti'), findsOneWidget);
+      expect(rows(), 4);
       await tester.tap(byKey('movements-filter-button'));
       await tester.pumpAndSettle();
       expect(find.text('Mostra 4 movimenti'), findsOneWidget);
@@ -173,7 +175,7 @@ void main() {
       await tester.tap(byKey('filter-apply'));
       await tester.pumpAndSettle();
 
-      expect(find.text('2 movimenti'), findsOneWidget);
+      expect(rows(), 2);
       expect(find.text('Pizza'), findsOneWidget);
       expect(find.text('Bus'), findsNothing);
       expect(
@@ -195,7 +197,7 @@ void main() {
       // Removing the category chip widens back to every expense.
       await tester.tap(byKey('movement-filter-chip-categories'));
       await tester.pumpAndSettle();
-      expect(find.text('3 movimenti'), findsOneWidget);
+      expect(rows(), 3);
 
       // A search plus filters with no match offers to clear the filters.
       await tester.enterText(find.byType(TextField), 'stipendio');
@@ -204,7 +206,7 @@ void main() {
       await tester.tap(byKey('movement-filters-clear'));
       await tester.pumpAndSettle();
       expect(byKey('movement-filter-chip-flow'), findsNothing);
-      expect(find.text('1 movimento'), findsOneWidget);
+      expect(rows(), 1);
       expect(tester.takeException(), isNull);
     });
 

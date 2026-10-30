@@ -81,19 +81,24 @@ class MainActivity : FlutterActivity() {
           when (value) {
             is String -> editor.putString(key as String, value)
             is Boolean -> editor.putBoolean(key as String, value)
+          is Int -> editor.putInt(key as String, value)
           }
         }
         editor.apply()
 
         val manager = AppWidgetManager.getInstance(this)
-        val component = ComponentName(this, PocketVaultWidgetProvider::class.java)
-        val ids = manager.getAppWidgetIds(component)
-        sendBroadcast(
-          Intent(this, PocketVaultWidgetProvider::class.java).apply {
-            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
-          },
-        )
+        for (provider in listOf(
+          PocketVaultWidgetProvider::class.java,
+          PocketVaultSmallWidgetProvider::class.java,
+        )) {
+          val ids = manager.getAppWidgetIds(ComponentName(this, provider))
+          sendBroadcast(
+            Intent(this, provider).apply {
+              action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+              putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+            },
+          )
+        }
         result.success(null)
       }
 

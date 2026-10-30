@@ -29,9 +29,9 @@ class SavingsGoalsCard extends ConsumerWidget {
     final locale = Localizations.localeOf(context).toString();
     final t = AppLocalizations.of(context)!;
     String hide(String value) => showBalance ? value : '••••';
-    final allocatedInSelection = contributions.value
-        ?.where((row) => isInSelectedTimeWindow(row.createdAt, timeState))
-        .fold<int>(0, (total, row) => total + row.amountMinor);
+    final allocatedInSelection = contributions.value == null
+        ? null
+        : reservedInSelection(contributions.value!, timeState);
 
     final colors = Theme.of(context).colorScheme;
     final savings = VaultColors.savings(context);

@@ -175,10 +175,8 @@ void main() {
 
     // 5 · Filters in Movements.
     await openTab('Movimenti');
-    String movementCount() => tester
-        .widgetList<Text>(find.textContaining(RegExp(r'^\d+ moviment')))
-        .first
-        .data!;
+    // Movement rows shown in the list (each is a Dismissible).
+    int movementCount() => find.byType(Dismissible).evaluate().length;
     final unfiltered = movementCount();
     await tester.tap(byKey('movements-filter-button'));
     await tester.pumpAndSettle();

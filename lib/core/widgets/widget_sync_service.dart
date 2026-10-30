@@ -23,6 +23,15 @@ class WidgetSnapshot {
   final String addIncomeLabel;
   final String receiptLabel;
 
+  /// Small widget: month name, "Disponibile" as on Home (rounded) and the
+  /// share of the month's income already spent, or -1 without income.
+  final String monthName;
+  final String availableLabel;
+  final String available;
+  final bool availableNegative;
+  final int spentPercent;
+  final String spentCaption;
+
   const WidgetSnapshot({
     required this.month,
     required this.balanceLabel,
@@ -35,14 +44,22 @@ class WidgetSnapshot {
     required this.addExpenseLabel,
     required this.addIncomeLabel,
     required this.receiptLabel,
+    required this.monthName,
+    required this.availableLabel,
+    required this.available,
+    required this.availableNegative,
+    required this.spentPercent,
+    required this.spentCaption,
   });
 
+  /// [availableMinor] is the Home "Disponibile" of the current month.
   factory WidgetSnapshot.build({
     required Iterable<TransactionModel> transactions,
     required String currencyCode,
     required AppLocalizations t,
     required String locale,
     required DateTime now,
+    required int availableMinor,
   }) {
     var income = 0;
     var expense = 0;
@@ -56,6 +73,11 @@ class WidgetSnapshot {
     }
     final net = income - expense;
     String money(int minor) => formatMoney(minor, currencyCode, locale);
+    final rounded = NumberFormat.simpleCurrency(
+      locale: locale,
+      name: currencyCode,
+      decimalDigits: 0,
+    ).format(minorToMajor(availableMinor.abs(), currencyCode));
     return WidgetSnapshot(
       month: toBeginningOfSentenceCase(
         DateFormat.yMMMM(locale).format(now),
@@ -71,6 +93,15 @@ class WidgetSnapshot {
       addExpenseLabel: t.expense,
       addIncomeLabel: t.income,
       receiptLabel: t.widgetReceipt,
+      monthName: toBeginningOfSentenceCase(
+        DateFormat.MMMM(locale).format(now),
+        locale,
+      ),
+      availableLabel: t.widgetAvailable,
+      available: '${availableMinor < 0 ? '−' : ''}$rounded',
+      availableNegative: availableMinor < 0,
+      spentPercent: income <= 0 ? -1 : (expense * 100 / income).round(),
+      spentCaption: income <= 0 ? t.widgetNoIncome : t.widgetIncomeSpent,
     );
   }
 
@@ -86,6 +117,12 @@ class WidgetSnapshot {
     'addExpenseLabel': addExpenseLabel,
     'addIncomeLabel': addIncomeLabel,
     'receiptLabel': receiptLabel,
+    'monthName': monthName,
+    'availableLabel': availableLabel,
+    'available': available,
+    'availableNegative': availableNegative,
+    'spentPercent': spentPercent,
+    'spentCaption': spentCaption,
   };
 }
 
@@ -96,6 +133,7 @@ class WidgetSyncService {
     required List<TransactionModel> transactions,
     required String currencyCode,
     required Locale locale,
+    required int availableMinor,
   }) async {
     if (kIsWeb ||
         (defaultTargetPlatform != TargetPlatform.android &&
@@ -110,6 +148,7 @@ class WidgetSyncService {
       t: lookupAppLocalizations(locale),
       locale: locale.toString(),
       now: DateTime.now(),
+      availableMinor: availableMinor,
     );
     try {
       await _channel.invokeMethod<void>('sync', snapshot.toMap());

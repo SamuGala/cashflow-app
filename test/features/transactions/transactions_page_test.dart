@@ -69,7 +69,7 @@ String eur(int minor) => formatMoney(minor, 'EUR', 'it');
 void main() {
   final month = DateTime(2026, 3);
 
-  testWidgets('movements summary, swipe delete with confirmation and undo', (
+  testWidgets('movement list, swipe delete with confirmation and undo', (
     tester,
   ) async {
     final (database, container) = await seed(month);
@@ -80,12 +80,11 @@ void main() {
     await tester.pumpWidget(app(container, const TransactionsPage()));
     await tester.pumpAndSettle();
 
-    String text(String key) =>
-        tester.widget<Text>(find.byKey(ValueKey(key))).data!;
-    expect(text('movements-income-total'), eur(250000));
-    expect(text('movements-expense-total'), eur(4750));
-    expect(text('movements-balance-total'), eur(245250));
-    expect(find.text('3 movimenti'), findsOneWidget);
+    // No totals card any more: the list starts with the first day.
+    expect(find.byKey(const ValueKey('movements-income-total')), findsNothing);
+    for (final id in ['salary', 'pizza', 'bus']) {
+      expect(find.byKey(ValueKey(id)), findsOneWidget);
+    }
 
     // Expense amounts keep the shared semantic red.
     final context = tester.element(find.byType(TransactionsPage));
@@ -104,7 +103,7 @@ void main() {
       (await database.getAllTransactions()).map((row) => row.id),
       isNot(contains('pizza')),
     );
-    expect(text('movements-expense-total'), eur(1500));
+    expect(find.byKey(const ValueKey('pizza')), findsNothing);
 
     await tester.tap(find.text('Annulla'));
     await tester.pumpAndSettle();

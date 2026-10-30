@@ -261,6 +261,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
+        // The tab tint and wash are painted by the navigation shell.
+        backgroundColor: Colors.transparent,
         body: SafeArea(
           bottom: false,
           child: Column(
@@ -375,27 +377,13 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                           final dates = grouped.keys.toList()
                             ..sort((a, b) => b.compareTo(a));
 
-                          final income = filteredSearch
-                              .where((tx) => tx.isIncome)
-                              .fold<int>(0, (sum, tx) => sum + tx.amountCents);
-                          final expense = filteredSearch
-                              .where((tx) => !tx.isIncome)
-                              .fold<int>(0, (sum, tx) => sum + tx.amountCents);
                           final now = DateTime.now();
 
                           return ListView(
                             keyboardDismissBehavior:
                                 ScrollViewKeyboardDismissBehavior.onDrag,
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
                             children: [
-                              _MovementsSummary(
-                                income: money(income),
-                                expense: money(expense),
-                                balance:
-                                    '${income - expense < 0 ? '−' : ''}'
-                                    '${money((income - expense).abs())}',
-                                count: t.movementsCount(filteredSearch.length),
-                              ),
                               for (final date in dates) ...[
                                 Builder(
                                   builder: (context) {
@@ -771,95 +759,6 @@ class _ActiveFilters extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _MovementsSummary extends StatelessWidget {
-  const _MovementsSummary({
-    required this.income,
-    required this.expense,
-    required this.balance,
-    required this.count,
-  });
-
-  final String income;
-  final String expense;
-  final String balance;
-  final String count;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context)!;
-    final colors = Theme.of(context).colorScheme;
-    Widget metric(String label, String value, Color color, Key key) => Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant),
-          ),
-          const SizedBox(height: 3),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              key: key,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: color,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-    return VaultSurface(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            count,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: colors.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              metric(
-                t.incomes,
-                income,
-                VaultColors.income(context),
-                const ValueKey('movements-income-total'),
-              ),
-              const SizedBox(width: 10),
-              metric(
-                t.expenses,
-                expense,
-                VaultColors.expense(context),
-                const ValueKey('movements-expense-total'),
-              ),
-              const SizedBox(width: 10),
-              metric(
-                t.balance,
-                balance,
-                colors.onSurface,
-                const ValueKey('movements-balance-total'),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

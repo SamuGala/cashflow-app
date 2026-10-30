@@ -1480,4 +1480,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get recapNoData => 'Ningún movimiento este año.';
+
+  @override
+  String get widgetAvailable => 'Disponible';
+
+  @override
+  String get widgetIncomeSpent => 'de los ingresos ya gastados';
+
+  @override
+  String get widgetNoIncome => 'sin ingresos este mes';
 }

@@ -11,4 +11,5 @@
     <string name="widget_default_balance">Saldo del mese</string>
     <string name="widget_default_incomes">Entrate</string>
     <string name="widget_default_expenses">Uscite</string>
+    <string name="widget_small_description">Disponibile del mese e spesa veloce</string>
 </resources>

@@ -9,4 +9,7 @@
     <color name="widget_tonal">#EEF0FE</color>
     <color name="widget_income">#17734E</color>
     <color name="widget_expense">#C93545</color>
+    <color name="widget_home_top">#FFFFFF</color>
+    <color name="widget_home_bottom">#E9EBFD</color>
+    <color name="widget_ring_track">#E3E6FD</color>
 </resources>

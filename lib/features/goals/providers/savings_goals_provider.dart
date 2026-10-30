@@ -5,20 +5,51 @@ import 'package:uuid/uuid.dart';
 import '../../../core/currency/currency_provider.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_provider.dart';
+import '../../../core/providers/time_filter_provider.dart';
 
 final savingsGoalsProvider =
     AsyncNotifierProvider<SavingsGoalsNotifier, List<SavingsGoalRow>>(
       SavingsGoalsNotifier.new,
     );
 
+/// Contributions and releases of the goals that still exist. Deleting a goal
+/// undoes its reservations, so its history no longer counts in any period;
+/// the rows stay in the database for undo and backups.
 final savingsGoalContributionsProvider =
     FutureProvider<List<SavingsGoalContributionRow>>((ref) async {
       ref.watch(savingsGoalsProvider);
       final db = ref.read(databaseProvider);
-      return (db.select(
-        db.savingsGoalContributions,
-      )..orderBy([(row) => OrderingTerm.desc(row.createdAt)])).get();
+      final query =
+          db.select(db.savingsGoalContributions).join([
+              innerJoin(
+                db.savingsGoals,
+                db.savingsGoals.id.equalsExp(
+                  db.savingsGoalContributions.goalId,
+                ),
+              ),
+            ])
+            ..where(db.savingsGoals.archived.equals(false))
+            ..orderBy([
+              OrderingTerm.desc(db.savingsGoalContributions.createdAt),
+            ]);
+      return [
+        for (final row in await query.get())
+          row.readTable(db.savingsGoalContributions),
+      ];
     });
+
+/// Money set aside in the selected period. A release of money reserved in an
+/// earlier period cannot make it negative: that period simply reserved
+/// nothing. Over the whole history the sum stays exact.
+int reservedInSelection(
+  Iterable<SavingsGoalContributionRow> contributions,
+  TimeFilterState timeState,
+) {
+  final net = contributions
+      .where((row) => isInSelectedTimeWindow(row.createdAt, timeState))
+      .fold<int>(0, (total, row) => total + row.amountMinor);
+  return net < 0 ? 0 : net;
+}
 
 class SavingsGoalRemoval {
   final SavingsGoalRow goal;

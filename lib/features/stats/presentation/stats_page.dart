@@ -171,6 +171,8 @@ class _StatsPageState extends ConsumerState<StatsPage>
     final loading = txState.isLoading || categoriesState.isLoading;
     final failed = txState.hasError || categoriesState.hasError;
     return Scaffold(
+      // The tab tint and wash are painted by the navigation shell.
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: ListView(

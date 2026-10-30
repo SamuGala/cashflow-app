@@ -2535,6 +2535,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No movements this year.'**
   String get recapNoData;
+
+  /// No description provided for @widgetAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get widgetAvailable;
+
+  /// No description provided for @widgetIncomeSpent.
+  ///
+  /// In en, this message translates to:
+  /// **'of income already spent'**
+  String get widgetIncomeSpent;
+
+  /// No description provided for @widgetNoIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'no income this month'**
+  String get widgetNoIncome;
 }
 
 class _AppLocalizationsDelegate

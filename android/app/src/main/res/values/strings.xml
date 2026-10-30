@@ -11,4 +11,5 @@
     <string name="widget_default_balance">This month</string>
     <string name="widget_default_incomes">Income</string>
     <string name="widget_default_expenses">Expenses</string>
+    <string name="widget_small_description">Available this month and a quick expense</string>
 </resources>

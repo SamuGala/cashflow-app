@@ -10,8 +10,6 @@ import '../providers/category_provider.dart';
 import '../providers/recurring_provider.dart';
 import '../../../core/currency/currency_provider.dart';
 import '../domain/recurrence_calculator.dart';
-import '../../../core/providers/locale_provider.dart';
-import '../../../core/widgets/widget_sync_service.dart';
 import '../../../core/receipts/receipt_storage_service.dart';
 
 final transactionProvider =
@@ -21,16 +19,6 @@ final transactionProvider =
 
 class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
   final _uuid = const Uuid();
-
-  void _syncWidget(List<TransactionModel> transactions) {
-    unawaited(
-      WidgetSyncService().sync(
-        transactions: transactions,
-        currencyCode: ref.read(currencyProvider).value?.baseCurrency ?? 'EUR',
-        locale: ref.read(localeProvider),
-      ),
-    );
-  }
 
   @override
   Future<List<TransactionModel>> build() async {
@@ -60,7 +48,6 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
           ),
         )
         .toList();
-    _syncWidget(transactions);
     return transactions;
   }
 
@@ -123,7 +110,6 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
     final current = state.value ?? [];
     final updated = [...current, transaction];
     state = AsyncData(updated);
-    _syncWidget(updated);
   }
 
   Future<void> restoreTransaction(TransactionModel tx) async {
@@ -152,7 +138,6 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
     final current = state.value ?? [];
     final updated = [...current, tx];
     state = AsyncData(updated);
-    _syncWidget(updated);
   }
 
   Future<void> addRecurringTransaction({
@@ -208,7 +193,6 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
     final current = state.value ?? [];
     final updated = current.where((t) => t.id != id).toList();
     state = AsyncData(updated);
-    _syncWidget(updated);
   }
 
   Future<void> updateTransaction({
@@ -273,7 +257,6 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
     }).toList();
 
     state = AsyncData(updated);
-    _syncWidget(updated);
   }
 
   /// DELETE ALL DATA
@@ -293,6 +276,5 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
     ref.invalidate(recurringProvider);
 
     state = const AsyncData([]);
-    _syncWidget(const []);
   }
 }

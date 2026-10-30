@@ -2,10 +2,8 @@ import 'package:pocket_vault/app/router.dart';
 import 'package:pocket_vault/app/startup_reveal.dart';
 import 'package:pocket_vault/app/theme/app_theme.dart';
 import 'package:pocket_vault/features/settings/presentation/providers/theme_provider.dart';
-import 'package:pocket_vault/core/currency/currency_provider.dart';
 import 'package:pocket_vault/core/notifications/notification_providers.dart';
-import 'package:pocket_vault/core/widgets/widget_sync_service.dart';
-import 'package:pocket_vault/features/transactions/providers/transaction_provider.dart';
+import 'package:pocket_vault/core/widgets/widget_sync_provider.dart';
 import 'package:pocket_vault/core/providers/locale_provider.dart';
 import 'package:pocket_vault/core/security/auth_provider.dart';
 import 'package:pocket_vault/core/security/pin_page.dart';
@@ -52,16 +50,9 @@ class _CashflowAppState extends ConsumerState<CashflowApp> {
     });
     // Keeps scheduled reminders in line with the data while the app runs.
     ref.watch(notificationSyncProvider);
-    // The widget text follows the app language, loaded after the first frame.
-    ref.listen(localeProvider, (previous, next) {
-      final transactions = ref.read(transactionProvider).value;
-      if (previous == next || transactions == null) return;
-      WidgetSyncService().sync(
-        transactions: transactions,
-        currencyCode: ref.read(currencyProvider).value?.baseCurrency ?? 'EUR',
-        locale: next,
-      );
-    });
+    // Keeps the home-screen widgets in line with the data. Data only changes
+    // while unlocked, so the sync starts with the unlocked app.
+    if (unlocked) ref.watch(widgetSyncProvider);
 
     return CupertinoTheme(
       data: AppTheme.cupertinoOverlay,

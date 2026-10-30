@@ -49,23 +49,23 @@ class PocketVaultWidgetProvider : android.appwidget.AppWidgetProvider() {
     }
   }
 
-  private fun launchIntent(context: Context, uri: Uri?): PendingIntent {
-    val intent = if (uri == null) {
-      Intent(context, MainActivity::class.java)
-    } else {
-      Intent(Intent.ACTION_VIEW, uri, context, MainActivity::class.java)
-    }.apply {
-      flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-    }
-    return PendingIntent.getActivity(
-      context,
-      uri?.hashCode() ?: 0,
-      intent,
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-    )
-  }
-
   companion object {
     const val PREFS = "PocketVaultWidget"
+
+    fun launchIntent(context: Context, uri: Uri?): PendingIntent {
+      val intent = if (uri == null) {
+        Intent(context, MainActivity::class.java)
+      } else {
+        Intent(Intent.ACTION_VIEW, uri, context, MainActivity::class.java)
+      }.apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+      }
+      return PendingIntent.getActivity(
+        context,
+        uri?.hashCode() ?: 0,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+      )
+    }
   }
 }

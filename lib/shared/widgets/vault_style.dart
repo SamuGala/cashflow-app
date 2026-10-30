@@ -54,14 +54,55 @@ class VaultSurface extends StatelessWidget {
               )
             : null,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(
-          color: dark ? colors.outlineVariant : const Color(0xFFF0F2F8),
-          width: .7,
-        ),
+        border: Border.all(color: colors.outlineVariant, width: .7),
+        boxShadow: VaultElevation.surface(dark),
       ),
       child: child,
     );
   }
+}
+
+/// Real elevation for Vault surfaces: soft shadows in layers, so cards lift
+/// off the tinted page instead of lying flat on it.
+abstract final class VaultElevation {
+  static List<BoxShadow> surface(bool dark) => dark
+      ? const [
+          BoxShadow(
+            color: Color(0xCC000000),
+            offset: Offset(0, 16),
+            blurRadius: 30,
+            spreadRadius: -18,
+          ),
+        ]
+      : const [
+          BoxShadow(
+            color: Color(0x0A0A132C),
+            offset: Offset(0, 1),
+            blurRadius: 1,
+          ),
+          BoxShadow(
+            color: Color(0x140A132C),
+            offset: Offset(0, 4),
+            blurRadius: 10,
+            spreadRadius: -4,
+          ),
+          BoxShadow(
+            color: Color(0x380A132C),
+            offset: Offset(0, 16),
+            blurRadius: 32,
+            spreadRadius: -20,
+          ),
+        ];
+
+  /// The navigation bar, lifted above the content it sits on.
+  static List<BoxShadow> navigation(bool dark) => [
+    BoxShadow(
+      color: dark ? const Color(0x99000000) : const Color(0x1F0A132C),
+      offset: const Offset(0, -6),
+      blurRadius: 24,
+      spreadRadius: -12,
+    ),
+  ];
 }
 
 /// Category glyph on a tint of the category's own saved color.
